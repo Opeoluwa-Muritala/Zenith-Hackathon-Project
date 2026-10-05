@@ -1,0 +1,12 @@
+name: openapi-check
+on: {push: {paths: ['backend/**']}, pull_request: {paths: ['backend/**']}}
+permissions: {contents: read}
+concurrency: {group: 'openapi-${{ github.ref }}', cancel-in-progress: true}
+jobs:
+  schema:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-groups && uv run python -m scripts.export_openapi && git diff --exit-code openapi.json
+        working-directory: backend
