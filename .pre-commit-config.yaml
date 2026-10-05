@@ -1,0 +1,19 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.13.2
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy
+        entry: bash -c 'cd backend && uv run mypy app'
+        language: system
+        pass_filenames: false
+      - id: ktlint
+        name: ktlint
+        entry: bash -c 'cd mobile && ./gradlew ktlintCheck'
+        language: system
+        pass_filenames: false
