@@ -1,0 +1,1 @@
+"""Individual pure detector modules."""
