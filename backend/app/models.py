@@ -20,18 +20,18 @@ class Base(DeclarativeBase):
     pass
 
 
-class Direction(str, enum.Enum):
+class Direction(enum.StrEnum):
     credit = "credit"
     debit = "debit"
 
 
-class AccountType(str, enum.Enum):
+class AccountType(enum.StrEnum):
     current = "current"
     savings = "savings"
     wallet = "wallet"
 
 
-class Channel(str, enum.Enum):
+class Channel(enum.StrEnum):
     NIP = "NIP"
     POS = "POS"
     USSD = "USSD"
@@ -40,7 +40,7 @@ class Channel(str, enum.Enum):
     OTHER = "OTHER"
 
 
-class SeriesStatus(str, enum.Enum):
+class SeriesStatus(enum.StrEnum):
     active = "active"
     lapsed = "lapsed"
     cancelled = "cancelled"
@@ -63,6 +63,8 @@ class RefreshToken(Base):
     token_hash: Mapped[str] = mapped_column(String(64), unique=True)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    family_id: Mapped[UUID] = mapped_column(index=True, default=uuid4)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class Consent(Base):
@@ -141,6 +143,9 @@ class RecurringSeries(Base):
     __tablename__ = "recurring_series"
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    account_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("accounts.id", ondelete="CASCADE"), index=True
+    )
     merchant_id: Mapped[UUID] = mapped_column(ForeignKey("merchants.id"))
     cadence_days: Mapped[int] = mapped_column(Integer)
     typical_amount_minor: Mapped[int] = mapped_column(BigInteger)
@@ -151,6 +156,7 @@ class RecurringSeries(Base):
     last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     next_expected_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     status: Mapped[SeriesStatus] = mapped_column(Enum(SeriesStatus))
+    direction: Mapped[Direction] = mapped_column(Enum(Direction), default=Direction.debit)
     merchant: Mapped[Merchant] = relationship()
 
 
@@ -179,3 +185,47 @@ class InsightRecord(Base):
     dedupe_key: Mapped[str] = mapped_column(String(160))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     dismissed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class ProviderLink(Base):
+    __tablename__ = "provider_links"
+    __table_args__ = (UniqueConstraint("provider", "provider_account_id"),)
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    consent_id: Mapped[UUID] = mapped_column(
+        ForeignKey("consents.id", ondelete="CASCADE"), index=True
+    )
+    provider: Mapped[str] = mapped_column(String(20))
+    provider_account_id: Mapped[str | None] = mapped_column(String(200))
+    status: Mapped[str] = mapped_column(String(20), default="pending")
+    data_status: Mapped[str | None] = mapped_column(String(30))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    last_webhook_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class WebhookEvent(Base):
+    __tablename__ = "webhook_events"
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    event_key: Mapped[str] = mapped_column(String(64), unique=True)
+    event_name: Mapped[str] = mapped_column(String(100))
+    received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class AssistantConversation(Base):
+    __tablename__ = "assistant_conversations"
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+
+
+class AssistantMessage(Base):
+    __tablename__ = "assistant_messages"
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    conversation_id: Mapped[UUID] = mapped_column(
+        ForeignKey("assistant_conversations.id", ondelete="CASCADE"), index=True
+    )
+    role: Mapped[str] = mapped_column(String(20))
+    content_redacted: Mapped[str] = mapped_column(Text)
+    tool_names: Mapped[list] = mapped_column(JSON, default=list)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))

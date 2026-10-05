@@ -7,7 +7,7 @@ from app.core.config import get_settings
 from app.models import Base
 
 config = context.config
-config.set_main_option("sqlalchemy.url", get_settings().database_url)
+config.set_main_option("sqlalchemy.url", get_settings().async_database_url.replace("%", "%%"))
 target_metadata = Base.metadata
 
 
@@ -17,12 +17,14 @@ def offline():
         target_metadata=target_metadata,
         literal_binds=True,
     )
-    context.run_migrations()
+    with context.begin_transaction():
+        context.run_migrations()
 
 
 def sync(connection):
     context.configure(connection=connection, target_metadata=target_metadata)
-    context.run_migrations()
+    with context.begin_transaction():
+        context.run_migrations()
 
 
 async def online():
