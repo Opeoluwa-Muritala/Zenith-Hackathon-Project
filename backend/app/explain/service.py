@@ -29,8 +29,13 @@ class TemplateExplanationService(ExplanationService):
     def explain(self, kind, payload):
         title = self.TITLES.get(kind, "Financial insight")
         body = {
-            "zombie_subscription": f"{payload.get('merchant', 'This service')} keeps charging. Bank data cannot show whether you use it.",
-            "opportunity_cost_swap": "This treasury-bill-style return is an illustration, not a guarantee or advice.",
+            "zombie_subscription": (
+                f"{payload.get('merchant', 'This service')} keeps charging. "
+                "Bank data cannot show whether you use it."
+            ),
+            "opportunity_cost_swap": (
+                "This treasury-bill-style return is an illustration, not a guarantee or advice."
+            ),
         }.get(kind, "Review the figures and decide what fits your plans.")
         return title, body
 

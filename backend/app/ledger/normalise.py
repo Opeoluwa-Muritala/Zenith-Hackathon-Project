@@ -8,6 +8,13 @@ MERCHANTS = {
     "ikeja": ("Ikeja Electric", "utilities", False),
     "chowdeck": ("Chowdeck", "food", False),
     "salary": ("Employer", "income", False),
+    "showmax": ("Showmax", "entertainment", True),
+    "gym": ("Gym", "health", True),
+    "cafe lagos": ("Cafe Lagos", "food", False),
+    "friday dining": ("Friday Dining", "food", False),
+    "living expense": ("Living Expense", "housing", False),
+    "usd client": ("Client", "income", False),
+    "family allowance": ("Family", "income", False),
 }
 
 
