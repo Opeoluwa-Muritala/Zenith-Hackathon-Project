@@ -1,0 +1,22 @@
+name: backend-ci
+on: {push: {paths: ['backend/**']}, pull_request: {paths: ['backend/**']}}
+permissions: {contents: read}
+concurrency: {group: 'backend-${{ github.ref }}', cancel-in-progress: true}
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres: {image: 'postgres:16-alpine', env: {POSTGRES_DB: cashlens, POSTGRES_USER: cashlens, POSTGRES_PASSWORD: cashlens_dev}, ports: ['5432:5432'], options: '--health-cmd "pg_isready -U cashlens" --health-interval 5s --health-timeout 5s --health-retries 10'}
+    env: {DATABASE_URL: 'postgresql+asyncpg://cashlens:cashlens_dev@localhost:5432/cashlens', AGGREGATOR_PROVIDER: mock, MONO_SECRET_KEY: test_sk_dummy, MONO_PUBLIC_KEY: test_pk_dummy, MONO_WEBHOOK_SECRET: dummy_webhook_secret}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with: {enable-cache: true}
+      - run: uv sync --all-groups
+        working-directory: backend
+      - run: uv run ruff check . && uv run ruff format --check . && uv run mypy app
+        working-directory: backend
+      - run: uv run alembic upgrade head
+        working-directory: backend
+      - run: uv run pytest --cov=app.insights --cov-fail-under=85
+        working-directory: backend
