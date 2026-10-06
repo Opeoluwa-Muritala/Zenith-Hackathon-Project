@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     mono_base_url: str = "https://api.withmono.com"
     mono_secret_key: str = ""
     mono_public_key: str = ""
-    mono_webhook_secret: str = ""
+    webhook_secure_key: str = ""
     mono_redirect_url: str = "cashlens://mono/callback"
     ai_enabled_global: bool = False
     ai_provider: str = "fake"

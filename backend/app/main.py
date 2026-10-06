@@ -709,9 +709,9 @@ async def mono_webhook(
     mono_webhook_secret: str | None = Header(default=None),
 ):
     if (
-        not settings.mono_webhook_secret
+        not settings.webhook_secure_key
         or not mono_webhook_secret
-        or not hmac.compare_digest(mono_webhook_secret, settings.mono_webhook_secret)
+        or not hmac.compare_digest(mono_webhook_secret, settings.webhook_secure_key)
     ):
         raise HTTPException(401, "Unauthorised")
     raw = await request.body()

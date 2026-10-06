@@ -140,7 +140,7 @@
         <pre id="output" aria-live="polite">Ready. Start with “Request OTP”.</pre>
         <div class="guide"><strong class="warning">Local webhook requirement</strong>
           <ol>
-            <li>Set <code>AGGREGATOR_PROVIDER=mono</code> and <code>MONO_WEBHOOK_SECRET</code> in <code>backend/app/.env</code>.</li>
+            <li>Set <code>AGGREGATOR_PROVIDER=mono</code> and <code>WEBHOOK_SECURE_KEY</code> in <code>backend/app/.env</code>.</li>
             <li>Expose local port 8000 through an HTTPS tunnel you control.</li>
             <li>Point the Mono sandbox webhook to <code>https://&lt;tunnel&gt;/webhooks/mono</code> with the matching secret.</li>
             <li>Use the configured redirect URL. The page polls status, but only a delivered webhook activates a hosted link.</li>
