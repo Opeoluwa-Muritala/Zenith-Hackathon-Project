@@ -12,15 +12,15 @@ seed:
 api:
 	cd backend && uv run uvicorn app.main:app --reload
 mobile-build:
-	cd mobile && gradlew.bat assembleDebug
+	cd mobile && npx expo export --platform android
 mobile-test:
-	cd mobile && gradlew.bat test
+	cd mobile && npm test
 test:
 	cd backend && uv run pytest --cov=app.insights --cov-fail-under=85
-	cd mobile && gradlew.bat test
+	cd mobile && npm test
 lint:
 	cd backend && uv run ruff check . && uv run ruff format --check . && uv run mypy app
-	cd mobile && gradlew.bat ktlintCheck
+	cd mobile && npm run typecheck
 openapi:
 	cd backend && uv run python -m scripts.export_openapi
 docs-api: openapi
