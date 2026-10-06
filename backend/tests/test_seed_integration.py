@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from app import main as main_module
+from app.ai.chat.tools import calculate
 from app.insights.runner import run_for_user
 from app.ledger.service import ledger_view
 from app.main import insight_is_authorised
@@ -54,6 +55,9 @@ async def test_seeded_personas_and_revocation(monkeypatch):
             assert expected[persona] <= kinds, (persona, expected[persona] - kinds)
             view, settings = await ledger_view(db, user.id, now)
             assert view.transactions and view.balances and settings
+            safe_overview = calculate("get_overview", {"period": "90d"}, view, settings, now)
+            assert isinstance(safe_overview["income_minor"], str)
+            assert all("transaction" not in key for key in safe_overview)
             if persona == "student":
                 stored_insight = (
                     (
@@ -72,6 +76,36 @@ async def test_seeded_personas_and_revocation(monkeypatch):
                 await db.flush()
                 revoked_view, _ = await ledger_view(db, user.id, now)
                 assert not revoked_view.transactions and not revoked_view.balances
+                assert (
+                    calculate("get_overview", {"period": "90d"}, revoked_view, settings, now)[
+                        "balance_minor"
+                    ]
+                    == "₦0.00"
+                )
+                assert calculate("get_recurring", {}, revoked_view, settings, now)["items"] == []
+                assert (
+                    calculate("get_cashflow_by_week", {"weeks": 4}, revoked_view, settings, now)[
+                        "weeks"
+                    ]
+                    == []
+                )
+                assert (
+                    calculate("get_active_insights", {}, revoked_view, settings, now)["items"] == []
+                )
+                assert (
+                    calculate("get_safe_to_spend", {}, revoked_view, settings, now)["status"]
+                    == "insufficient_data"
+                )
+                assert (
+                    calculate(
+                        "affordability_check",
+                        {"amount_minor": 500_000},
+                        revoked_view,
+                        settings,
+                        now,
+                    )["verdict"]
+                    == "not_advised"
+                )
                 assert not await insight_is_authorised(db, user.id, stored_insight)
                 assert await run_for_user(db, user.id, now) == 0
     await engine.dispose()

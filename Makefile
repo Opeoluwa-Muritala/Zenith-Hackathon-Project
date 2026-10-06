@@ -1,4 +1,4 @@
-.PHONY: setup dev-up dev-down migrate seed api mobile-build mobile-test test lint openapi reset-db
+.PHONY: setup dev-up dev-down migrate seed api mobile-build mobile-test test lint openapi reset-db ai-redaction-check ai-eval docs-api docs-check
 setup:
 	cd backend && uv sync --all-groups
 dev-up:
@@ -23,6 +23,15 @@ lint:
 	cd mobile && gradlew.bat ktlintCheck
 openapi:
 	cd backend && uv run python -m scripts.export_openapi
+docs-api: openapi
+	cd backend && uv run python ../scripts/gen_api_docs.py
+ai-redaction-check:
+	cd backend && uv run pytest tests/test_ai_safety.py -q
+ai-eval:
+	cd backend && uv run pytest tests/test_ai_safety.py -q
+docs-check: docs-api
+	cd backend && uv run pytest tests/test_openapi_quality.py -q
+	git diff --exit-code -- backend/openapi.json docs/api.md
 reset-db:
 	docker compose down -v
 	docker compose up -d

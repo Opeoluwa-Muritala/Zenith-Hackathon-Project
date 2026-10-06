@@ -25,9 +25,23 @@ class Settings(BaseSettings):
     mono_public_key: str = ""
     mono_webhook_secret: str = ""
     mono_redirect_url: str = "cashlens://mono/callback"
-    ai_provider: str = "disabled"
-    openai_api_key: str = ""
-    openai_model: str = "gpt-5.6-terra"
+    ai_enabled_global: bool = False
+    ai_provider: str = "fake"
+    openrouter_api_key: str = ""
+    openrouter_base_url: str = "https://openrouter.ai/api/v1"
+    ai_explain_model: str = ""
+    ai_chat_model: str = ""
+    ai_fallback_models: str = ""
+    ai_data_collection: str = "deny"
+    ai_require_zdr: bool = False
+    ai_site_url: str = ""
+    ai_site_name: str = "cashlens"
+    ai_max_tokens_explain: int = 240
+    ai_max_tokens_chat: int = 700
+    ai_daily_token_budget_per_user: int = 12_000
+    ai_global_daily_token_budget: int = 250_000
+    ai_request_timeout_s: float = 20.0
+    ai_chat_requests_per_minute: int = 10
     assistant_retention_days: int = 30
 
     @property
@@ -58,6 +72,12 @@ class Settings(BaseSettings):
             raise RuntimeError("Wildcard CORS is forbidden in production")
         if self.aggregator_provider == "mono" and not self.mono_secret_key:
             raise RuntimeError("MONO_SECRET_KEY is required for Mono")
+        if (
+            self.ai_enabled_global
+            and self.ai_provider == "openrouter"
+            and not self.openrouter_api_key
+        ):
+            raise RuntimeError("OPENROUTER_API_KEY is required when AI is enabled")
 
     @property
     def origins(self) -> list[str]:

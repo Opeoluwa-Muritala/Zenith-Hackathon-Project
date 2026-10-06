@@ -1,0 +1,22 @@
+name: docs-ci
+on:
+  push:
+    paths: ['docs/**', 'README.md', 'backend/**', 'mobile/**', 'Makefile', 'scripts/**']
+  pull_request:
+    paths: ['docs/**', 'README.md', 'backend/**', 'mobile/**', 'Makefile', 'scripts/**']
+permissions:
+  contents: read
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  docs-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --all-groups
+        working-directory: backend
+      - run: make docs-check
