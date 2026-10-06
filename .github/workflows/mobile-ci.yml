@@ -24,7 +24,7 @@ jobs:
       - run: npm test
       - run: npx expo-doctor
       - run: npx expo export --platform android
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: cashlens-android-bundle
           path: mobile/dist/**
