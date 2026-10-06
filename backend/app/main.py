@@ -2,11 +2,14 @@
 
 import hashlib
 import hmac
+import ipaddress
 import json
 import logging
+import re
 import time
 from collections import defaultdict
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Annotated
 from uuid import UUID, uuid4
 
@@ -21,11 +24,14 @@ from fastapi import (
     UploadFile,
 )
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.assistant.service import answer, redact
+from app.ai.chat.router import router as ai_router
+from app.ai.client import OpenRouterClient
+from app.ai.client_factory import client_for
 from app.core.clock import now_utc
 from app.core.config import PRODUCT_NAME, get_settings
 from app.core.db import SessionLocal, get_db
@@ -36,8 +42,6 @@ from app.ledger.service import active_accounts, ingest, ledger_view
 from app.models import (
     Account,
     AccountType,
-    AssistantConversation,
-    AssistantMessage,
     Consent,
     ConsentAudit,
     Direction,
@@ -58,15 +62,103 @@ from app.providers.statement import ProviderError, StatementUploadProvider
 settings = get_settings()
 settings.validate_runtime()
 logger = logging.getLogger("cashlens")
-app = FastAPI(title=PRODUCT_NAME, version="1.0.0")
+API_VERSION = "1.0.0"
+API_DESCRIPTION = """The cashlens API consolidates financial data from user-consented accounts and
+returns rule-based summaries and insights. BVN is used only for mocked identity verification;
+transaction data comes from the configured aggregator or CSV statements. Money amounts are
+integer kobo and timestamps use UTC ISO 8601.
+
+Journey: request and verify an OTP, verify identity, grant consent, link an account, sync
+transactions, then read summaries and insights. Protected endpoints use a Bearer access token
+obtained from `POST /auth/otp/verify`; refresh tokens are single-use. List endpoints use bounded
+`limit`/`offset` pagination where available. Errors use FastAPI's current `detail` response;
+validation errors may have a different shape. OTP and account refresh endpoints are rate limited.
+Wealth insights are educational information, not financial advice.
+"""
+OPENAPI_TAGS = [
+    {"name": "Auth", "description": "Request an OTP, obtain or rotate tokens, and end a session."},
+    {"name": "Identity", "description": "Verify identity; BVN is not a transaction-data source."},
+    {"name": "Consents", "description": "Grant, list and revoke scoped data-access consent."},
+    {
+        "name": "Accounts and linking",
+        "description": (
+            "Link demo or Mono accounts. Mono flow: initiate, authorise at hosted link, "
+            "receive webhook, poll status; SDK code exchange is optional."
+        ),
+    },
+    {
+        "name": "Sync and statements",
+        "description": "Refresh consented provider data or import a CSV statement.",
+    },
+    {
+        "name": "Transactions",
+        "description": "Read filtered transactions; monetary amounts are integer kobo.",
+    },
+    {"name": "Summary", "description": "Read account totals and spending aggregates."},
+    {"name": "Recurring", "description": "Read recurring bills and subscriptions."},
+    {"name": "Insights", "description": "Read, run and dismiss deterministic detector results."},
+    {"name": "Forecast", "description": "Read the safe-to-spend calculation."},
+    {
+        "name": "AI",
+        "description": "Opt-in wording and aggregate-only chat; model failure falls back safely.",
+    },
+    {
+        "name": "Webhooks",
+        "description": "Provider callbacks authenticated by shared-secret header, not JWT.",
+    },
+    {"name": "Health", "description": "Check service availability."},
+]
+app = FastAPI(
+    title=PRODUCT_NAME,
+    version=API_VERSION,
+    description=API_DESCRIPTION,
+    openapi_tags=OPENAPI_TAGS,
+    contact={"name": "Project maintainers"},
+    license_info={"name": "Unspecified"},
+    servers=[{"url": "http://localhost:8000", "description": "Local development"}],
+    swagger_ui_parameters={
+        "persistAuthorization": True,
+        "displayRequestDuration": True,
+        "docExpansion": "none",
+    },
+)
+app.include_router(ai_router)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.origins,
     allow_credentials=False,
-    allow_methods=["GET", "POST", "DELETE"],
+    allow_methods=["GET", "POST", "PATCH", "DELETE"],
     allow_headers=["Authorization", "Content-Type"],
 )
 _otp_attempts: dict[str, list[float]] = defaultdict(list)
+
+
+@app.on_event("startup")
+async def check_ai_tool_capability():
+    """Check OpenRouter's tools-filtered catalogue without blocking non-AI startup."""
+    app.state.ai_chat_available = True
+    if settings.ai_enabled_global and settings.ai_provider == "openrouter":
+        client = client_for()
+        try:
+            app.state.ai_chat_available = bool(
+                isinstance(client, OpenRouterClient)
+                and await client.supports_tools(settings.ai_chat_model)
+            )
+        except Exception as exc:
+            app.state.ai_chat_available = False
+            logger.warning(
+                "ai_chat_capability_check_failed", extra={"error_type": type(exc).__name__}
+            )
+        if not app.state.ai_chat_available:
+            logger.warning("ai_chat_model_lacks_tool_support")
+
+
+@app.on_event("shutdown")
+async def close_ai_http_client():
+    """Close a configured shared AI HTTP client during application shutdown."""
+    client = client_for()
+    if isinstance(client, OpenRouterClient):
+        await client.close()
 
 
 class PhoneIn(BaseModel):
@@ -105,10 +197,6 @@ class InitiateIn(BaseModel):
     consent_id: UUID
     name: str = Field(min_length=2, max_length=100)
     email: EmailStr
-
-
-class AssistantIn(BaseModel):
-    message: str = Field(min_length=1, max_length=2000)
 
 
 async def owned_consent(db: AsyncSession, user_id: UUID, consent_id: UUID) -> Consent:
@@ -150,6 +238,32 @@ async def security_headers(request, call_next):
 @app.get("/health")
 async def health():
     return {"status": "ok", "product": PRODUCT_NAME}
+
+
+@app.get("/dev/mono-test", include_in_schema=False)
+async def mono_test_page(request: Request):
+    """Serve the sandbox helper only to loopback clients outside production."""
+    client_host = request.client.host if request.client else ""
+    try:
+        is_loopback = ipaddress.ip_address(client_host).is_loopback
+    except ValueError:
+        is_loopback = False
+    local_host = request.url.hostname in {"localhost", "127.0.0.1", "::1"}
+    if settings.environment == "production" or not local_host or not is_loopback:
+        raise HTTPException(404, "Not found")
+    return FileResponse(
+        Path(__file__).parent / "dev" / "mono_test.html",
+        media_type="text/html",
+        headers={
+            "Cache-Control": "no-store",
+            "X-Frame-Options": "DENY",
+            "Content-Security-Policy": (
+                "default-src 'none'; script-src 'unsafe-inline'; "
+                "style-src 'unsafe-inline'; connect-src 'self'; "
+                "base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+            ),
+        },
+    )
 
 
 def rate_limit(phone):
@@ -924,6 +1038,9 @@ def insight_out(x):
         "severity": x.severity,
         "title": x.title,
         "body": x.body,
+        "wording_source": x.wording_source,
+        "template_title": x.template_title,
+        "template_body": x.template_body,
         "payload": x.payload_json,
         "created_at": x.created_at,
         "footer": "Educational information, not financial advice."
@@ -936,7 +1053,9 @@ async def insight_is_authorised(db: AsyncSession, user_id: UUID, row: InsightRec
     """Hide stored insights once any source account loses active consent."""
     view, _ = await ledger_view(db, user_id, now_utc())
     source_ids = row.payload_json.get("source_account_ids")
-    return bool(source_ids) and set(source_ids) <= {b.account_id for b in view.balances}
+    if not isinstance(source_ids, list) or not source_ids:
+        return False
+    return set(source_ids) <= {b.account_id for b in view.balances}
 
 
 @app.get("/insights")
@@ -1010,121 +1129,94 @@ async def dismiss(
     await db.commit()
 
 
-async def owned_conversation(db: AsyncSession, user_id: UUID, conversation_id: UUID):
-    row = (
-        await db.execute(
-            select(AssistantConversation).where(
-                AssistantConversation.id == conversation_id,
-                AssistantConversation.user_id == user_id,
-                AssistantConversation.expires_at > now_utc(),
-            )
-        )
-    ).scalar_one_or_none()
-    if row is None:
-        raise HTTPException(404, "Conversation not found")
-    return row
-
-
-@app.post("/assistant/conversations", status_code=201)
-async def new_conversation(user: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
-    now = now_utc()
-    row = AssistantConversation(
-        user_id=user.id,
-        created_at=now,
-        expires_at=now + timedelta(days=settings.assistant_retention_days),
-    )
-    db.add(row)
-    await db.commit()
-    return {"id": row.id, "expires_at": row.expires_at}
-
-
-@app.get("/assistant/conversations")
-async def conversations(user: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
-    rows = (
-        await db.execute(
-            select(AssistantConversation)
-            .where(
-                AssistantConversation.user_id == user.id,
-                AssistantConversation.expires_at > now_utc(),
-            )
-            .order_by(AssistantConversation.created_at.desc())
-            .limit(100)
-        )
-    ).scalars()
-    return [
-        {"id": row.id, "created_at": row.created_at, "expires_at": row.expires_at} for row in rows
-    ]
-
-
-@app.get("/assistant/conversations/{conversation_id}")
-async def conversation_detail(
-    conversation_id: UUID, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
-):
-    row = await owned_conversation(db, user.id, conversation_id)
-    messages = (
-        await db.execute(
-            select(AssistantMessage)
-            .where(AssistantMessage.conversation_id == row.id)
-            .order_by(AssistantMessage.created_at)
-            .limit(200)
-        )
-    ).scalars()
-    return {
-        "id": row.id,
-        "messages": [
-            {"role": m.role, "text": m.content_redacted, "tool_names": m.tool_names}
-            for m in messages
-        ],
+def _document_operation(path: str, method: str, operation: dict) -> None:
+    """Add stable Swagger metadata without changing route behaviour."""
+    groups = {
+        "/auth/": "Auth",
+        "/identity/": "Identity",
+        "/consents": "Consents",
+        "/accounts": "Accounts and linking",
+        "/sync": "Sync and statements",
+        "/statements/": "Sync and statements",
+        "/transactions": "Transactions",
+        "/summary/": "Summary",
+        "/recurring": "Recurring",
+        "/insights": "Insights",
+        "/forecast/": "Forecast",
+        "/settings/ai": "AI",
+        "/ai/": "AI",
+        "/webhooks/": "Webhooks",
+        "/health": "Health",
     }
-
-
-@app.delete("/assistant/conversations/{conversation_id}", status_code=204)
-async def delete_conversation(
-    conversation_id: UUID, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
-):
-    row = await owned_conversation(db, user.id, conversation_id)
-    await db.execute(delete(AssistantMessage).where(AssistantMessage.conversation_id == row.id))
-    await db.delete(row)
-    await db.commit()
-
-
-@app.post("/assistant/conversations/{conversation_id}/messages")
-async def assistant_message(
-    conversation_id: UUID,
-    body: AssistantIn,
-    user: User = Depends(current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    conversation = await owned_conversation(db, user.id, conversation_id)
-    view, user_settings = await ledger_view(db, user.id, now_utc())
-    try:
-        response, tools_used = await answer(body.message, view, user_settings, now_utc())
-    except (ValueError, json.JSONDecodeError):
-        raise HTTPException(502, "Assistant response unavailable") from None
-    now = now_utc()
-    conversation.expires_at = now + timedelta(days=settings.assistant_retention_days)
-    db.add(
-        AssistantMessage(
-            conversation_id=conversation.id,
-            role="user",
-            content_redacted=redact(body.message),
-            tool_names=[],
-            created_at=now,
-        )
+    tag = next(
+        (name for prefix, name in groups.items() if path.startswith(prefix)), "Accounts and linking"
     )
-    db.add(
-        AssistantMessage(
-            conversation_id=conversation.id,
-            role="assistant",
-            content_redacted=redact(response),
-            tool_names=tools_used,
-            created_at=now,
-        )
+    operation["tags"] = [tag]
+    method = method.upper()
+    verb = {"GET": "Read", "POST": "Submit", "PATCH": "Update", "DELETE": "Delete"}.get(
+        method, "Manage"
     )
-    await db.commit()
-    return {
-        "text": response,
-        "tool_names": tools_used,
-        "model": settings.openai_model if settings.ai_provider == "openai" else "template",
-        "footer": "Educational information, not financial advice.",
-    }
+    readable = path.strip("/").replace("/", " ").replace("{", "by ").replace("}", "") or "health"
+    operation.setdefault("summary", f"{verb} {readable}"[:59])
+    operation.setdefault(
+        "description",
+        (
+            f"{verb} this resource in the cashlens user journey. Protected operations "
+            "require the signed-in user's Bearer access token and scope data to that user. "
+            "Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations "
+            "may update consent, ledger, or derived insight data as described by the route."
+        ),
+    )
+    operation_id = re.sub(
+        r"[^a-zA-Z0-9]+",
+        "_",
+        f"{method.lower()}_{path.strip('/')}".replace("{", "by_").replace("}", ""),
+    ).strip("_")
+    operation["operationId"] = operation_id
+
+
+def custom_openapi():
+    """Generate ordered, stable OpenAPI metadata for Swagger UI and ReDoc."""
+    from fastapi.openapi.utils import get_openapi
+
+    if app.openapi_schema:
+        return app.openapi_schema
+    schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        description=app.description,
+        routes=app.routes,
+        tags=OPENAPI_TAGS,
+    )
+    schema["servers"] = app.servers
+    seen: set[str] = set()
+    for path, path_item in schema.get("paths", {}).items():
+        for method, operation in path_item.items():
+            if method not in {"get", "post", "put", "patch", "delete", "options", "head"}:
+                continue
+            _document_operation(path, method, operation)
+            if operation.get("security"):
+                operation.setdefault("responses", {}).setdefault(
+                    "401",
+                    {
+                        "description": "Authentication is missing or invalid.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {"detail": {"type": "string"}},
+                                    "required": ["detail"],
+                                }
+                            }
+                        },
+                    },
+                )
+            operation_id = operation["operationId"]
+            if operation_id in seen:
+                operation["operationId"] = f"{operation_id}_{len(seen)}"
+            seen.add(operation["operationId"])
+    app.openapi_schema = schema
+    return schema
+
+
+app.openapi = custom_openapi  # type: ignore[method-assign]

@@ -19,6 +19,8 @@ The detector engine turns a consent-filtered ledger into deduplicated observatio
 
 Exact constants live in `backend/app/insights/config.py`. All calculations use integer arithmetic. Wealth output includes: “Educational information, not financial advice.”
 
+Optional AI may rephrase existing detector facts only after user opt-in. Detector calculations, amounts and thresholds remain deterministic; failed wording checks fall back to template text. See [AI boundary](ai.md).
+
 ## Related docs
 
 - [Architecture](architecture.md)

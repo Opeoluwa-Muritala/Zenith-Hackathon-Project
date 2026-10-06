@@ -169,6 +169,7 @@ class UserSettings(Base):
     payday_hint: Mapped[int | None] = mapped_column(Integer)
     discretionary_categories: Mapped[list] = mapped_column(JSON, default=list)
     nominal_tbill_rate_bps: Mapped[int] = mapped_column(Integer, default=1500)
+    ai_enabled: Mapped[bool] = mapped_column(default=False)
 
 
 class InsightRecord(Base):
@@ -181,6 +182,11 @@ class InsightRecord(Base):
     severity: Mapped[str] = mapped_column(String(20))
     title: Mapped[str] = mapped_column(String(160))
     body: Mapped[str] = mapped_column(Text)
+    template_title: Mapped[str] = mapped_column(String(160), default="")
+    template_body: Mapped[str] = mapped_column(Text, default="")
+    wording_source: Mapped[str] = mapped_column(String(12), default="template")
+    prompt_version: Mapped[str | None] = mapped_column(String(40))
+    wording_cache_key: Mapped[str | None] = mapped_column(String(64), index=True)
     payload_json: Mapped[dict] = mapped_column(JSON)
     dedupe_key: Mapped[str] = mapped_column(String(160))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
@@ -229,3 +235,19 @@ class AssistantMessage(Base):
     content_redacted: Mapped[str] = mapped_column(Text)
     tool_names: Mapped[list] = mapped_column(JSON, default=list)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class AiAudit(Base):
+    __tablename__ = "ai_audit"
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    feature: Mapped[str] = mapped_column(String(12))
+    model: Mapped[str] = mapped_column(String(100))
+    prompt_version: Mapped[str] = mapped_column(String(40))
+    input_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    output_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    latency_ms: Mapped[int] = mapped_column(Integer, default=0)
+    verification_passed: Mapped[bool] = mapped_column(default=False)
+    fallback_used: Mapped[bool] = mapped_column(default=False)
+    tools_used: Mapped[list] = mapped_column(JSON, default=list)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)

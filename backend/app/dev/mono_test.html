@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>cashlens · Mono sandbox check</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #172b26;
+      --muted: #63736d;
+      --line: #dce5df;
+      --paper: #f5f7f2;
+      --surface: #fff;
+      --green: #176d4a;
+      --green-soft: #e8f3ec;
+      --amber: #8d5e0d;
+      --red: #9b3835;
+      --radius: 14px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; }
+    header { background: #132e27; color: #f6faf6; padding: 22px max(22px, calc((100vw - 1120px) / 2)); }
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; letter-spacing: .02em; }
+    .mark { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid #7eb395; border-radius: 10px; color: #a5d3b4; font-size: 14px; }
+    .eyebrow { margin: 23px 0 5px; color: #aad5b8; font-size: 11px; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
+    h1 { margin: 0; font-size: clamp(25px, 4vw, 36px); letter-spacing: -.035em; }
+    header p { max-width: 720px; margin: 10px 0 0; color: #c8d8ce; line-height: 1.55; }
+    main { max-width: 1120px; margin: 26px auto 70px; padding: 0 22px; }
+    .notice { display: flex; align-items: flex-start; gap: 13px; padding: 15px 17px; border: 1px solid #d7e7db; border-radius: var(--radius); background: var(--green-soft); color: #254f3b; line-height: 1.5; }
+    .notice strong { display: block; margin-bottom: 2px; }
+    .layout { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(285px, .75fr); gap: 20px; margin-top: 20px; align-items: start; }
+    .steps { display: grid; gap: 12px; }
+    section, .side-panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+    section { padding: 20px; }
+    .step-head { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 17px; }
+    .step-num { flex: 0 0 30px; display: grid; place-items: center; height: 30px; border-radius: 50%; background: var(--green-soft); color: var(--green); font-size: 13px; font-weight: 750; }
+    h2 { margin: 0; font-size: 16px; letter-spacing: -.01em; }
+    .step-head p, .hint { color: var(--muted); font-size: 13px; line-height: 1.5; }
+    .step-head p { margin: 4px 0 0; }
+    .fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    label { display: grid; gap: 6px; font-size: 12px; font-weight: 650; color: #344941; }
+    input { width: 100%; height: 44px; border: 1px solid #cbd7d0; border-radius: 9px; padding: 0 11px; background: #fff; color: var(--ink); font: inherit; font-size: 14px; }
+    input:focus-visible, button:focus-visible, a:focus-visible { outline: 3px solid #80bd98; outline-offset: 2px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 14px; }
+    button, .button-link { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 9px; padding: 0 15px; background: var(--green); color: #fff; font: inherit; font-size: 13px; font-weight: 700; text-decoration: none; cursor: pointer; }
+    button.secondary { border: 1px solid #cbd7d0; background: #fff; color: var(--ink); }
+    button:disabled { cursor: wait; opacity: .6; }
+    .step-state { display: inline-flex; align-items: center; gap: 7px; margin-left: auto; color: var(--muted); font-size: 11px; font-weight: 700; white-space: nowrap; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #a4b2ab; }
+    .step-state[data-state="done"] { color: var(--green); }
+    .step-state[data-state="done"] .dot { background: #32915e; }
+    .step-state[data-state="error"] { color: var(--red); }
+    .step-state[data-state="error"] .dot { background: #bb4843; }
+    .hint { margin: 12px 0 0; }
+    .side-panel { position: sticky; top: 18px; overflow: hidden; }
+    .side-title { padding: 17px 18px; border-bottom: 1px solid var(--line); }
+    .side-title h2 { font-size: 14px; }
+    .side-title p { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+    #output { min-height: 180px; max-height: 430px; overflow: auto; margin: 0; padding: 17px 18px; background: #fbfcfa; color: #31443c; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.65 ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .guide { padding: 16px 18px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; line-height: 1.55; }
+    .guide strong { color: #344941; }
+    .guide ol { margin: 8px 0 0; padding-left: 18px; }
+    .guide li + li { margin-top: 5px; }
+    .warning { color: var(--amber); }
+    #hosted-link { display: none; }
+    #hosted-link[data-visible="true"] { display: inline-flex; }
+    @media (max-width: 760px) {
+      header { padding: 18px 20px 23px; }
+      main { margin-top: 17px; padding: 0 14px; }
+      .layout { grid-template-columns: 1fr; }
+      .side-panel { position: static; }
+      section { padding: 17px; }
+    }
+    @media (max-width: 480px) {
+      .fields { grid-template-columns: 1fr; }
+      .step-state { font-size: 10px; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand"><span class="mark" aria-hidden="true">C</span><span>cashlens <span style="color:#9db5a7;font-weight:500">/ developer tools</span></span></div>
+    <div class="eyebrow">Mono sandbox · local test panel</div>
+    <h1>Test the account-link journey</h1>
+    <p>This page talks to the local cashlens API. Mono credentials stay on the backend; this tab keeps your short-lived access token in memory only.</p>
+  </header>
+  <main>
+    <div class="notice" role="note">
+      <span aria-hidden="true">ⓘ</span>
+      <div><strong>Use sandbox and synthetic identity details only.</strong>The BVN route is mocked. Never enter a real customer's BVN or credentials here. Buttons create consent, link and ledger records in the database configured in <code>backend/app/.env</code>; make sure that is your intended demo database. This local-only tool is not a customer-facing app.</div>
+    </div>
+    <div class="layout">
+      <div class="steps">
+        <section aria-labelledby="auth-title">
+          <div class="step-head"><span class="step-num">1</span><div><h2 id="auth-title">Get a development session</h2><p>Request an OTP, then verify it to receive a token for this tab.</p></div><span class="step-state" id="auth-state" data-state="idle"><span class="dot"></span><span>Not connected</span></span></div>
+          <div class="fields">
+            <label>Test phone number<input id="phone" autocomplete="off" inputmode="tel" placeholder="+2348000000001" maxlength="16"></label>
+            <label>Development OTP<input id="otp" autocomplete="off" inputmode="numeric" placeholder="Check DEV_OTP in backend env" maxlength="6"></label>
+          </div>
+          <div class="actions"><button id="request-otp">Request OTP</button><button class="secondary" id="verify-otp">Verify and continue</button></div>
+          <p class="hint">The development OTP is configured by <code>DEV_OTP</code>. It is disabled in production.</p>
+        </section>
+
+        <section aria-labelledby="identity-title">
+          <div class="step-head"><span class="step-num">2</span><div><h2 id="identity-title">Run mocked identity verification</h2><p>Optional for the current link API; this confirms the identity route only.</p></div><span class="step-state" id="identity-state" data-state="idle"><span class="dot"></span><span>Not checked</span></span></div>
+          <div class="fields"><label>Synthetic 11-digit BVN<input id="bvn" inputmode="numeric" autocomplete="off" placeholder="12345678901" maxlength="11"></label></div>
+          <div class="actions"><button class="secondary" id="verify-bvn">Verify synthetic BVN</button></div>
+          <p class="hint">This value is sent only to the mocked identity endpoint, which stores a salted hash and last four digits.</p>
+        </section>
+
+        <section aria-labelledby="consent-title">
+          <div class="step-head"><span class="step-num">3</span><div><h2 id="consent-title">Grant data consent</h2><p>Create a consent record before initiating a bank connection.</p></div><span class="step-state" id="consent-state" data-state="idle"><span class="dot"></span><span>Not granted</span></span></div>
+          <div class="fields"><label>Institution label<input id="institution" value="Mono Sandbox" maxlength="80"></label><label>Consent scope<input id="scope" value="transactions,balances" maxlength="100"></label></div>
+          <div class="actions"><button id="create-consent">Grant consent</button><button class="secondary" id="revoke-consent" disabled>Revoke this test consent</button></div>
+          <p class="hint" id="consent-id">No consent created.</p>
+        </section>
+
+        <section aria-labelledby="link-title">
+          <div class="step-head"><span class="step-num">4</span><div><h2 id="link-title">Start Mono Connect</h2><p>Open the hosted bank-authorisation page, then wait for the webhook to activate the link.</p></div><span class="step-state" id="link-state" data-state="idle"><span class="dot"></span><span>Not started</span></span></div>
+          <div class="fields"><label>Synthetic customer name<input id="customer-name" value="Sandbox Demo Customer" maxlength="100"></label><label>Synthetic email<input id="customer-email" type="email" value="sandbox@example.test" maxlength="254"></label></div>
+          <div class="actions"><button id="initiate-link">Create hosted link</button><a class="button-link" id="hosted-link" data-visible="false" target="_blank" rel="noopener noreferrer">Open Mono hosted page ↗</a><button class="secondary" id="poll-status" disabled>Check link status</button></div>
+          <p class="hint" id="link-ref">No link initiated.</p>
+        </section>
+
+        <section aria-labelledby="sync-title">
+          <div class="step-head"><span class="step-num">5</span><div><h2 id="sync-title">Sync and inspect the result</h2><p>After the webhook shows connected, pull transactions through the configured provider.</p></div></div>
+          <div class="actions"><button id="sync" disabled>Sync connected accounts</button><button class="secondary" id="summary" disabled>Load overview</button></div>
+          <p class="hint">A successful link alone does not mean transaction data is ready. Mono may need to finish processing first.</p>
+        </section>
+      </div>
+
+      <aside class="side-panel" aria-label="API response and local webhook setup">
+        <div class="side-title"><h2>API activity</h2><p>Responses are rendered as text; access and refresh tokens are never shown.</p></div>
+        <pre id="output" aria-live="polite">Ready. Start with “Request OTP”.</pre>
+        <div class="guide"><strong class="warning">Local webhook requirement</strong>
+          <ol>
+            <li>Set <code>AGGREGATOR_PROVIDER=mono</code> and <code>MONO_WEBHOOK_SECRET</code> in <code>backend/app/.env</code>.</li>
+            <li>Expose local port 8000 through an HTTPS tunnel you control.</li>
+            <li>Point the Mono sandbox webhook to <code>https://&lt;tunnel&gt;/webhooks/mono</code> with the matching secret.</li>
+            <li>Use the configured redirect URL. The page polls status, but only a delivered webhook activates a hosted link.</li>
+          </ol>
+          Do not use a production key or real customer information in this panel.
+        </div>
+      </aside>
+    </div>
+  </main>
+  <script>
+    "use strict";
+    (() => {
+      let accessToken = "";
+      let consentId = "";
+      let linkRef = "";
+      let polling = false;
+      const output = document.getElementById("output");
+      const states = {
+        auth: document.getElementById("auth-state"),
+        identity: document.getElementById("identity-state"),
+        consent: document.getElementById("consent-state"),
+        link: document.getElementById("link-state")
+      };
+      function show(label, data) {
+        output.textContent = `${new Date().toLocaleTimeString()}  ${label}\n` +
+          (typeof data === "string" ? data : JSON.stringify(data, null, 2));
+      }
+      function state(el, name, text) {
+        el.dataset.state = name;
+        el.lastElementChild.textContent = text;
+      }
+      function setBusy(button, busy) {
+        button.disabled = busy;
+        if (busy) button.dataset.previousText = button.textContent;
+        button.textContent = busy ? "Working…" : (button.dataset.previousText || button.textContent);
+      }
+      async function api(path, options = {}) {
+        const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
+        if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+        const response = await fetch(path, { ...options, headers, cache: "no-store", credentials: "same-origin" });
+        if (response.status === 204) return { ok: response.ok, status: response.status, data: null };
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(`${response.status}: ${data.detail || "Request failed"}`);
+        return { ok: true, status: response.status, data };
+      }
+      function requireSession() {
+        if (!accessToken) throw new Error("Verify the development OTP first.");
+      }
+      document.getElementById("request-otp").addEventListener("click", async (event) => {
+        const button = event.currentTarget;
+        setBusy(button, true);
+        try {
+          const result = await api("/auth/otp/request", { method: "POST", body: JSON.stringify({ phone: document.getElementById("phone").value.trim() }) });
+          show("OTP requested", { status: result.status, response: result.data });
+        } catch (error) { show("OTP request failed", error.message); }
+        finally { setBusy(button, false); }
+      });
+      document.getElementById("verify-otp").addEventListener("click", async (event) => {
+        const button = event.currentTarget;
+        setBusy(button, true);
+        try {
+          const result = await api("/auth/otp/verify", { method: "POST", body: JSON.stringify({ phone: document.getElementById("phone").value.trim(), otp: document.getElementById("otp").value.trim() }) });
+          accessToken = result.data.access_token;
+          state(states.auth, "done", "Session ready");
+          document.getElementById("summary").disabled = false;
+          show("Development session ready", "The bearer token is held in memory in this tab and is not displayed or persisted.");
+        } catch (error) { state(states.auth, "error", "Could not sign in"); show("OTP verification failed", error.message); }
+        finally { setBusy(button, false); }
+      });
+      document.getElementById("verify-bvn").addEventListener("click", async (event) => {
+        const button = event.currentTarget;
+        setBusy(button, true);
+        try {
+          requireSession();
+          const result = await api("/identity/bvn/verify", { method: "POST", body: JSON.stringify({ bvn: document.getElementById("bvn").value.trim() }) });
+          state(states.identity, "done", "Mock verified");
+          show("Mock identity verification", result.data);
+        } catch (error) { state(states.identity, "error", "Not verified"); show("Identity verification failed", error.message); }
+        finally { setBusy(button, false); }
+      });
+      document.getElementById("create-consent").addEventListener("click", async (event) => {
+        const button = event.currentTarget;
+        setBusy(button, true);
+        try {
+          requireSession();
+          const result = await api("/consents", { method: "POST", body: JSON.stringify({ institution: document.getElementById("institution").value.trim(), scope: document.getElementById("scope").value.trim(), expires_in_days: 30 }) });
+          consentId = result.data.id;
+          state(states.consent, "done", "Consent granted");
+          document.getElementById("consent-id").textContent = `Consent reference: ${consentId}`;
+          document.getElementById("revoke-consent").disabled = false;
+          document.getElementById("initiate-link").disabled = false;
+          show("Consent created", result.data);
+        } catch (error) { state(states.consent, "error", "Not granted"); show("Consent creation failed", error.message); }
+        finally { setBusy(button, false); }
+      });
+      document.getElementById("revoke-consent").addEventListener("click", async (event) => {
+        const button = event.currentTarget;
+        setBusy(button, true);
+        try {
+          requireSession();
+          if (!consentId) throw new Error("There is no test consent to revoke.");
+          const result = await api(`/consents/${encodeURIComponent(consentId)}`, { method: "DELETE" });
+          consentId = "";
+          linkRef = "";
+          document.getElementById("initiate-link").disabled = true;
+          document.getElementById("poll-status").disabled = true;
+          document.getElementById("hosted-link").dataset.visible = "false";
+          document.getElementById("revoke-consent").disabled = true;
+          state(states.consent, "idle", "Consent revoked");
+          state(states.link, "idle", "Consent revoked");
+          document.getElementById("consent-id").textContent = "Test consent revoked.";
+          show("Consent revoked locally", { status: result.status, detail: "This consent's data is excluded on the next read." });
+        } catch (error) { state(states.consent, "error", "Revoke failed"); show("Consent revocation failed", error.message); }
+        finally {
+          setBusy(button, false);
+          if (!consentId) button.disabled = true;
+        }
+      });
+      document.getElementById("initiate-link").addEventListener("click", async (event) => {
+        const button = event.currentTarget;
+        setBusy(button, true);
+        try {
+          requireSession();
+          if (!consentId) throw new Error("Grant consent first.");
+          const result = await api("/accounts/link/initiate", { method: "POST", body: JSON.stringify({ consent_id: consentId, name: document.getElementById("customer-name").value.trim(), email: document.getElementById("customer-email").value.trim() }) });
+          linkRef = result.data.ref;
+          const hosted = new URL(result.data.url);
+          if (hosted.protocol !== "https:" || hosted.hostname !== "link.mono.co") throw new Error("Mono returned a hosted URL outside the expected sandbox domain; it was not opened.");
+          const anchor = document.getElementById("hosted-link");
+          anchor.href = hosted.href;
+          anchor.dataset.visible = "true";
+          document.getElementById("poll-status").disabled = false;
+          document.getElementById("link-ref").textContent = `Link reference: ${linkRef}`;
+          state(states.link, "pending", "Waiting for webhook");
+          show("Mono link initiated", { ref: linkRef, status: result.data.status, host: hosted.hostname });
+          startPolling();
+        } catch (error) { state(states.link, "error", "Link failed"); show("Link initiation failed", error.message); }
+        finally { setBusy(button, false); }
+      });
+      async function checkStatus() {
+        if (!linkRef || polling) return;
+        polling = true;
+        try {
+          const result = await api(`/accounts/link/status?ref=${encodeURIComponent(linkRef)}`);
+          show("Mono link status", result.data);
+          if (result.data.status === "connected") {
+            state(states.link, "done", "Connected");
+            document.getElementById("sync").disabled = false;
+            polling = false;
+            return;
+          }
+          if (result.data.status === "failed" || result.data.status === "unlinked") {
+            state(states.link, "error", result.data.status);
+            polling = false;
+            return;
+          }
+        } catch (error) { show("Status check failed", error.message); }
+        polling = false;
+      }
+      function startPolling() {
+        let attempts = 0;
+        const timer = window.setInterval(async () => {
+          attempts += 1;
+          await checkStatus();
+          if (states.link.dataset.state === "done" || states.link.dataset.state === "error" || attempts >= 60) window.clearInterval(timer);
+        }, 5000);
+      }
+      document.getElementById("poll-status").addEventListener("click", checkStatus);
+      document.getElementById("sync").addEventListener("click", async (event) => {
+        const button = event.currentTarget;
+        setBusy(button, true);
+        try {
+          requireSession();
+          const result = await api("/sync", { method: "POST" });
+          show("Sync finished", result.data);
+          const accounts = await api("/accounts");
+          show("Connected accounts (masked)", accounts.data);
+        } catch (error) { show("Sync failed or data is not ready", error.message); }
+        finally { setBusy(button, false); }
+      });
+      document.getElementById("summary").addEventListener("click", async (event) => {
+        const button = event.currentTarget;
+        setBusy(button, true);
+        try {
+          requireSession();
+          const result = await api("/summary/overview");
+          show("30-day overview (money in integer kobo)", result.data);
+        } catch (error) { show("Overview unavailable", error.message); }
+        finally { setBusy(button, false); }
+      });
+      document.getElementById("initiate-link").disabled = true;
+    })();
+  </script>
+</body>
+</html>
