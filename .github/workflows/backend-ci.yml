@@ -10,7 +10,7 @@ jobs:
     env: {DATABASE_URL: 'postgresql+asyncpg://cashlens:cashlens_dev@localhost:5432/cashlens', AGGREGATOR_PROVIDER: mock, MONO_SECRET_KEY: test_sk_dummy, MONO_PUBLIC_KEY: test_pk_dummy, MONO_WEBHOOK_SECRET: dummy_webhook_secret, AI_ENABLED_GLOBAL: 'false', AI_PROVIDER: fake, OPENROUTER_API_KEY: dummy_openrouter_key}
     steps:
       - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@v7
         with: {enable-cache: true}
       - run: uv sync --all-groups
         working-directory: backend
