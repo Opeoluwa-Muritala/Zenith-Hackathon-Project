@@ -30,7 +30,7 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.chat.router import router as ai_router
-from app.ai.client import OpenRouterClient
+from app.ai.client import GroqClient
 from app.ai.client_factory import client_for
 from app.core.clock import now_utc
 from app.core.config import PRODUCT_NAME, get_settings
@@ -135,13 +135,13 @@ _otp_attempts: dict[str, list[float]] = defaultdict(list)
 
 @app.on_event("startup")
 async def check_ai_tool_capability():
-    """Check OpenRouter's tools-filtered catalogue without blocking non-AI startup."""
+    """Check Groq's model catalogue without blocking non-AI startup."""
     app.state.ai_chat_available = True
-    if settings.ai_enabled_global and settings.ai_provider == "openrouter":
+    if settings.ai_enabled_global and settings.ai_provider == "groq":
         client = client_for()
         try:
             app.state.ai_chat_available = bool(
-                isinstance(client, OpenRouterClient)
+                isinstance(client, GroqClient)
                 and await client.supports_tools(settings.ai_chat_model)
             )
         except Exception as exc:
@@ -157,7 +157,7 @@ async def check_ai_tool_capability():
 async def close_ai_http_client():
     """Close a configured shared AI HTTP client during application shutdown."""
     client = client_for()
-    if isinstance(client, OpenRouterClient):
+    if isinstance(client, GroqClient):
         await client.close()
 
 

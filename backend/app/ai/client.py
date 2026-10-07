@@ -1,4 +1,4 @@
-"""OpenRouter chat-completions client and a deterministic fake for tests."""
+"""Groq chat-completions client and a deterministic fake for tests."""
 
 import asyncio
 import json
@@ -61,8 +61,8 @@ class FakeLLMClient:
         return self.results.pop(0) if self.results else LLMResult(text="I cannot verify that yet.")
 
 
-class OpenRouterClient:
-    """Call OpenRouter with privacy routing, provider fallbacks and bounded retries."""
+class GroqClient:
+    """Call Groq with bounded retries."""
 
     def __init__(
         self,
@@ -70,29 +70,15 @@ class OpenRouterClient:
         base_url: str,
         *,
         timeout_s: float,
-        data_collection: str = "deny",
-        require_zdr: bool = False,
-        site_url: str = "",
-        site_name: str = "cashlens",
-        fallback_models: tuple[str, ...] = (),
         client: httpx.AsyncClient | None = None,
     ):
         if not api_key:
-            raise ValueError("OPENROUTER_API_KEY is required")
-        if data_collection not in {"deny", "allow"}:
-            raise ValueError("AI_DATA_COLLECTION must be deny or allow")
+            raise ValueError("GROQ_KEY is required")
         self.base_url = base_url.rstrip("/")
         headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
-        if site_url:
-            headers["HTTP-Referer"] = site_url
-        if site_name:
-            headers["X-OpenRouter-Title"] = site_name
         self.http = client or httpx.AsyncClient(headers=headers, timeout=httpx.Timeout(timeout_s))
         self._headers = headers
         self._owns_client = client is None
-        self.data_collection = data_collection
-        self.require_zdr = require_zdr
-        self.fallback_models = fallback_models
 
     async def close(self) -> None:
         """Close the internally owned shared HTTP client."""
@@ -135,12 +121,9 @@ class OpenRouterClient:
         temperature: float,
     ) -> LLMResult:
         """Call the OpenAI-compatible endpoint and normalise tool calls and usage."""
-        if not model or "/" not in model:
-            raise ValueError("AI model must be a vendor/model slug")
-        provider: dict[str, object] = {"data_collection": self.data_collection}
-        if self.require_zdr:
-            provider["zdr"] = True
-        openrouter_tools = [
+        if not model:
+            raise ValueError("AI model is required")
+        groq_tools = [
             {
                 "type": "function",
                 "function": {
@@ -156,12 +139,9 @@ class OpenRouterClient:
             "messages": [{"role": "system", "content": system}, *messages],
             "temperature": temperature,
             "max_tokens": max_tokens,
-            "provider": provider,
         }
-        if openrouter_tools:
-            payload["tools"] = openrouter_tools
-        if self.fallback_models:
-            payload["models"] = list(self.fallback_models[:3])
+        if groq_tools:
+            payload["tools"] = groq_tools
         body = await self._post("/chat/completions", payload)
         choices = body.get("choices")
         if not isinstance(choices, list) or not choices:
@@ -200,10 +180,9 @@ class OpenRouterClient:
         )
 
     async def supports_tools(self, model: str) -> bool:
-        """Check the configured chat model in OpenRouter's tools-filtered catalogue."""
+        """Check that the configured chat model is available in Groq's catalogue."""
         response = await self.http.get(
             f"{self.base_url}/models",
-            params={"supported_parameters": "tools"},
             headers=self._headers,
         )
         if response.is_error:

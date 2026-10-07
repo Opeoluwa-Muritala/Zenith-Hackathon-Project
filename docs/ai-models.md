@@ -3,13 +3,12 @@ An unverified row is not a recommendation; run the synthetic eval suite before s
 
 # Model compatibility
 
-| OpenRouter model slug | Tool calls checked | Insight wording pass rate | Chat eval pass rate | Cost per 1,000 turns | Status / notes |
+| Groq model ID | Tool calls checked | Insight wording pass rate | Chat eval pass rate | Cost per 1,000 turns | Status / notes |
 |---|---:|---:|---:|---:|---|
-| `inclusionai/ling-3.1-flash` | Catalogue lists tool support; runtime unverified | Unverified | Unverified | Unverified | `.env.example` example only |
-| `openai/gpt-6.1-sol` | Catalogue lists tool support; runtime unverified | Unverified | Unverified | Unverified | `.env.example` example only |
-| `anthropic/claude-sonnet-5.5` | Catalogue lists tool support; runtime unverified | Unverified | Unverified | Unverified | Candidate only; not tested |
+| `llama-3.1-8b-instant` | Groq lists tool support; runtime unverified | Unverified | Unverified | Unverified | Insight wording default |
+| `llama-3.3-70b-versatile` | Groq lists tool support; runtime unverified | Unverified | Unverified | Unverified | Chat default |
 
-No demo default or fallback is selected. Before demo, run `make ai-eval MODEL=<slug>` with synthetic seeded data, compare at least three supported models, and record actual pass rates and pricing from account-side usage. This repository has not measured a per-turn price.
+The default models require a live evaluation before a demo. Before demo, run `make ai-eval MODEL=<slug>` with synthetic seeded data, compare at least three supported models, and record actual pass rates and pricing from account-side usage. This repository has not measured a per-turn price.
 
 ## Related docs
 

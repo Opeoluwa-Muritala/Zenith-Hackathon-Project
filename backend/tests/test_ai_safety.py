@@ -7,7 +7,7 @@ import httpx
 import pytest
 
 from app.ai.chat.orchestrator import _safety_reply, converse
-from app.ai.client import FakeLLMClient, LLMResult, OpenRouterClient, ToolCall
+from app.ai.client import FakeLLMClient, GroqClient, LLMResult, ToolCall
 from app.ai.redaction import insight_input, redact_user_text, tool_input
 from app.ai.verify import valid_output, verify_numbers
 from app.insights.types import LedgerView, Settings
@@ -197,7 +197,7 @@ async def test_chat_replaces_a_hallucinated_amount_with_verified_fallback(monkey
 
 
 @pytest.mark.asyncio
-async def test_openrouter_request_uses_openai_tools_and_privacy_headers():
+async def test_groq_request_uses_openai_tools_without_openrouter_fields():
     requests = []
 
     async def handler(request: httpx.Request):
@@ -205,23 +205,21 @@ async def test_openrouter_request_uses_openai_tools_and_privacy_headers():
         return httpx.Response(
             200,
             json={
-                "model": "vendor/model",
+                "model": "llama-3.3-70b-versatile",
                 "choices": [{"finish_reason": "stop", "message": {"content": "Ready"}}],
                 "usage": {"prompt_tokens": 5, "completion_tokens": 2},
             },
         )
 
     http = httpx.AsyncClient(transport=httpx.MockTransport(handler))
-    provider = OpenRouterClient(
+    provider = GroqClient(
         "test-secret",
-        "https://openrouter.example/api/v1",
+        "https://api.groq.example/openai/v1",
         timeout_s=2,
-        site_url="https://cashlens.example",
-        site_name="Cashlens",
         client=http,
     )
     result = await provider.complete(
-        model="vendor/model",
+        model="llama-3.3-70b-versatile",
         system="safe",
         messages=[],
         tools=[
@@ -237,9 +235,9 @@ async def test_openrouter_request_uses_openai_tools_and_privacy_headers():
     request = requests[0]
     payload = json.loads(request.content)
     assert request.headers["authorization"] == "Bearer test-secret"
-    assert request.headers["http-referer"] == "https://cashlens.example"
-    assert request.headers["x-openrouter-title"] == "Cashlens"
-    assert payload["provider"] == {"data_collection": "deny"}
+    assert request.url.path == "/openai/v1/chat/completions"
+    assert "provider" not in payload
+    assert "models" not in payload
     assert payload["tools"][0]["type"] == "function"
     assert payload["tools"][0]["function"]["parameters"] == {"type": "object"}
     assert result.text == "Ready"
