@@ -26,16 +26,11 @@ class Settings(BaseSettings):
     webhook_secure_key: str = ""
     mono_redirect_url: str = "cashlens://mono/callback"
     ai_enabled_global: bool = False
-    ai_provider: str = "fake"
-    openrouter_api_key: str = ""
-    openrouter_base_url: str = "https://openrouter.ai/api/v1"
-    ai_explain_model: str = ""
-    ai_chat_model: str = ""
-    ai_fallback_models: str = ""
-    ai_data_collection: str = "deny"
-    ai_require_zdr: bool = False
-    ai_site_url: str = ""
-    ai_site_name: str = "cashlens"
+    ai_provider: str = "groq"
+    groq_key: str = ""
+    groq_base_url: str = "https://api.groq.com/openai/v1"
+    ai_explain_model: str = "llama-3.1-8b-instant"
+    ai_chat_model: str = "llama-3.3-70b-versatile"
     ai_max_tokens_explain: int = 240
     ai_max_tokens_chat: int = 700
     ai_daily_token_budget_per_user: int = 12_000
@@ -74,10 +69,10 @@ class Settings(BaseSettings):
             raise RuntimeError("MONO_SECRET_KEY is required for Mono")
         if (
             self.ai_enabled_global
-            and self.ai_provider == "openrouter"
-            and not self.openrouter_api_key
+            and self.ai_provider == "groq"
+            and not self.groq_key
         ):
-            raise RuntimeError("OPENROUTER_API_KEY is required when AI is enabled")
+            raise RuntimeError("GROQ_KEY is required when AI is enabled")
 
     @property
     def origins(self) -> list[str]:
