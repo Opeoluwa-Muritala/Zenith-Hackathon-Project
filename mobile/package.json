@@ -4,7 +4,7 @@
   "private": true,
   "main": "expo/AppEntry",
   "scripts": {
-    "start": "node api.js && expo start",
+    "start": "node init && expo start",
     "android": "expo start --android",
     "typecheck": "tsc --noEmit",
     "test": "npm run typecheck"
