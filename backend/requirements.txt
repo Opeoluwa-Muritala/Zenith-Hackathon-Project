@@ -48,7 +48,7 @@ markupsafe==3.0.4
     # via mako
 opentelemetry-api==1.45.0
     # via fastapi
-pydantic==2.13.5
+pydantic==2.14.0
     # via
     #   fastapi
     #   pydantic-settings
