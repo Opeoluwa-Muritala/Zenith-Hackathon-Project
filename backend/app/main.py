@@ -2177,6 +2177,9 @@ async def transactions(
         raise HTTPException(422, "Invalid pagination")
     if from_date and to_date and (to_date < from_date or to_date - from_date > timedelta(days=365)):
         raise HTTPException(422, "Invalid date range")
+    known_categories = FETCH_CATEGORIES | set(CATEGORY_ALIASES) | set(CATEGORY_ALIASES.values())
+    if category and category not in known_categories:
+        raise HTTPException(422, "Invalid category")
     active = (
         select(Account.id)
         .join(Consent)
@@ -2637,13 +2640,17 @@ async def upload_statement(
     user: User = Depends(current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    if file.content_type not in {"text/csv", "application/vnd.ms-excel", "application/csv"}:
-        raise HTTPException(415, "CSV required")
+    if file.content_type not in {
+        "text/csv", "application/vnd.ms-excel", "application/csv",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/pdf",
+    }:
+        raise HTTPException(415, "PDF, CSV or XLSX required")
     data = await file.read(2_000_001)
     try:
-        rows = StatementUploadProvider().parse(data)
-    except (ProviderError, ValueError) as exc:
-        raise HTTPException(422, str(exc)) from exc
+        rows = StatementUploadProvider().parse(data, file.filename or "statement.csv")
+    except (ProviderError, ValueError):
+        # Keep parse failures generic so CSV cell contents cannot leak into errors.
+        raise HTTPException(422, "Invalid statement") from None
     account = (
         await db.execute(
             select(Account).where(
