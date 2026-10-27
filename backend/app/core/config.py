@@ -1,7 +1,7 @@
 from functools import lru_cache
 
 from cryptography.fernet import Fernet
-from pydantic import Field
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import make_url
 
@@ -9,10 +9,15 @@ PRODUCT_NAME = "cashlens"
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=("../.env", ".env", "app/.env"), extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=("../.env", ".env", "app/.env"), extra="ignore", populate_by_name=True
+    )
     database_url: str = "postgresql+asyncpg://localhost/cashlens"
     jwt_secret: str = ""
-    environment: str = "development"
+    environment: str = Field(
+        "development", validation_alias=AliasChoices("APP_ENV", "ENVIRONMENT")
+    )
+    redis_url: str = ""
     cors_origins: str = "http://localhost:3000"
     public_base_url: str = "http://localhost:8000"
     api_docs_enabled: bool = False
@@ -28,6 +33,8 @@ class Settings(BaseSettings):
     otp_expiry_seconds: int = Field(300, ge=60, le=900)
     otp_max_attempts: int = Field(5, ge=1, le=10)
     otp_resend_cooldown_seconds: int = Field(60, ge=1, le=600)
+    otp_lockout_threshold: int = Field(5, ge=2, le=20)
+    otp_lockout_base_seconds: int = Field(60, ge=10, le=3600)
     balance_stale_minutes: int = Field(45, ge=1, le=1440)
     account_refresh_cooldown_seconds: int = Field(3600, ge=60, le=86400)
     fx_provider_name: str = ""
@@ -125,8 +132,18 @@ class Settings(BaseSettings):
             raise RuntimeError("MONO_SECRET_KEY is required for Mono")
         if not self.mono_lookup_secret_key:
             raise RuntimeError("MONO_LOOKUP_SECRET_KEY is required in production")
-        if not self.stable_field_encryption_available:
-            raise RuntimeError("A stable field encryption key is required in production")
+        if not self.field_encryption_key:
+            raise RuntimeError("FIELD_ENCRYPTION_KEY is required in production")
+        database = make_url(self.database_url)
+        if database.host in {None, "localhost", "127.0.0.1", "::1"}:
+            raise RuntimeError("Production DATABASE_URL must not use a development host")
+        if database.username in {None, "postgres", "user"} or database.database in {
+            None,
+            "cashlens",
+            "postgres",
+            "dbname",
+        }:
+            raise RuntimeError("Production DATABASE_URL uses development credentials")
         if self.fx_provider_url and (
             not self.fx_provider_url.startswith("https://") or not self.fx_provider_name
         ):

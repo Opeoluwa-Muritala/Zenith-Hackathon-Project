@@ -59,6 +59,15 @@ Do not edit; run `python backend/scripts/gen_data_model.py`.
 | `tool_names` | `JSON` | False |  |  |
 | `created_at` | `DATETIME` | False |  |  |
 
+## `auth_lockouts`
+
+| Column | Type | Nullable | Key | Protection |
+|---|---|---:|---|---|
+| `identifier_hash` | `VARCHAR(64)` | False | PK | Hash |
+| `failed_attempts` | `INTEGER` | False |  |  |
+| `locked_until` | `DATETIME` | True |  |  |
+| `updated_at` | `DATETIME` | False |  |  |
+
 ## `budgets`
 
 | Column | Type | Nullable | Key | Protection |
@@ -306,6 +315,16 @@ Do not edit; run `python backend/scripts/gen_data_model.py`.
 | `used_at` | `DATETIME` | True |  |  |
 | `family_id` | `CHAR(32)` | False |  |  |
 | `revoked_at` | `DATETIME` | True |  |  |
+
+## `security_audit_events`
+
+| Column | Type | Nullable | Key | Protection |
+|---|---|---:|---|---|
+| `id` | `CHAR(32)` | False | PK |  |
+| `user_id` | `CHAR(32)` | True | FK |  |
+| `event` | `VARCHAR(50)` | False |  |  |
+| `subject_hash` | `VARCHAR(64)` | True |  | Hash |
+| `occurred_at` | `DATETIME` | False |  |  |
 
 ## `transactions`
 

@@ -5,8 +5,8 @@ This table records MVP features that are still missing or only partially impleme
 | Item | Status | Notes |
 |---|---|---|
 | Production OTP delivery | pending | Hosted demo uses a protected allowlisted presenter page. Generic HTTP delivery exists, but real SMS/email delivery is outside the demo verification. |
-| Distributed rate limiting and lockout | pending | Demo runs one worker. Throttles are process-local; no Redis or durable identifier lockout. Lookup starts additionally use a persisted cooldown and user-row lock. |
-| Authentication audit events | pending | Refresh rotation and owner-scoped logout exist; append-only login/logout audit table does not. |
+| Distributed rate limiting and lockout | partial | Redis-backed limits are used when configured, with a warned process-local fallback. OTP identifier lockout is durable; IP limits remain rate-limit-window based. |
+| Authentication audit events | partial | Metadata-only OTP request, login failure, login, logout and logout-all events are append-only. Lookup/link/unlink/wipe/rule audit events land in their owning phases. |
 | Mono BVN discovery and hosted account linking | partial | Full mocked HTTP journey passes, including selectable discovery IDs and link/account status. Live sandbox delivery and coverage remain unverified. |
 | Account match | partial | Optional chargeable match is off by default; mismatches stop sync but are not automatically unlinked. |
 | Account categories and grouped totals | partial | Grouped totals separate currencies; mapping includes a few known names and fictional fixture banks. Unknown names are flagged. Broader coverage is pending. |

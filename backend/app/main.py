@@ -7,7 +7,6 @@ import json
 import logging
 import re
 import time
-from collections import defaultdict
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from html import escape
@@ -46,7 +45,10 @@ from app.core.clock import now_utc
 from app.core.config import PRODUCT_NAME, get_settings
 from app.core.db import SessionLocal, get_db
 from app.core.encryption import decrypt_field, encrypt_field, hash_field
+from app.core.rate_limit import get_rate_limiter
 from app.core.security import access_token, current_user, hash_secret, new_refresh
+from app.identity.audit import record_auth_event
+from app.identity.lockout import clear_failures, ensure_not_locked, register_failure
 from app.identity.otp import (
     code_digest,
     code_matches,
@@ -182,7 +184,6 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PATCH", "DELETE"],
     allow_headers=["Authorization", "Content-Type"],
 )
-_otp_attempts: dict[str, list[float]] = defaultdict(list)
 _refresh_requests: dict[UUID, float] = {}
 presenter_auth = HTTPBasic(auto_error=False)
 
@@ -468,7 +469,7 @@ async def owned_lookup_session(db, user_id, session_id):
 async def start_bvn_lookup(
     body: BvnIn, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
 ):
-    rate_limit("lookup-start:" + str(user.id))
+    await rate_limit("lookup-start:" + str(user.id))
     await db.execute(select(User.id).where(User.id == user.id).with_for_update())
     recent = (
         await db.execute(
@@ -514,7 +515,7 @@ async def start_bvn_lookup(
 async def send_bvn_otp(
     body: BvnMethodIn, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
 ):
-    rate_limit("lookup-otp:" + str(user.id))
+    await rate_limit("lookup-otp:" + str(user.id))
     row = await owned_lookup_session(db, user.id, body.session_id)
     if row.status == "confirmed":
         raise HTTPException(409, "Lookup already confirmed")
@@ -530,7 +531,7 @@ async def send_bvn_otp(
 async def confirm_bvn(
     body: BvnConfirmIn, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
 ):
-    rate_limit("lookup-confirm:" + str(user.id))
+    await rate_limit("lookup-confirm:" + str(user.id))
     row = await owned_lookup_session(db, user.id, body.session_id)
     if row.status not in {"otp_sent", "confirmed"}:
         raise HTTPException(409, "Request the BVN OTP before confirming")
@@ -661,19 +662,16 @@ async def mono_test_page(request: Request):
     )
 
 
-def rate_limit(phone):
-    now = time.monotonic()
-    _otp_attempts[phone] = [x for x in _otp_attempts[phone] if now - x < 60]
-    if len(_otp_attempts[phone]) >= 5:
-        raise HTTPException(429, "Try again later")
-    _otp_attempts[phone].append(now)
+async def rate_limit(key: str) -> None:
+    await get_rate_limiter().hit(key)
 
 
 @app.post("/auth/otp/request", status_code=202, response_model=api.StatusResponse)
 async def request_otp(body: PhoneIn, request: Request, db: AsyncSession = Depends(get_db)):
     identifier = body.identifier
-    rate_limit("otp-send:" + identifier)
-    rate_limit("otp-send-ip:" + (request.client.host if request.client else "unknown"))
+    await rate_limit("otp-send:" + identifier)
+    await rate_limit("otp-send-ip:" + (request.client.host if request.client else "unknown"))
+    await ensure_not_locked(db, identifier)
     if settings.demo_mode and identifier not in settings.demo_identity_allowlist:
         return {"status": "sent"}
     now = now_utc()
@@ -710,6 +708,7 @@ async def request_otp(body: PhoneIn, request: Request, db: AsyncSession = Depend
             created_at=now,
         )
     )
+    record_auth_event(db, "auth.otp_requested", identifier=identifier)
     await db.commit()
     return {"status": "sent"}
 
@@ -717,8 +716,9 @@ async def request_otp(body: PhoneIn, request: Request, db: AsyncSession = Depend
 @app.post("/auth/otp/verify", response_model=api.TokenResponse)
 async def verify_otp(body: OtpIn, request: Request, db: AsyncSession = Depends(get_db)):
     identifier = body.identifier
-    rate_limit("otp-verify:" + identifier)
-    rate_limit("otp-verify-ip:" + (request.client.host if request.client else "unknown"))
+    await rate_limit("otp-verify:" + identifier)
+    await rate_limit("otp-verify-ip:" + (request.client.host if request.client else "unknown"))
+    await ensure_not_locked(db, identifier)
     code_row = (
         await db.execute(
             select(OtpCode)
@@ -742,11 +742,14 @@ async def verify_otp(body: OtpIn, request: Request, db: AsyncSession = Depends(g
             if code_row.attempts >= settings.otp_max_attempts:
                 code_row.consumed_at = now
                 forget_code(identifier)
-            await db.commit()
+        await register_failure(db, identifier)
+        record_auth_event(db, "auth.login_failed", identifier=identifier)
+        await db.commit()
         if code_row and as_utc(code_row.expires_at) <= now:
             forget_code(identifier)
         raise HTTPException(401, "Invalid code")
     code_row.consumed_at = now
+    await clear_failures(db, identifier)
     forget_code(identifier)
     condition = User.phone == body.phone if body.phone else User.email == str(body.email)
     user = (await db.execute(select(User).where(condition))).scalar_one_or_none()
@@ -769,6 +772,7 @@ async def verify_otp(body: OtpIn, request: Request, db: AsyncSession = Depends(g
             used_at=None,
         )
     )
+    record_auth_event(db, "auth.login", user_id=user.id, identifier=identifier)
     await db.commit()
     return {"access_token": access_token(user.id), "refresh_token": raw, "token_type": "bearer"}
 
@@ -920,6 +924,7 @@ async def logout(
         ).scalars()
         for token in family:
             token.revoked_at = now_utc()
+        record_auth_event(db, "auth.logout", user_id=user.id)
         await db.commit()
 
 
@@ -932,6 +937,7 @@ async def logout_all(user: User = Depends(current_user), db: AsyncSession = Depe
     ).scalars()
     for token in tokens:
         token.revoked_at = now
+    record_auth_event(db, "auth.logout_all", user_id=user.id)
     await db.commit()
 
 
@@ -1108,7 +1114,7 @@ async def link_mock(
 async def initiate_link(
     body: InitiateIn, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
 ):
-    rate_limit("link:" + str(user.id))
+    await rate_limit("link:" + str(user.id))
     if settings.aggregator_provider != "mono":
         raise HTTPException(409, "Mono linking is disabled")
     await owned_consent(db, user.id, body.consent_id)
@@ -1522,7 +1528,7 @@ async def link_discovered_account(
     db: AsyncSession,
     skipped_only: bool = False,
 ):
-    rate_limit("link:" + str(user.id))
+    await rate_limit("link:" + str(user.id))
     if settings.aggregator_provider != "mono":
         raise HTTPException(409, "Mono linking is disabled")
     row = (
