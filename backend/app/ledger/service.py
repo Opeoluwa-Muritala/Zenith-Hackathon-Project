@@ -227,6 +227,7 @@ async def ingest(db: AsyncSession, account: Account, rows: list[ProviderTransact
                 dedupe_hash=dedupe_key,
                 source=row.source,
                 parse_confidence_bps=row.parse_confidence,
+                classification_method="provider" if row.category else "rule",
             )
         )
         count += 1

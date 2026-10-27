@@ -359,6 +359,7 @@ Do not edit; run `python backend/scripts/gen_data_model.py`.
 | `category_source` | `VARCHAR(9)` | False |  |  |
 | `source` | `VARCHAR(20)` | False |  |  |
 | `parse_confidence_bps` | `INTEGER` | False |  |  |
+| `classification_method` | `VARCHAR(20)` | False |  |  |
 
 ## `user_settings`
 

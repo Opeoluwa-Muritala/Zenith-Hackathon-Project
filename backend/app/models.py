@@ -241,6 +241,7 @@ class Transaction(Base):
     )
     source: Mapped[str] = mapped_column(String(20), default="mono")
     parse_confidence_bps: Mapped[int] = mapped_column(Integer, default=10000)
+    classification_method: Mapped[str] = mapped_column(String(20), default="rule")
     merchant: Mapped[Merchant | None] = relationship()
 
 

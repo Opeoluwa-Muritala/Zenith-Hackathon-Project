@@ -29,4 +29,5 @@ def test_merchant_category_precedes_provider_category():
 def test_NDL_2_nigerian_fee_rules_are_deterministic():
     assert categorise("NIP TRANSFER FEE")[:2] == ("Bank Service Fee", "Bills & Utilities")
     assert categorise("SMS ALERT CHARGE")[:2] == ("SMS Alert Fee", "Bills & Utilities")
+    assert categorise("WHT TAX REMITTANCE")[:2] == ("Tax", "Bills & Utilities")
     assert categorise("AIRTIME PURCHASE")[1] == "Airtime & Data"

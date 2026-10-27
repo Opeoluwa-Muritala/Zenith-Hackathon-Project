@@ -33,6 +33,7 @@ NIGERIA_RULES = (
     (re.compile(r"\b(?:sms|alert)\s*(?:fee|charge)\b", re.I), "SMS Alert Fee", "Bills & Utilities"),
     (re.compile(r"\b(?:stamp\s*duty|stamping)\b", re.I), "Stamp Duty", "Bills & Utilities"),
     (re.compile(r"\bvat\b", re.I), "VAT", "Bills & Utilities"),
+    (re.compile(r"\b(?:tax|wht|withholding|paye|cit|stamp)\s*(?:payment|remittance|deduction)?\b", re.I), "Tax", "Bills & Utilities"),
     (re.compile(r"\bmaintenance\s*(?:fee|charge)?\b", re.I), "Account Maintenance Fee", "Bills & Utilities"),
     (re.compile(r"\b(?:card|atm)\s*(?:fee|charge)\b", re.I), "Card Fee", "Bills & Utilities"),
     (re.compile(r"\b(?:ussd|nip|pos|transfer)\s*(?:fee|charge)\b", re.I), "Bank Service Fee", "Bills & Utilities"),
