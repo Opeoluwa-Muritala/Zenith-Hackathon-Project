@@ -52,6 +52,8 @@ class StatementUploadProvider:
                     row["narration"][:500],
                     row.get("category") or None,
                     int(row["balance_after_minor"]) if row.get("balance_after_minor") else None,
+                    "upload",
+                    8000,
                 )
             )
         return out
@@ -111,7 +113,7 @@ class StatementUploadProvider:
                     raise ValueError
             except (InvalidOperation, TypeError, ValueError, OverflowError) as exc:
                 raise ProviderError("Invalid statement row") from exc
-            out.append(ProviderTransaction(str(row.get("id") or index), posted_at, amount_minor, direction, narration[:500], row.get("category") or None, None))
+            out.append(ProviderTransaction(str(row.get("id") or index), posted_at, amount_minor, direction, narration[:500], row.get("category") or None, None, "upload", 8000))
         if not out:
             raise ProviderError("Missing statement rows")
         return out
