@@ -62,7 +62,12 @@ from app.insights.detectors.velocity_warning import projected_month_end_spend
 from app.insights.runner import run_for_user
 from app.ledger.account_categories import category_for_institution
 from app.ledger.balances import balance_state
-from app.ledger.normalise import CATEGORY_ALIASES, category_label, counterparty_key
+from app.ledger.normalise import (
+    CATEGORY_ALIASES,
+    FETCH_CATEGORIES,
+    category_label,
+    counterparty_key,
+)
 from app.ledger.obligations import sync_detected_obligations
 from app.ledger.recurring import rebuild_account
 from app.ledger.service import active_accounts, as_utc, ingest, ledger_view
@@ -77,6 +82,7 @@ from app.models import (
     CategorySource,
     Consent,
     ConsentAudit,
+    ClassificationCorrection,
     DeviceToken,
     Direction,
     DiscoveredAccount,
@@ -1783,7 +1789,7 @@ async def sync_owned_account(
     if link.status != "connected" or account.sync_paused:
         raise HTTPException(409, "Account is not connected")
     try:
-        start = sync_window_start(account.last_synced_at, now)
+        start = sync_window_start(account.sync_cursor_at or account.last_synced_at, now)
         rows = await provider().transactions(link.provider_account_id, start, now)
     except ProviderNotReady as exc:
         raise HTTPException(409, "Provider data is not ready") from exc
@@ -1792,6 +1798,8 @@ async def sync_owned_account(
     if len(rows) > 10_000:
         raise HTTPException(502, "Provider returned too many transactions")
     count = await ingest(db, account, rows)
+    account.sync_cursor_at = now
+    account.last_synced_at = now
     await db.flush()
     await rebuild_account(db, account.id, account.user_id, now)
     await db.flush()
@@ -1880,6 +1888,9 @@ async def refresh_account(
         raise HTTPException(429, "Refresh cooldown active", headers={"Retry-After": str(wait)})
     _refresh_requests[account.id] = time.monotonic()
     if link.provider == "mono":
+        await reserve_refresh_call(
+            db, user.id, account.id, settings.mono_refresh_monthly_limit
+        )
         try:
             response = await provider().balance(link.provider_account_id, realtime=True)
         except (ProviderError, ValueError, KeyError, TypeError):
@@ -2267,6 +2278,12 @@ async def reclassify_transaction(
     if not body.apply_to_future:
         tx.category = body.category
         tx.category_source = CategorySource.manual
+        db.add(ClassificationCorrection(
+            user_id=user.id,
+            counterparty_key=counterparty_key(tx.decoded_merchant or tx.narration_clean),
+            category=body.category,
+            created_at=now_utc(),
+        ))
         await db.commit()
         return {"id": tx.id, "category": tx.category, "category_source": tx.category_source}
     key = counterparty_key(tx.decoded_merchant or tx.narration_clean)
@@ -2287,6 +2304,9 @@ async def reclassify_transaction(
         )
     else:
         rule.category = body.category
+    db.add(ClassificationCorrection(
+        user_id=user.id, counterparty_key=key, category=body.category, created_at=now_utc()
+    ))
     matching = (
         await db.execute(
             select(Transaction)

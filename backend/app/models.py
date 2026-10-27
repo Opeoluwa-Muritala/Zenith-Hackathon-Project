@@ -438,6 +438,16 @@ class CategoryRule(Base):
     __table_args__ = (UniqueConstraint("user_id", "counterparty_key"),)
 
 
+class ClassificationCorrection(Base):
+    __tablename__ = "classification_corrections"
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    counterparty_key: Mapped[str] = mapped_column(String(160), index=True)
+    category: Mapped[str] = mapped_column(String(40))
+    confirmed: Mapped[bool] = mapped_column(default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
 class Budget(Base):
     __tablename__ = "budgets"
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)

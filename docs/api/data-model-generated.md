@@ -100,6 +100,17 @@ Do not edit; run `python backend/scripts/gen_data_model.py`.
 | `category` | `VARCHAR(40)` | False |  |  |
 | `created_at` | `DATETIME` | False |  |  |
 
+## `classification_corrections`
+
+| Column | Type | Nullable | Key | Protection |
+|---|---|---:|---|---|
+| `id` | `CHAR(32)` | False | PK |  |
+| `user_id` | `CHAR(32)` | False | FK |  |
+| `counterparty_key` | `VARCHAR(160)` | False |  |  |
+| `category` | `VARCHAR(40)` | False |  |  |
+| `confirmed` | `BOOLEAN` | False |  |  |
+| `created_at` | `DATETIME` | False |  |  |
+
 ## `consent_audit`
 
 | Column | Type | Nullable | Key | Protection |
