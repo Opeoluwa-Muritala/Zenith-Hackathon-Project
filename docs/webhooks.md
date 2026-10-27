@@ -1,0 +1,7 @@
+# Webhooks
+
+`POST /webhooks/mono` expects the `mono-webhook-secret` header and compares it to `WEBHOOK_SECURE_KEY` using constant-time comparison, as specified in [Mono's webhook guide](https://docs.mono.co/docs/webhooks). The event key and processing metadata are stored in `webhook_events`; raw financial payloads are not persisted. Current event handling covers account connected, updated, and unlinked flows. Financial data is fetched only when AVAILABLE/PARTIAL and the required resource appears in retrieved_data.
+
+Receipt is acknowledged before background processing. Event states are pending, processing, processed and failed. An atomic claim prevents concurrent active processing; a processing claim older than two minutes is eligible for redelivery with a new claim token. Completed events are ignored. Failed events may retry when their payload is redelivered, but there is no autonomous retry queue or worker. A late account_connected event cannot downgrade a completed data state. Manual `/sync` can recover ready connected accounts, but it cannot reconstruct a missing connected event.
+
+Failed remote unlink attempts retain a `pending_unlink` provider link and encrypted identifier, but no automatic worker retries them. An `account_unlinked` event clears that state and purges any remaining linked account data. Test the route with mocked requests in `backend/tests/`; never put a real secret in a collection or document. A 200 response confirms receipt, not successful processing.

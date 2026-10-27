@@ -1,0 +1,17 @@
+[
+  {"name": "Chowdeck", "aliases": ["chowdeck"], "category": "Food & Dining", "subscription": false},
+  {"name": "Netflix", "aliases": ["netflix", "netflix.com"], "category": "Bills & Utilities", "subscription": true},
+  {"name": "Spotify", "aliases": ["spotify"], "category": "Bills & Utilities", "subscription": true},
+  {"name": "DStv", "aliases": ["dstv"], "category": "Bills & Utilities", "subscription": true},
+  {"name": "Showmax", "aliases": ["showmax"], "category": "Bills & Utilities", "subscription": true},
+  {"name": "Ikeja Electric", "aliases": ["ikeja electric", "ikeja"], "category": "Bills & Utilities", "subscription": false},
+  {"name": "Gym", "aliases": ["gym"], "category": "Shopping & Transfers", "subscription": true},
+  {"name": "Cafe Lagos", "aliases": ["cafe lagos"], "category": "Food & Dining", "subscription": false},
+  {"name": "Friday Dining", "aliases": ["friday dining"], "category": "Food & Dining", "subscription": false},
+  {"name": "Employer", "aliases": ["salary"], "category": "Uncategorised", "subscription": false},
+  {"name": "Living Expense", "aliases": ["living expense"], "category": "Bills & Utilities", "subscription": false},
+  {"name": "Client", "aliases": ["usd client"], "category": "Uncategorised", "subscription": false},
+  {"name": "Family", "aliases": ["family allowance", "family transfer"], "category": "Transfers & Family", "subscription": false},
+  {"name": "MTN", "aliases": ["mtn"], "category": "Airtime & Data", "subscription": false},
+  {"name": "Uber", "aliases": ["uber"], "category": "Transport", "subscription": false}
+]

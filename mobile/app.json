@@ -1,0 +1,16 @@
+{
+  "expo": {
+    "name": "cashlens",
+    "slug": "cashlens",
+    "version": "0.1.0",
+    "scheme": "cashlens",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "android": {
+      "package": "com.cashlens",
+      "usesCleartextTraffic": true
+    },
+    "plugins": ["expo-secure-store"]
+  }
+}

@@ -1,0 +1,2168 @@
+{
+  "components": {
+    "schemas": {
+      "AiPreferenceRequest": {
+        "description": "Whether the user opts in to model-powered wording and chat.",
+        "properties": {
+          "enabled": {
+            "description": "Opt in to sending minimised aggregates to the configured language model.",
+            "title": "Enabled",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled"
+        ],
+        "title": "AiPreferenceRequest",
+        "type": "object"
+      },
+      "Body_upload_statement_statements_upload_post": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_statement_statements_upload_post",
+        "type": "object"
+      },
+      "BvnIn": {
+        "properties": {
+          "bvn": {
+            "pattern": "^\\d{11}$",
+            "title": "Bvn",
+            "type": "string"
+          }
+        },
+        "required": [
+          "bvn"
+        ],
+        "title": "BvnIn",
+        "type": "object"
+      },
+      "ChatRequest": {
+        "description": "One user question, optionally attached to an existing conversation.",
+        "properties": {
+          "conversation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Opaque ID of an owned chat, if continuing.",
+            "title": "Conversation Id"
+          },
+          "message": {
+            "description": "Question about the signed-in user's connected financial data.",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "title": "ChatRequest",
+        "type": "object"
+      },
+      "ConsentIn": {
+        "properties": {
+          "expires_in_days": {
+            "default": 30,
+            "maximum": 365.0,
+            "minimum": 1.0,
+            "title": "Expires In Days",
+            "type": "integer"
+          },
+          "institution": {
+            "maxLength": 80,
+            "minLength": 2,
+            "title": "Institution",
+            "type": "string"
+          },
+          "scope": {
+            "pattern": "^[a-z,_-]{1,100}$",
+            "title": "Scope",
+            "type": "string"
+          }
+        },
+        "required": [
+          "institution",
+          "scope"
+        ],
+        "title": "ConsentIn",
+        "type": "object"
+      },
+      "ExchangeIn": {
+        "properties": {
+          "code": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Code",
+            "type": "string"
+          },
+          "consent_id": {
+            "format": "uuid",
+            "title": "Consent Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "consent_id",
+          "code"
+        ],
+        "title": "ExchangeIn",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "InitiateIn": {
+        "properties": {
+          "consent_id": {
+            "format": "uuid",
+            "title": "Consent Id",
+            "type": "string"
+          },
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 100,
+            "minLength": 2,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "consent_id",
+          "name",
+          "email"
+        ],
+        "title": "InitiateIn",
+        "type": "object"
+      },
+      "LinkIn": {
+        "properties": {
+          "consent_id": {
+            "format": "uuid",
+            "title": "Consent Id",
+            "type": "string"
+          },
+          "institution_code": {
+            "maxLength": 20,
+            "minLength": 2,
+            "title": "Institution Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "consent_id",
+          "institution_code"
+        ],
+        "title": "LinkIn",
+        "type": "object"
+      },
+      "OtpIn": {
+        "properties": {
+          "otp": {
+            "maxLength": 6,
+            "minLength": 6,
+            "title": "Otp",
+            "type": "string"
+          },
+          "phone": {
+            "pattern": "^\\+[1-9]\\d{7,14}$",
+            "title": "Phone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "phone",
+          "otp"
+        ],
+        "title": "OtpIn",
+        "type": "object"
+      },
+      "PhoneIn": {
+        "properties": {
+          "phone": {
+            "pattern": "^\\+[1-9]\\d{7,14}$",
+            "title": "Phone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "phone"
+        ],
+        "title": "PhoneIn",
+        "type": "object"
+      },
+      "RefreshIn": {
+        "properties": {
+          "refresh_token": {
+            "maxLength": 200,
+            "minLength": 32,
+            "title": "Refresh Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "refresh_token"
+        ],
+        "title": "RefreshIn",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "The cashlens API consolidates financial data from user-consented accounts and\nreturns rule-based summaries and insights. BVN is used only for mocked identity verification;\ntransaction data comes from the configured aggregator or CSV statements. Money amounts are\ninteger kobo and timestamps use UTC ISO 8601.\n\nJourney: request and verify an OTP, verify identity, grant consent, link an account, sync\ntransactions, then read summaries and insights. Protected endpoints use a Bearer access token\nobtained from `POST /auth/otp/verify`; refresh tokens are single-use. List endpoints use bounded\n`limit`/`offset` pagination where available. Errors use FastAPI's current `detail` response;\nvalidation errors may have a different shape. OTP and account refresh endpoints are rate limited.\nWealth insights are educational information, not financial advice.\n",
+    "title": "cashlens",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/accounts": {
+      "get": {
+        "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "get_accounts",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Accounts",
+        "tags": [
+          "Accounts and linking"
+        ]
+      }
+    },
+    "/accounts/link": {
+      "post": {
+        "description": "Submit this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "post_accounts_link",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Link Mock",
+        "tags": [
+          "Accounts and linking"
+        ]
+      }
+    },
+    "/accounts/link/exchange": {
+      "post": {
+        "description": "Submit this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "post_accounts_link_exchange",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExchangeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Exchange Link",
+        "tags": [
+          "Accounts and linking"
+        ]
+      }
+    },
+    "/accounts/link/initiate": {
+      "post": {
+        "description": "Submit this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "post_accounts_link_initiate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InitiateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Initiate Link",
+        "tags": [
+          "Accounts and linking"
+        ]
+      }
+    },
+    "/accounts/link/status": {
+      "get": {
+        "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "get_accounts_link_status",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "ref",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ref",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Link Status",
+        "tags": [
+          "Accounts and linking"
+        ]
+      }
+    },
+    "/accounts/{account_id}/refresh": {
+      "post": {
+        "description": "Submit this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "post_accounts_by_account_id_refresh",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Account Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Refresh Account",
+        "tags": [
+          "Accounts and linking"
+        ]
+      }
+    },
+    "/ai/chat": {
+      "post": {
+        "description": "Answer through bounded aggregate tools, with graceful disabled and budget states.",
+        "operationId": "post_ai_chat",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Ask Money",
+        "tags": [
+          "AI"
+        ]
+      }
+    },
+    "/ai/chat/{conversation_id}": {
+      "delete": {
+        "description": "Hard-delete an owned conversation and all its messages.",
+        "operationId": "delete_ai_chat_by_conversation_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "conversation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Conversation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Chat",
+        "tags": [
+          "AI"
+        ]
+      },
+      "get": {
+        "description": "Return bounded text history for one conversation owned by the user.",
+        "operationId": "get_ai_chat_by_conversation_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "conversation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Conversation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Chat",
+        "tags": [
+          "AI"
+        ]
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "description": "Submit this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "post_auth_logout",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Logout",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/otp/request": {
+      "post": {
+        "description": "Submit this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "post_auth_otp_request",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PhoneIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Request Otp",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/otp/verify": {
+      "post": {
+        "description": "Submit this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "post_auth_otp_verify",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OtpIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Verify Otp",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "description": "Rotate a refresh token once; replay revokes its entire family.",
+        "operationId": "post_auth_refresh",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Refresh",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/consents": {
+      "get": {
+        "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "get_consents",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Consents",
+        "tags": [
+          "Consents"
+        ]
+      },
+      "post": {
+        "description": "Submit this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "post_consents",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsentIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Consent",
+        "tags": [
+          "Consents"
+        ]
+      }
+    },
+    "/consents/{consent_id}": {
+      "delete": {
+        "description": "Delete this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "delete_consents_by_consent_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "consent_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Consent Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Revoke",
+        "tags": [
+          "Consents"
+        ]
+      }
+    },
+    "/forecast/safe-to-spend": {
+      "get": {
+        "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "get_forecast_safe_to_spend",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Safe To Spend Forecast",
+        "tags": [
+          "Forecast"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "get_health",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health",
+        "tags": [
+          "Health"
+        ]
+      }
+    },
+    "/identity/bvn/verify": {
+      "post": {
+        "description": "Submit this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "post_identity_bvn_verify",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BvnIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Verify Bvn",
+        "tags": [
+          "Identity"
+        ]
+      }
+    },
+    "/insights": {
+      "get": {
+        "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "get_insights",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "module",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Module"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Insights",
+        "tags": [
+          "Insights"
+        ]
+      }
+    },
+    "/insights/run": {
+      "post": {
+        "description": "Submit this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "post_insights_run",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Run Insights",
+        "tags": [
+          "Insights"
+        ]
+      }
+    },
+    "/insights/{insight_id}": {
+      "get": {
+        "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "get_insights_by_insight_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "insight_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Insight Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Insight Detail",
+        "tags": [
+          "Insights"
+        ]
+      }
+    },
+    "/insights/{insight_id}/dismiss": {
+      "post": {
+        "description": "Submit this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "post_insights_by_insight_id_dismiss",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "insight_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Insight Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Dismiss",
+        "tags": [
+          "Insights"
+        ]
+      }
+    },
+    "/recurring": {
+      "get": {
+        "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "get_recurring",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Recurring",
+        "tags": [
+          "Recurring"
+        ]
+      }
+    },
+    "/settings/ai": {
+      "patch": {
+        "description": "Persist user opt-in; disabling AI immediately deletes their chat history.",
+        "operationId": "patch_settings_ai",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiPreferenceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Set Ai Preference",
+        "tags": [
+          "AI"
+        ]
+      }
+    },
+    "/statements/upload": {
+      "post": {
+        "description": "Submit this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "post_statements_upload",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Account Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_statement_statements_upload_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Upload Statement",
+        "tags": [
+          "Sync and statements"
+        ]
+      }
+    },
+    "/summary/categories": {
+      "get": {
+        "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "get_summary_categories",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Category Summary",
+        "tags": [
+          "Summary"
+        ]
+      }
+    },
+    "/summary/monthly": {
+      "get": {
+        "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "get_summary_monthly",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Monthly Summary",
+        "tags": [
+          "Summary"
+        ]
+      }
+    },
+    "/summary/overview": {
+      "get": {
+        "description": "Return a rolling 30-day summary over consented accounts.",
+        "operationId": "get_summary_overview",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Summary",
+        "tags": [
+          "Summary"
+        ]
+      }
+    },
+    "/sync": {
+      "post": {
+        "description": "Submit this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "post_sync",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Sync",
+        "tags": [
+          "Sync and statements"
+        ]
+      }
+    },
+    "/transactions": {
+      "get": {
+        "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "get_transactions",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          },
+          {
+            "in": "query",
+            "name": "account_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Account Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "merchant_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Merchant Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From Date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To Date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Transactions",
+        "tags": [
+          "Transactions"
+        ]
+      }
+    },
+    "/webhooks/mono": {
+      "post": {
+        "description": "Submit this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "post_webhooks_mono",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "mono-webhook-secret",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Mono-Webhook-Secret"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Mono Webhook",
+        "tags": [
+          "Webhooks"
+        ]
+      }
+    }
+  },
+  "servers": [
+    {
+      "description": "Local development",
+      "url": "http://localhost:8000"
+    }
+  ],
+  "tags": [
+    {
+      "description": "Request an OTP, obtain or rotate tokens, and end a session.",
+      "name": "Auth"
+    },
+    {
+      "description": "Verify identity; BVN is not a transaction-data source.",
+      "name": "Identity"
+    },
+    {
+      "description": "Grant, list and revoke scoped data-access consent.",
+      "name": "Consents"
+    },
+    {
+      "description": "Link demo or Mono accounts. Mono flow: initiate, authorise at hosted link, receive webhook, poll status; SDK code exchange is optional.",
+      "name": "Accounts and linking"
+    },
+    {
+      "description": "Refresh consented provider data or import a CSV statement.",
+      "name": "Sync and statements"
+    },
+    {
+      "description": "Read filtered transactions; monetary amounts are integer kobo.",
+      "name": "Transactions"
+    },
+    {
+      "description": "Read account totals and spending aggregates.",
+      "name": "Summary"
+    },
+    {
+      "description": "Read recurring bills and subscriptions.",
+      "name": "Recurring"
+    },
+    {
+      "description": "Read, run and dismiss deterministic detector results.",
+      "name": "Insights"
+    },
+    {
+      "description": "Read the safe-to-spend calculation.",
+      "name": "Forecast"
+    },
+    {
+      "description": "Opt-in wording and aggregate-only chat; model failure falls back safely.",
+      "name": "AI"
+    },
+    {
+      "description": "Provider callbacks authenticated by shared-secret header, not JWT.",
+      "name": "Webhooks"
+    },
+    {
+      "description": "Check service availability.",
+      "name": "Health"
+    }
+  ]
+}
