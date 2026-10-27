@@ -15,6 +15,7 @@ Do not edit; run `python backend/scripts/gen_data_model.py`.
 | `currency` | `VARCHAR(3)` | False |  |  |
 | `current_balance_minor` | `BIGINT` | False |  |  |
 | `last_synced_at` | `DATETIME` | True |  |  |
+| `sync_cursor_at` | `DATETIME` | True |  |  |
 | `category` | `VARCHAR(19)` | False |  |  |
 | `available_balance_minor` | `BIGINT` | True |  |  |
 | `ledger_balance_minor` | `BIGINT` | True |  |  |

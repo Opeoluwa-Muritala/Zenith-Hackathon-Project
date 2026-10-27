@@ -197,6 +197,7 @@ class Account(Base):
     currency: Mapped[str] = mapped_column(String(3), default="NGN")
     current_balance_minor: Mapped[int] = mapped_column(BigInteger)
     last_synced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    sync_cursor_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     category: Mapped[AccountCategory] = mapped_column(
         Enum(AccountCategory), default=AccountCategory.commercial_bank
     )
