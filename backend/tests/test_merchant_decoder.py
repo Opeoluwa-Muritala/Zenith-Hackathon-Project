@@ -24,3 +24,9 @@ def test_merchant_category_precedes_provider_category():
     assert categorise("POS CHOWDECK", "transport")[1] == "Food & Dining"
     assert categorise("POS DEMO MERCHANT", "transport")[1] == "Transport"
     assert categorise("POS DEMO MERCHANT", "unknown")[1] == "Uncategorised"
+
+
+def test_NDL_2_nigerian_fee_rules_are_deterministic():
+    assert categorise("NIP TRANSFER FEE")[:2] == ("Bank Service Fee", "Bills & Utilities")
+    assert categorise("SMS ALERT CHARGE")[:2] == ("SMS Alert Fee", "Bills & Utilities")
+    assert categorise("AIRTIME PURCHASE")[1] == "Airtime & Data"

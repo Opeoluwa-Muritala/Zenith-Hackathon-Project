@@ -78,6 +78,8 @@ python-multipart==0.0.32
     # via cashlens-backend
 pyyaml==6.0.3
     # via uvicorn
+rapidfuzz==3.14.6
+    # via cashlens-backend
 redis==8.1.0
     # via cashlens-backend
 sqlalchemy==2.1.3

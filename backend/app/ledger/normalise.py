@@ -29,6 +29,16 @@ FETCH_CATEGORIES = {
     "Uncategorised",
 }
 
+NIGERIA_RULES = (
+    (re.compile(r"\b(?:sms|alert)\s*(?:fee|charge)\b", re.I), "SMS Alert Fee", "Bills & Utilities"),
+    (re.compile(r"\b(?:stamp\s*duty|stamping)\b", re.I), "Stamp Duty", "Bills & Utilities"),
+    (re.compile(r"\bvat\b", re.I), "VAT", "Bills & Utilities"),
+    (re.compile(r"\bmaintenance\s*(?:fee|charge)?\b", re.I), "Account Maintenance Fee", "Bills & Utilities"),
+    (re.compile(r"\b(?:card|atm)\s*(?:fee|charge)\b", re.I), "Card Fee", "Bills & Utilities"),
+    (re.compile(r"\b(?:ussd|nip|pos|transfer)\s*(?:fee|charge)\b", re.I), "Bank Service Fee", "Bills & Utilities"),
+    (re.compile(r"\b(?:airtime|data)\b", re.I), "Airtime & Data", "Airtime & Data"),
+)
+
 
 def category_label(value: str | None) -> str:
     if value in FETCH_CATEGORIES:
@@ -86,6 +96,11 @@ def lender_name(value: str) -> str | None:
 
 def categorise(value, provider_category=None):
     lower = value.lower()
+    for pattern, merchant, category in NIGERIA_RULES:
+        if merchant == "Airtime & Data":
+            continue
+        if pattern.search(lower):
+            return merchant, category, False
     lender = lender_name(value)
     if lender:
         return lender, "Bills & Utilities", True
@@ -95,6 +110,17 @@ def categorise(value, provider_category=None):
             for alias in merchant["aliases"]
         ):
             return merchant["name"], merchant["category"], merchant["subscription"]
+    if re.search(r"\b(?:airtime|data)\b", lower):
+        return (" ".join(narration_parts(value))[:100] or "Airtime & Data", "Airtime & Data", False)
+    try:
+        from rapidfuzz import fuzz
+
+        candidate = counterparty_key(" ".join(narration_parts(value)))
+        best = max(merchant_aliases(), key=lambda item: max(fuzz.ratio(candidate, counterparty_key(alias)) for alias in item["aliases"]), default=None)
+        if best and max(fuzz.ratio(candidate, counterparty_key(alias)) for alias in best["aliases"]) >= 90:
+            return best["name"], best["category"], best["subscription"]
+    except ImportError:
+        pass
     name = " ".join(narration_parts(value))[:100] or "Other"
     category = category_label(provider_category)
     return name, category, False
