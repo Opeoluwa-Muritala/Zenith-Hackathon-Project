@@ -47,7 +47,7 @@ async def test_complete_demo_journey(monkeypatch, caplog):
     }.items():
         monkeypatch.setattr(main.settings, name, value)
     monkeypatch.setattr(main, "_institution_coverage", None)
-    main._otp_attempts.clear()
+    main.get_rate_limiter.cache_clear()
     main._refresh_requests.clear()
     base = "https://api.withmono.com"
     initiate = respx.post(base + "/v2/lookup/bvn/initiate").mock(
@@ -320,6 +320,6 @@ async def test_complete_demo_journey(monkeypatch, caplog):
             assert "654321" not in caplog.text
     finally:
         main.app.dependency_overrides.clear()
-        main._otp_attempts.clear()
+        main.get_rate_limiter.cache_clear()
         main._refresh_requests.clear()
         await engine.dispose()

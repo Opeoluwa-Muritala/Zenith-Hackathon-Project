@@ -7,6 +7,7 @@ Do not edit; run `python backend/scripts/gen_config_docs.py`.
 | `database_url` | `<class 'str'>` | `postgresql+asyncpg://localhost/cashlens` |
 | `jwt_secret` | `<class 'str'>` | `` |
 | `environment` | `<class 'str'>` | `development` |
+| `redis_url` | `<class 'str'>` | `` |
 | `cors_origins` | `<class 'str'>` | `http://localhost:3000` |
 | `public_base_url` | `<class 'str'>` | `http://localhost:8000` |
 | `api_docs_enabled` | `<class 'bool'>` | `False` |
@@ -22,6 +23,8 @@ Do not edit; run `python backend/scripts/gen_config_docs.py`.
 | `otp_expiry_seconds` | `<class 'int'>` | `300` |
 | `otp_max_attempts` | `<class 'int'>` | `5` |
 | `otp_resend_cooldown_seconds` | `<class 'int'>` | `60` |
+| `otp_lockout_threshold` | `<class 'int'>` | `5` |
+| `otp_lockout_base_seconds` | `<class 'int'>` | `60` |
 | `balance_stale_minutes` | `<class 'int'>` | `45` |
 | `account_refresh_cooldown_seconds` | `<class 'int'>` | `3600` |
 | `fx_provider_name` | `<class 'str'>` | `` |

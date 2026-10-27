@@ -39,7 +39,7 @@ async def test_presenter_page_requires_basic_auth_and_allowlisted_identity(monke
         forget_code("user@example.com")
 
 
-def test_demo_startup_refuses_missing_secrets_and_production():
+def test_AUTH_5_demo_startup_refuses_missing_secrets_and_production():
     with pytest.raises(RuntimeError, match="forbidden"):
         Settings(_env_file=None, demo_mode=True, environment="production").validate_runtime()
     with pytest.raises(RuntimeError, match="password"):

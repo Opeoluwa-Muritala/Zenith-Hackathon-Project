@@ -116,6 +116,25 @@ class OtpCode(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
+class AuthLockout(Base):
+    __tablename__ = "auth_lockouts"
+    identifier_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    failed_attempts: Mapped[int] = mapped_column(Integer, default=0)
+    locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class SecurityAuditEvent(Base):
+    __tablename__ = "security_audit_events"
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    user_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), index=True
+    )
+    event: Mapped[str] = mapped_column(String(50), index=True)
+    subject_hash: Mapped[str | None] = mapped_column(String(64), index=True)
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+
+
 class RefreshToken(Base):
     __tablename__ = "refresh_tokens"
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)

@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from app import main
 from app.core.db import get_db
 from app.identity.otp import _development_inbox, code_matches
-from app.models import Base, OtpCode, User
+from app.models import Base, OtpCode, SecurityAuditEvent, User
 
 
 @pytest.mark.asyncio
@@ -23,7 +23,7 @@ async def test_mock_bvn_shortcut_is_unavailable_in_production(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_otp_is_hashed_single_use_and_logout_all_revokes_sessions(monkeypatch):
+async def test_AUTH_1_AUTH_3_AUTH_4_otp_lifecycle_and_session_revocation(monkeypatch):
     engine = create_async_engine("sqlite+aiosqlite:///:memory:")
     sessions = async_sessionmaker(engine, expire_on_commit=False)
     async with engine.begin() as connection:
@@ -38,7 +38,7 @@ async def test_otp_is_hashed_single_use_and_logout_all_revokes_sessions(monkeypa
     monkeypatch.setattr(main.settings, "otp_dev_inbox_enabled", True)
     monkeypatch.setattr(main.settings, "jwt_secret", "unit-test-jwt-key-with-at-least-32-bytes")
     monkeypatch.setattr(main.settings, "otp_secret", "unit-test-otp-key-with-at-least-32-bytes")
-    main._otp_attempts.clear()
+    main.get_rate_limiter.cache_clear()
     try:
         async with httpx.AsyncClient(
             transport=httpx.ASGITransport(app=main.app), base_url="http://test"
@@ -65,6 +65,8 @@ async def test_otp_is_hashed_single_use_and_logout_all_revokes_sessions(monkeypa
             assert replay.status_code == 401
             async with sessions() as db:
                 assert (await db.execute(select(User))).scalar_one().phone == identifier
+                events = (await db.execute(select(SecurityAuditEvent.event))).scalars().all()
+                assert {"auth.otp_requested", "auth.login_failed", "auth.login"} <= set(events)
             auth = {"Authorization": "Bearer " + tokens["access_token"]}
             assert (await client.post("/auth/logout-all", headers=auth)).status_code == 204
             assert (await client.post("/auth/logout-all", headers=auth)).status_code == 401
@@ -73,13 +75,13 @@ async def test_otp_is_hashed_single_use_and_logout_all_revokes_sessions(monkeypa
             ).status_code == 401
     finally:
         main.app.dependency_overrides.clear()
-        main._otp_attempts.clear()
+        main.get_rate_limiter.cache_clear()
         _development_inbox.clear()
         await engine.dispose()
 
 
 @pytest.mark.asyncio
-async def test_expired_code_cannot_be_used(monkeypatch):
+async def test_AUTH_1_expired_code_cannot_be_used(monkeypatch):
     engine = create_async_engine("sqlite+aiosqlite:///:memory:")
     sessions = async_sessionmaker(engine, expire_on_commit=False)
     async with engine.begin() as connection:
@@ -92,7 +94,7 @@ async def test_expired_code_cannot_be_used(monkeypatch):
     main.app.dependency_overrides[get_db] = db_override
     monkeypatch.setattr(main.settings, "otp_sender", "dev_inbox")
     monkeypatch.setattr(main.settings, "otp_dev_inbox_enabled", True)
-    main._otp_attempts.clear()
+    main.get_rate_limiter.cache_clear()
     try:
         async with httpx.AsyncClient(
             transport=httpx.ASGITransport(app=main.app), base_url="http://test"
@@ -111,6 +113,6 @@ async def test_expired_code_cannot_be_used(monkeypatch):
             ).status_code == 401
     finally:
         main.app.dependency_overrides.clear()
-        main._otp_attempts.clear()
+        main.get_rate_limiter.cache_clear()
         _development_inbox.clear()
         await engine.dispose()
