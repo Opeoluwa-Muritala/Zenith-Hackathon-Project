@@ -135,6 +135,17 @@ class SecurityAuditEvent(Base):
     occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
 
 
+class ProviderCallLog(Base):
+    __tablename__ = "provider_call_logs"
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    provider: Mapped[str] = mapped_column(String(20))
+    operation: Mapped[str] = mapped_column(String(60))
+    account_id: Mapped[UUID | None] = mapped_column(ForeignKey("accounts.id", ondelete="SET NULL"))
+    requested_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    outcome: Mapped[str] = mapped_column(String(20))
+
+
 class RefreshToken(Base):
     __tablename__ = "refresh_tokens"
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)

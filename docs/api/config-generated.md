@@ -27,6 +27,7 @@ Do not edit; run `python backend/scripts/gen_config_docs.py`.
 | `otp_lockout_base_seconds` | `<class 'int'>` | `60` |
 | `balance_stale_minutes` | `<class 'int'>` | `45` |
 | `account_refresh_cooldown_seconds` | `<class 'int'>` | `3600` |
+| `mono_refresh_monthly_limit` | `<class 'int'>` | `2` |
 | `fx_provider_name` | `<class 'str'>` | `` |
 | `fx_provider_url` | `<class 'str'>` | `` |
 | `fx_provider_key` | `<class 'str'>` | `` |
