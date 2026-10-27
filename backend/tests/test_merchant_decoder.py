@@ -2,7 +2,8 @@
 
 import pytest
 
-from app.ledger.normalise import categorise, narration_parts
+from app.ledger.normalise import categorise, detect_ajo_esusu, narration_parts, suggest_family_transfer
+from datetime import UTC, datetime
 
 
 @pytest.mark.parametrize(
@@ -30,4 +31,13 @@ def test_NDL_2_nigerian_fee_rules_are_deterministic():
     assert categorise("NIP TRANSFER FEE")[:2] == ("Bank Service Fee", "Bills & Utilities")
     assert categorise("SMS ALERT CHARGE")[:2] == ("SMS Alert Fee", "Bills & Utilities")
     assert categorise("WHT TAX REMITTANCE")[:2] == ("Tax", "Bills & Utilities")
+
+
+def test_NDL_5_NDL_6_family_and_ajo_are_suggestions_until_confirmed():
+    assert suggest_family_transfer(["NIP TO AMAKA", "NIP TO AMAKA"])
+    assert not suggest_family_transfer(["NIP TO AMAKA"])
+    day = datetime(2026, 1, 1, tzinfo=UTC)
+    debits = [(day, 10_000, "AMAKA"), (day, 10_000, "AMAKA"), (day, 10_000, "AMAKA")]
+    credits = [(day, 50_000, "AMAKA")]
+    assert detect_ajo_esusu(debits, credits) == "amaka"
     assert categorise("AIRTIME PURCHASE")[1] == "Airtime & Data"

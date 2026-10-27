@@ -3,6 +3,8 @@ import json
 import re
 from functools import lru_cache
 from pathlib import Path
+from collections import Counter
+from datetime import datetime
 
 CATEGORY_ALIASES = {
     "food": "Food & Dining",
@@ -131,3 +133,28 @@ def dedupe(account_id, external_id, posted_at, amount, direction):
     return hashlib.sha256(
         f"{account_id}|{external_id}|{posted_at.isoformat()}|{amount}|{direction}".encode()
     ).hexdigest()
+
+
+def suggest_family_transfer(narrations: list[str], *, confirmed: bool = False) -> bool:
+    """Return a suggestion for repeated family-like transfers; confirmation is explicit."""
+    if confirmed:
+        return True
+    keys = [counterparty_key(" ".join(narration_parts(value))) for value in narrations]
+    return bool(keys and max(Counter(keys).values()) >= 2)
+
+
+def detect_ajo_esusu(
+    debits: list[tuple[datetime, int, str]], credits: list[tuple[datetime, int, str]]
+) -> str | None:
+    """Suggest a recurring savings circle counterparty without changing ledger state."""
+    for counterparty in {counterparty_key(item[2]) for item in debits}:
+        recurring = [item for item in debits if counterparty_key(item[2]) == counterparty]
+        if len(recurring) < 3:
+            continue
+        amounts = {item[1] for item in recurring}
+        if len(amounts) != 1:
+            continue
+        for credit_date, credit_amount, credit_name in credits:
+            if counterparty_key(credit_name) == counterparty and credit_amount > amounts.pop() * 2:
+                return counterparty
+    return None
