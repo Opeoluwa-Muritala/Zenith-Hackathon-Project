@@ -5,7 +5,10 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 *.pyc
+.env
+.env.*
 !.env.example
+.vscode/
 .gradle/
 build/
 .kotlin/
