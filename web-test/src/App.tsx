@@ -33,7 +33,83 @@ function EnvironmentStep({ environment, setEnvironment, client, setNotice, setSt
 
 function SignInStep({ client, setToken, setNotice, setStep, journey, setJourney }: StepProps) { const [identifier, setIdentifier] = useState(journey.identifier); const [otp, setOtp] = useState(''); const [message, setMessage] = useState(''); async function request(e: FormEvent) { e.preventDefault(); await client.request('/auth/otp/request', { method: 'POST', body: JSON.stringify(identifier.includes('@') ? { email: identifier } : { phone: identifier }) }); setMessage('Code requested. Retrieve it through the protected demo channel.'); } async function verify() { const body = identifier.includes('@') ? { email: identifier, otp } : { phone: identifier, otp }; const pair = await client.request<TokenPair>('/auth/otp/verify', { method: 'POST', body: JSON.stringify(body) }); setToken(pair.access_token); sessionStorage.setItem('fetch.refresh-token', pair.refresh_token); setJourney((old) => ({ ...old, identifier })); setOtp(''); setNotice('Signed in.'); setStep(2); } return <Panel title="Passwordless sign-in" aside={<span className="badge">6 digits · 5 min</span>}><form onSubmit={(e) => void request(e)} className="form"><label>Email or E.164 phone<input value={identifier} onChange={(e) => setIdentifier(e.target.value)} required /></label><button>Request code</button><label>One-time code<input value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))} inputMode="numeric" /></label><button type="button" className="primary" disabled={otp.length !== 6} onClick={() => void verify()}>Verify and continue</button></form><p className="note">{message || 'The browser does not persist OTPs or access tokens.'}</p></Panel>; }
 
-function DiscoveryStep({ client, setNotice, setStep, journey, setJourney }: StepProps) { const [bvn, setBvn] = useState(''); const [methods, setMethods] = useState<{method: string | null; hint: string | null}[]>([]); const [method, setMethod] = useState(''); const [alternatePhone, setAlternatePhone] = useState(''); const [otp, setOtp] = useState(''); async function start() { const result = await client.request<{session_id: string; methods: {method: string | null; hint: string | null}[]}>('/onboarding/bvn/start', { method: 'POST', body: JSON.stringify({ bvn }) }); setBvn(''); setMethods(result.methods); setJourney((old) => ({ ...old, sessionId: result.session_id, sessionExpiresAt: new Date(Date.now() + 600_000).toISOString(), accounts: [], selectedIds: [] })); setNotice('Lookup session started; 10-minute countdown active.'); } async function send() { await client.request('/onboarding/bvn/send-otp', { method: 'POST', body: JSON.stringify({ session_id: journey.sessionId, method, ...(method === 'alternate_phone' ? { phone_number: alternatePhone } : {}) }) }); setNotice('Lookup OTP requested.'); } async function confirm() { const accounts = await client.request<DiscoveredAccount[]>('/onboarding/bvn/confirm', { method: 'POST', body: JSON.stringify({ session_id: journey.sessionId, otp }) }); setOtp(''); setJourney((old) => ({ ...old, accounts, selectedIds: [] })); } async function selectAccounts() { await client.request('/accounts/discovered/select', { method: 'POST', body: JSON.stringify({ ids: journey.selectedIds }) }); setNotice('Selection saved. Link each account through Mono.'); setStep(3); } const remaining = journey.sessionExpiresAt ? Math.max(0, Math.ceil((new Date(journey.sessionExpiresAt).getTime() - Date.now()) / 1000)) : 0; return <><Panel title="BVN Lookup" aside={<span className="badge warning">Billable outside sandbox</span>}><div className="form"><label>Test BVN<input value={bvn} onChange={(e) => setBvn(e.target.value.replace(/\D/g, '').slice(0, 11))} inputMode="numeric" /></label><button disabled={bvn.length !== 11} onClick={() => void start()}>Start discovery</button>{journey.sessionId && <><label>Delivery channel<select value={method} onChange={(e) => setMethod(e.target.value)}><option value="">Choose one</option>{methods.map((item) => item.method && <option key={item.method} value={item.method}>{item.hint ?? item.method}</option>)}</select></label><button disabled={!method} onClick={() => void send()}>Send Lookup OTP</button>{method === 'alternate_phone' && <label>Alternate phone<input value={alternatePhone} onChange={(e) => setAlternatePhone(e.target.value)} /></label>}<label>Lookup OTP<input value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 8))} /></label><button disabled={otp.length < 4} onClick={() => void confirm()}>Confirm discovery</button><p className="note">Session remaining: {Math.floor(remaining / 60)}m {remaining % 60}s</p></>}</div></Panel>{journey.accounts.length > 0 && <Panel title="Choose accounts"><div className="rows">{journey.accounts.map((account) => <div className="row" key={account.id}><input type="checkbox" checked={journey.selectedIds.includes(account.id)} onChange={() => setJourney((old) => ({ ...old, selectedIds: old.selectedIds.includes(account.id) ? old.selectedIds.filter((id) => id !== account.id) : [...old.selectedIds, account.id] }))} /><div><strong>{account.institution_name}</strong><span>{account.account_name} · {account.account_type}</span></div><code>•••• {account.account_number_last4}</code></div>)}</div><button disabled={!journey.selectedIds.length} onClick={() => void selectAccounts()}>Save selection and continue</button></Panel>}</>; }
+function DiscoveryStep({ client, setNotice, setStep, journey, setJourney }: StepProps) {
+  const [bvn, setBvn] = useState('');
+  const [methods, setMethods] = useState<{method: string | null; hint: string | null}[]>([]);
+  const [method, setMethod] = useState('');
+  const [alternatePhone, setAlternatePhone] = useState('');
+  const [otp, setOtp] = useState('');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 1_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  async function skipToSandboxConnect() {
+    if (!journey.identifier.includes('@')) {
+      setError('Direct sandbox Connect requires signing in with an email address.');
+      return;
+    }
+    setBusy(true);
+    setError('');
+    try {
+      const consent = await client.request<{id: string}>('/consents', {
+        method: 'POST',
+        body: JSON.stringify({ institution: 'Mono Sandbox', scope: 'auth', expires_in_days: 30 }),
+      });
+      const link = await client.request<{ref: string; url: string; status: string}>('/accounts/link/initiate', {
+        method: 'POST',
+        body: JSON.stringify({
+          consent_id: consent.id,
+          name: 'Fetch Sandbox User',
+          email: journey.identifier,
+        }),
+      });
+      const sandboxAccount: DiscoveredAccount = {
+        id: 'sandbox-direct',
+        account_name: 'Mono test account',
+        account_type: 'sandbox',
+        account_number_last4: '----',
+        institution_name: 'Choose on Mono',
+        status: 'selected',
+      };
+      setJourney((old) => ({
+        ...old,
+        accounts: [sandboxAccount],
+        selectedIds: [sandboxAccount.id],
+        links: { ...old.links, [sandboxAccount.id]: { ref: link.ref, status: link.status } },
+      }));
+      window.open(link.url, '_blank', 'noopener,noreferrer');
+      setNotice('Mono Sandbox opened. Complete Connect there, then poll its status.');
+      setStep(3);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Could not start Mono Sandbox Connect.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function start() {
+    setError('');
+    try {
+      const result = await client.request<{session_id: string; methods: {method: string | null; hint: string | null}[]}>('/onboarding/bvn/start', { method: 'POST', body: JSON.stringify({ bvn }) });
+      setBvn('');
+      setMethods(result.methods);
+      setJourney((old) => ({ ...old, sessionId: result.session_id, sessionExpiresAt: new Date(Date.now() + 600_000).toISOString(), accounts: [], selectedIds: [] }));
+      setNotice('Lookup session started; 10-minute countdown active.');
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'BVN Lookup could not start.');
+    }
+  }
+  async function send() { await client.request('/onboarding/bvn/send-otp', { method: 'POST', body: JSON.stringify({ session_id: journey.sessionId, method, ...(method === 'alternate_phone' ? { phone_number: alternatePhone } : {}) }) }); setNotice('Lookup OTP requested.'); }
+  async function confirm() { const accounts = await client.request<DiscoveredAccount[]>('/onboarding/bvn/confirm', { method: 'POST', body: JSON.stringify({ session_id: journey.sessionId, otp }) }); setOtp(''); setJourney((old) => ({ ...old, accounts, selectedIds: [] })); }
+  async function selectAccounts() { await client.request('/accounts/discovered/select', { method: 'POST', body: JSON.stringify({ ids: journey.selectedIds }) }); setNotice('Selection saved. Link each account through Mono.'); setStep(3); }
+  const remaining = journey.sessionExpiresAt ? Math.max(0, Math.ceil((new Date(journey.sessionExpiresAt).getTime() - now) / 1000)) : 0;
+  return <><Panel title="Mono Sandbox Connect" aside={<span className="badge">No BVN required</span>}><p>Open Mono's hosted sandbox directly and choose a test institution there.</p><button className="primary" disabled={busy} onClick={() => void skipToSandboxConnect()}>{busy ? 'Opening…' : 'Skip BVN and open Mono Sandbox'}</button>{error && <p className="note error" role="alert">{error}</p>}</Panel><Panel title="BVN Lookup" aside={<span className="badge warning">Billable outside sandbox</span>}><div className="form"><label>Test BVN<input value={bvn} onChange={(e) => setBvn(e.target.value.replace(/\D/g, '').slice(0, 11))} inputMode="numeric" /></label><button disabled={bvn.length !== 11} onClick={() => void start()}>Start discovery</button>{journey.sessionId && <><label>Delivery channel<select value={method} onChange={(e) => setMethod(e.target.value)}><option value="">Choose one</option>{methods.map((item) => item.method && <option key={item.method} value={item.method}>{item.hint ?? item.method}</option>)}</select></label><button disabled={!method} onClick={() => void send()}>Send Lookup OTP</button>{method === 'alternate_phone' && <label>Alternate phone<input value={alternatePhone} onChange={(e) => setAlternatePhone(e.target.value)} /></label>}<label>Lookup OTP<input value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 8))} /></label><button disabled={otp.length < 4} onClick={() => void confirm()}>Confirm discovery</button><p className="note">Session remaining: {Math.floor(remaining / 60)}m {remaining % 60}s</p></>}</div></Panel>{journey.accounts.length > 0 && <Panel title="Choose accounts"><div className="rows">{journey.accounts.map((account) => <div className="row" key={account.id}><input type="checkbox" checked={journey.selectedIds.includes(account.id)} onChange={() => setJourney((old) => ({ ...old, selectedIds: old.selectedIds.includes(account.id) ? old.selectedIds.filter((id) => id !== account.id) : [...old.selectedIds, account.id] }))} /><div><strong>{account.institution_name}</strong><span>{account.account_name} · {account.account_type}</span></div><code>•••• {account.account_number_last4}</code></div>)}</div><button disabled={!journey.selectedIds.length} onClick={() => void selectAccounts()}>Save selection and continue</button></Panel>}</>;
+}
 
 function LinkStep({ client, journey, setJourney, setNotice, setStep }: StepProps) { const [email, setEmail] = useState(journey.identifier.includes('@') ? journey.identifier : ''); const selected = journey.accounts.filter((account) => journey.selectedIds.includes(account.id)); async function link(account: DiscoveredAccount) { const result = await client.request<{ref: string; mono_url: string}>(`/accounts/discovered/${account.id}/link`, { method: 'POST', body: JSON.stringify({ email }) }); setJourney((old) => ({ ...old, links: { ...old.links, [account.id]: { ref: result.ref, status: 'processing' } } })); window.open(result.mono_url, '_blank', 'noopener,noreferrer'); setNotice('Mono opened. Poll status until data is ready.'); } async function poll(accountId: string) { const current = journey.links[accountId]; if (!current?.ref) return; const result = await client.request<{status: string; data_status: string | null; account_id: string | null}>(`/accounts/link/status?ref=${encodeURIComponent(current.ref)}`); setJourney((old) => ({ ...old, links: { ...old.links, [accountId]: { ...current, status: result.status, dataStatus: result.data_status ?? undefined, accountId: result.account_id ?? undefined } } })); } const allReady = selected.length > 0 && selected.every((account) => ['AVAILABLE', 'PARTIAL'].includes(journey.links[account.id]?.dataStatus ?? '')); return <Panel title="Hosted Mono Connect" aside={<span className="badge">{selected.length} selected</span>}><label>Connect customer email<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></label><div className="rows">{selected.map((account) => { const state = journey.links[account.id] ?? { status: 'to_link' }; return <div className="row" key={account.id}><div><strong>{account.institution_name}</strong><span>{state.status} · {state.dataStatus ?? 'not ready'}</span></div><button disabled={!email || Boolean(state.ref)} onClick={() => void link(account)}>Open Mono ↗</button><button disabled={!state.ref} onClick={() => void poll(account.id)}>Poll status</button></div>; })}</div><p className="note">Bank credentials are entered only on Mono. Fetch waits for AVAILABLE or resource-specific PARTIAL before reading data.</p><button className="primary" disabled={!allReady} onClick={() => setStep(4)}>Continue to account history</button></Panel>; }
 
