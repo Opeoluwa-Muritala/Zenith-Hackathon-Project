@@ -60,6 +60,7 @@ from app.identity.otp import (
 )
 from app.insights.detectors.velocity_warning import projected_month_end_spend
 from app.insights.runner import run_for_user
+from app.insights.router import router as insights_phase5_router
 from app.ledger.account_categories import category_for_institution
 from app.ledger.balances import balance_state
 from app.ledger.normalise import (
@@ -186,6 +187,7 @@ app = FastAPI(
 )
 app.include_router(ai_router)
 app.include_router(classification_review_router)
+app.include_router(insights_phase5_router)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.origins,
@@ -2742,6 +2744,21 @@ async def recurring(user: User = Depends(current_user), db: AsyncSession = Depen
 
 
 def insight_out(x):
+    payload = x.payload_json
+    value_minor = next(
+        (
+            payload[key]
+            for key in (
+                "amount_minor",
+                "annualised_minor",
+                "delta_minor",
+                "overshoot_minor",
+                "outflow_minor",
+            )
+            if isinstance(payload.get(key), int)
+        ),
+        None,
+    )
     return {
         "id": x.id,
         "module": x.module,
@@ -2752,7 +2769,13 @@ def insight_out(x):
         "wording_source": x.wording_source,
         "template_title": x.template_title,
         "template_body": x.template_body,
-        "payload": x.payload_json,
+        "payload": payload,
+        "number_minor": value_minor,
+        "why_it_matters": payload.get("why_it_matters"),
+        "action": payload.get("action"),
+        "confidence_bps": payload.get("confidence_bps"),
+        "confidence_label": payload.get("confidence_label"),
+        "evidence_transaction_ids": payload.get("transaction_ids", []),
         "created_at": x.created_at,
         "footer": "Educational information, not financial advice."
         if x.module == "wealth"

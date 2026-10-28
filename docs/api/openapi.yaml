@@ -1034,6 +1034,19 @@ components:
       - status
       title: MockLinkResponse
       type: object
+    ModeInput:
+      additionalProperties: false
+      properties:
+        mode:
+          enum:
+          - consumer
+          - sme
+          title: Mode
+          type: string
+      required:
+      - mode
+      title: ModeInput
+      type: object
     NetPositionResponse:
       properties:
         as_of:
@@ -1925,6 +1938,20 @@ components:
       - monthly
       title: UpdateCadence
       type: string
+    UseReviewInput:
+      additionalProperties: false
+      properties:
+        label:
+          enum:
+          - business
+          - personal
+          - unsure
+          title: Label
+          type: string
+      required:
+      - label
+      title: UseReviewInput
+      type: object
     ValidationError:
       properties:
         ctx:
@@ -3703,6 +3730,92 @@ paths:
       summary: Read spending velocity
       tags:
       - Budget
+  /business-personal/review:
+    get:
+      description: Read this resource in the cashlens user journey. Protected operations
+        require the signed-in user's Bearer access token and scope data to that user.
+        Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
+        may update consent, ledger, or derived insight data as described by the route.
+      operationId: get_business_personal_review
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Business Personal Review Business Personal Review
+                  Get
+                type: object
+          description: Successful Response
+        '401':
+          content:
+            application/json:
+              schema:
+                properties:
+                  detail:
+                    type: string
+                required:
+                - detail
+                type: object
+          description: Authentication is missing or invalid.
+      security:
+      - HTTPBearer: []
+      summary: Business Personal Review
+      tags:
+      - Accounts and linking
+  /business-personal/transactions/{transaction_id}:
+    put:
+      description: Manage this resource in the cashlens user journey. Protected operations
+        require the signed-in user's Bearer access token and scope data to that user.
+        Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
+        may update consent, ledger, or derived insight data as described by the route.
+      operationId: put_business_personal_transactions_by_transaction_id
+      parameters:
+      - in: path
+        name: transaction_id
+        required: true
+        schema:
+          format: uuid
+          title: Transaction Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UseReviewInput'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Review Transaction Use Business Personal Transactions  Transaction
+                  Id  Put
+                type: object
+          description: Successful Response
+        '401':
+          content:
+            application/json:
+              schema:
+                properties:
+                  detail:
+                    type: string
+                required:
+                - detail
+                type: object
+          description: Authentication is missing or invalid.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Review Transaction Use
+      tags:
+      - Accounts and linking
   /category-rules:
     get:
       description: Read the user's persistent category overrides. No provider call.
@@ -4147,6 +4260,148 @@ paths:
       summary: Verify Bvn
       tags:
       - Identity
+  /insight-alerts:
+    get:
+      description: Read this resource in the cashlens user journey. Protected operations
+        require the signed-in user's Bearer access token and scope data to that user.
+        Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
+        may update consent, ledger, or derived insight data as described by the route.
+      operationId: get_insight_alerts
+      parameters:
+      - in: query
+        name: status
+        required: false
+        schema:
+          default: unread
+          enum:
+          - all
+          - unread
+          title: Status
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  additionalProperties: true
+                  type: object
+                title: Response List Insight Alerts Insight Alerts Get
+                type: array
+          description: Successful Response
+        '401':
+          content:
+            application/json:
+              schema:
+                properties:
+                  detail:
+                    type: string
+                required:
+                - detail
+                type: object
+          description: Authentication is missing or invalid.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: List Insight Alerts
+      tags:
+      - Accounts and linking
+  /insight-alerts/{alert_id}/read:
+    post:
+      description: Submit this resource in the cashlens user journey. Protected operations
+        require the signed-in user's Bearer access token and scope data to that user.
+        Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
+        may update consent, ledger, or derived insight data as described by the route.
+      operationId: post_insight_alerts_by_alert_id_read
+      parameters:
+      - in: path
+        name: alert_id
+        required: true
+        schema:
+          format: uuid
+          title: Alert Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Mark Insight Alert Read Insight Alerts  Alert Id  Read
+                  Post
+                type: object
+          description: Successful Response
+        '401':
+          content:
+            application/json:
+              schema:
+                properties:
+                  detail:
+                    type: string
+                required:
+                - detail
+                type: object
+          description: Authentication is missing or invalid.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Mark Insight Alert Read
+      tags:
+      - Accounts and linking
+  /insight-profile:
+    put:
+      description: Manage this resource in the cashlens user journey. Protected operations
+        require the signed-in user's Bearer access token and scope data to that user.
+        Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
+        may update consent, ledger, or derived insight data as described by the route.
+      operationId: put_insight_profile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModeInput'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Set Insight Profile Insight Profile Put
+                type: object
+          description: Successful Response
+        '401':
+          content:
+            application/json:
+              schema:
+                properties:
+                  detail:
+                    type: string
+                required:
+                - detail
+                type: object
+          description: Authentication is missing or invalid.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Set Insight Profile
+      tags:
+      - Accounts and linking
   /insights:
     get:
       description: Read this resource in the cashlens user journey. Protected operations

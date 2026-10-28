@@ -178,6 +178,28 @@ Do not edit; run `python backend/scripts/gen_data_model.py`.
 | `source` | `VARCHAR(80)` | False |  |  |
 | `fetched_at` | `DATETIME` | False |  |  |
 
+## `insight_alerts`
+
+| Column | Type | Nullable | Key | Protection |
+|---|---|---:|---|---|
+| `id` | `CHAR(32)` | False | PK |  |
+| `user_id` | `CHAR(32)` | False | FK |  |
+| `insight_id` | `CHAR(32)` | False | FK |  |
+| `kind` | `VARCHAR(30)` | False |  |  |
+| `severity` | `VARCHAR(20)` | False |  |  |
+| `what_changed` | `VARCHAR(200)` | False |  |  |
+| `suggested_response` | `VARCHAR(200)` | False |  |  |
+| `created_at` | `DATETIME` | False |  |  |
+| `read_at` | `DATETIME` | True |  |  |
+
+## `insight_profiles`
+
+| Column | Type | Nullable | Key | Protection |
+|---|---|---:|---|---|
+| `user_id` | `CHAR(32)` | False | PK |  |
+| `mode` | `VARCHAR(12)` | False |  |  |
+| `updated_at` | `DATETIME` | False |  |  |
+
 ## `insights`
 
 | Column | Type | Nullable | Key | Protection |
@@ -358,6 +380,17 @@ Do not edit; run `python backend/scripts/gen_data_model.py`.
 | `event` | `VARCHAR(50)` | False |  |  |
 | `subject_hash` | `VARCHAR(64)` | True |  | Hash |
 | `occurred_at` | `DATETIME` | False |  |  |
+
+## `transaction_use_labels`
+
+| Column | Type | Nullable | Key | Protection |
+|---|---|---:|---|---|
+| `transaction_id` | `CHAR(32)` | False | PK |  |
+| `user_id` | `CHAR(32)` | False | FK |  |
+| `suggested_label` | `VARCHAR(12)` | False |  |  |
+| `confidence_bps` | `INTEGER` | False |  |  |
+| `confirmed_label` | `VARCHAR(12)` | True |  |  |
+| `updated_at` | `DATETIME` | False |  |  |
 
 ## `transactions`
 

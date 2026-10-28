@@ -10,10 +10,10 @@ def tx(i, days, amount, direction="debit", category="food", merchant="Chowdeck")
     return Tx(str(i), NOW - timedelta(days=days), amount, direction, category, merchant)
 
 
-def test_registry_has_twelve_detectors():
+def test_INS_1_INS_3_INS_4_registry_has_phase5_detectors():
     from app.insights.registry import DETECTORS
 
-    assert len(DETECTORS) == 12
+    assert len(DETECTORS) == 17
 
 
 def test_student_triggers_monopoly_velocity_and_opportunity():

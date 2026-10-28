@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.clock import now_utc
-from app.insights.types import Balance, LedgerView, Series, Settings, Tx
+from app.insights.types import Balance, LedgerView, ObligationDue, Series, Settings, Tx
 from app.ledger.normalise import (
     categorise,
     category_label,
@@ -25,7 +25,9 @@ from app.models import (
     Channel,
     Consent,
     Direction,
+    InsightProfile,
     Merchant,
+    Obligation,
     RecurringSeries,
     ReviewedGlobalRule,
     Transaction,
@@ -93,6 +95,14 @@ async def ledger_view(
         .scalars()
         .all()
     )
+    obligation_rows = (
+        await db.scalars(
+            select(Obligation).where(
+                Obligation.user_id == user_id,
+                Obligation.status == "upcoming",
+            )
+        )
+    ).all()
     series_merchants = {
         m.id: m
         for m in (
@@ -102,6 +112,7 @@ async def ledger_view(
         ).scalars()
     }
     settings_row = await db.get(UserSettings, user_id)
+    profile_row = await db.get(InsightProfile, user_id)
     settings = Settings(
         safe_buffer=settings_row.safe_buffer_minor if settings_row else 500_000,
         payday_hint=settings_row.payday_hint if settings_row else None,
@@ -111,6 +122,7 @@ async def ledger_view(
         if settings_row and settings_row.discretionary_categories
         else Settings().discretionary,
         nominal_tbill_rate_bps=settings_row.nominal_tbill_rate_bps if settings_row else 1500,
+        profile_mode=profile_row.mode if profile_row else "consumer",
     )
     movement: dict[UUID, datetime] = {}
     for transaction in transactions:
@@ -125,13 +137,18 @@ async def ledger_view(
                 t.amount_minor,
                 t.direction.value,
                 category_label(t.category),
-                merchants[t.merchant_id].canonical_name if t.merchant_id in merchants else "",
+                (
+                    merchants[t.merchant_id].canonical_name
+                    if t.merchant_id in merchants
+                    else (t.decoded_merchant or "")
+                ),
                 merchants[t.merchant_id].is_subscription_like
                 if t.merchant_id in merchants
                 else False,
                 merchants[t.merchant_id].legitimately_repeating
                 if t.merchant_id in merchants
                 else False,
+                t.parse_confidence_bps,
             )
             for t in transactions
         ),
@@ -162,6 +179,16 @@ async def ledger_view(
             )
             for s in series_rows
             if s.merchant_id in series_merchants
+        ),
+        obligations=tuple(
+            ObligationDue(
+                str(item.id),
+                item.lender_name,
+                item.amount_minor,
+                item.next_due_date,
+                item.confidence_bps,
+            )
+            for item in obligation_rows
         ),
     )
     return view, settings

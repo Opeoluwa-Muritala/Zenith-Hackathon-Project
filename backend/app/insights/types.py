@@ -1,7 +1,7 @@
 """Database-independent detector values; all money is integer kobo."""
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 
 
 @dataclass(frozen=True)
@@ -14,6 +14,7 @@ class Tx:
     merchant: str = ""
     subscription_like: bool = False
     legitimately_repeating: bool = False
+    confidence_bps: int = 10000
 
 
 @dataclass(frozen=True)
@@ -42,6 +43,15 @@ class Series:
 
 
 @dataclass(frozen=True)
+class ObligationDue:
+    id: str
+    lender: str
+    amount: int
+    due_date: date
+    confidence_bps: int
+
+
+@dataclass(frozen=True)
 class Settings:
     safe_buffer: int = 0
     payday_hint: int | None = None
@@ -55,6 +65,7 @@ class Settings:
         "Transport",
     )
     nominal_tbill_rate_bps: int = 1500
+    profile_mode: str = "consumer"
 
 
 @dataclass(frozen=True)
@@ -62,6 +73,7 @@ class LedgerView:
     transactions: tuple[Tx, ...] = ()
     balances: tuple[Balance, ...] = ()
     recurring: tuple[Series, ...] = ()
+    obligations: tuple[ObligationDue, ...] = ()
 
 
 @dataclass(frozen=True)

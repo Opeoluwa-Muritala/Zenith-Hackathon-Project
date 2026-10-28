@@ -5,12 +5,20 @@ Phase 4 classification review: operators can promote an agreed correction with
 The command requires two independent users' confirmed corrections. Review the key and
 category before running it; global rules store a hash of the key. User rules always win.
 
-| Requirement | Phase 4 status |
+| Requirement | Status |
 |---|---|
 | NDL-5 | Family suggestions, user confirmation, future category override |
 | NDL-6 | Weekly/monthly ajo detection, confirm/dismiss review |
 | NDL-7 | Configured AI adapter, validated JSON, bounded cache and failure fallback |
 | NDL-8 | Correction history, independent-user threshold, operator-reviewed promotion |
+| INS-1 | Leak Finder headline, duplicate/increase/subscription values and evidence |
+| INS-2 | SME business/personal/unsure suggestions, split totals and owner correction |
+| INS-3 | 90-day inflow/outflow rhythm, best/worst weeks and simple runway |
+| INS-4 | Weekly consumer/SME health score with three disclosed drivers |
+| INS-5 | Cards expose number, rationale, action, confidence and evidence IDs |
+| INS-6 | Persisted alerts for leaks, unusual transfers, overspending and repayments |
+| INS-7 | Low-confidence labels and owner-correctable SME suggestions |
+| INS-8 | Code-only calculations; validated phrasing retries once then uses templates |
 
 Public review routes and API artifacts are linked from [Public API](docs/public-api.md).
 
@@ -18,7 +26,7 @@ Fetch is a FastAPI backend for consented personal-finance data. It authenticates
 
 See [docs/README.md](docs/README.md) for the complete documentation index and [docs/api/openapi.json](docs/api/openapi.json) for the generated API specification.
 
-For the mobile backend demo with Mono sandbox and an existing Neon database, follow the [backend demo walkthrough](docs/demo-backend-walkthrough.md). The presenter can read generated login codes from a protected backend page; finance endpoints continue using the existing Mono integration. Neon was last verified at revision 0012; new development migrations continue from 0013. Mono sandbox behavior remains unverified.
+For the mobile backend demo with Mono sandbox and an existing Neon database, follow the [backend demo walkthrough](docs/demo-backend-walkthrough.md). The presenter can read generated login codes from a protected backend page; finance endpoints continue using the existing Mono integration. Neon was verified at Phase 5 revision 0020 with rollback-only smoke inserts. Mono sandbox behavior remains unverified.
 
 ## Five-minute quickstart
 
