@@ -14,6 +14,8 @@ class ProviderTransaction:
     narration: str
     category: str | None
     balance_after_minor: int | None
+    source: str = "mono"
+    parse_confidence: int = 10000
 
 
 class ProviderError(RuntimeError):

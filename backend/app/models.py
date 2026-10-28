@@ -239,6 +239,8 @@ class Transaction(Base):
     category_source: Mapped[CategorySource] = mapped_column(
         Enum(CategorySource), default=CategorySource.auto
     )
+    source: Mapped[str] = mapped_column(String(20), default="mono")
+    parse_confidence_bps: Mapped[int] = mapped_column(Integer, default=10000)
     merchant: Mapped[Merchant | None] = relationship()
 
 

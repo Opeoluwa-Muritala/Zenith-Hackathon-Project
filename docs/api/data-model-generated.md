@@ -357,6 +357,8 @@ Do not edit; run `python backend/scripts/gen_data_model.py`.
 | `dedupe_hash` | `VARCHAR(64)` | False |  | Hash |
 | `decoded_merchant` | `VARCHAR(100)` | True |  |  |
 | `category_source` | `VARCHAR(9)` | False |  |  |
+| `source` | `VARCHAR(20)` | False |  |  |
+| `parse_confidence_bps` | `INTEGER` | False |  |  |
 
 ## `user_settings`
 

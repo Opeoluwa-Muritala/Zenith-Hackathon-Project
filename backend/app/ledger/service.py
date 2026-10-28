@@ -225,6 +225,8 @@ async def ingest(db: AsyncSession, account: Account, rows: list[ProviderTransact
                 channel=channel,
                 balance_after_minor=row.balance_after_minor,
                 dedupe_hash=dedupe_key,
+                source=row.source,
+                parse_confidence_bps=row.parse_confidence,
             )
         )
         count += 1
