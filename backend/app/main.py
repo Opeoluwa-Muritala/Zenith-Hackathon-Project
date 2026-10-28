@@ -27,7 +27,7 @@ from fastapi import (
 )
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from pydantic import BaseModel, EmailStr, Field, model_validator
 from sqlalchemy import and_, delete, func, or_, select, update
@@ -666,6 +666,14 @@ async def safe_internal_error(_request, exc):
 @app.get("/health", response_model=api.HealthResponse)
 async def health():
     return {"status": "ok", "product": PRODUCT_NAME}
+
+
+@app.get("/api-docs", include_in_schema=False)
+async def api_docs_alias():
+    """Provide a stable, shareable alias for the configured Swagger UI."""
+    if settings.environment == "production" and not settings.api_docs_enabled:
+        raise HTTPException(404, "Not found")
+    return RedirectResponse(url="/docs", status_code=307)
 
 
 @app.get("/dev/mono-test", include_in_schema=False)
