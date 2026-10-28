@@ -399,6 +399,31 @@ class ProviderLink(Base):
         self.provider_account_id_hash = hash_field(value) if value else None
 
 
+class PendingUnlink(Base):
+    """Remote unlink target that intentionally has no user foreign key."""
+
+    __tablename__ = "pending_unlinks"
+    __table_args__ = (UniqueConstraint("provider", "provider_account_id_hash"),)
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    user_hash: Mapped[str] = mapped_column(String(64), index=True)
+    provider: Mapped[str] = mapped_column(String(20))
+    provider_account_id_encrypted: Mapped[str] = mapped_column(String(512))
+    provider_account_id_hash: Mapped[str] = mapped_column(String(64))
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    last_attempt_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+
+
+class WipeAudit(Base):
+    """The only user-specific record retained after a complete wipe."""
+
+    __tablename__ = "wipe_audits"
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    user_hash: Mapped[str] = mapped_column(String(64), index=True)
+    wiped_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+
+
 class WebhookEvent(Base):
     __tablename__ = "webhook_events"
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)

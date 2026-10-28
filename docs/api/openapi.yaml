@@ -276,6 +276,44 @@ components:
       - groups
       title: AccountsResponse
       type: object
+    ActiveConsentResponse:
+      properties:
+        consent_id:
+          format: uuid
+          title: Consent Id
+          type: string
+        data_status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Data Status
+        institution:
+          title: Institution
+          type: string
+        link_id:
+          format: uuid
+          title: Link Id
+          type: string
+        linked_at:
+          format: date-time
+          title: Linked At
+          type: string
+        read_only:
+          title: Read Only
+          type: boolean
+        scope:
+          title: Scope
+          type: string
+      required:
+      - consent_id
+      - link_id
+      - institution
+      - linked_at
+      - data_status
+      - scope
+      - read_only
+      title: ActiveConsentResponse
+      type: object
     AiPreferenceRequest:
       description: Whether the user opts in to model-powered wording and chat.
       properties:
@@ -2270,6 +2308,35 @@ components:
       - received
       title: WebhookResponse
       type: object
+    WipeRequest:
+      properties:
+        otp:
+          pattern: ^\d{6}$
+          title: Otp
+          type: string
+      required:
+      - otp
+      title: WipeRequest
+      type: object
+    WipeResponse:
+      properties:
+        deleted:
+          additionalProperties:
+            type: integer
+          title: Deleted
+          type: object
+        status:
+          title: Status
+          type: string
+        unlink_pending:
+          title: Unlink Pending
+          type: boolean
+      required:
+      - status
+      - deleted
+      - unlink_pending
+      title: WipeResponse
+      type: object
   securitySchemes:
     HTTPBearer:
       description: App-issued JWT after OTP verification. Refresh tokens rotate on
@@ -3170,9 +3237,9 @@ paths:
   /accounts/{account_id}/unlink:
     post:
       description: Purge linked local transactions, recurring records and obligations,
-        revoke consent, then attempt Mono unlink. Failure retains an encrypted pending_unlink
-        target; no automatic retry worker exists. User-level derived insights and
-        AI conversations are also purged. Requires the signed-in user's Bearer token;
+        revoke consent, then attempt Mono unlink. Failure retains an encrypted durable
+        retry target processed by the scheduler. User-level derived insights and AI
+        conversations are also purged. Requires the signed-in user's Bearer token;
         resources are owner-scoped.
       operationId: post_accounts_by_account_id_unlink
       parameters:
@@ -4573,8 +4640,8 @@ paths:
   /consents/{consent_id}:
     delete:
       description: Revoke owned consent, purge linked account data and attempt remote
-        unlink. Failed unlinks remain pending; no automatic retry worker exists. Requires
-        the signed-in user's Bearer token; resources are owner-scoped.
+        unlink. Failed unlinks remain in the encrypted scheduler queue. Requires the
+        signed-in user's Bearer token; resources are owner-scoped.
       operationId: delete_consents_by_consent_id
       parameters:
       - in: path
@@ -5744,6 +5811,100 @@ paths:
       summary: Put Privacy Preferences
       tags:
       - Consents
+  /privacy/consents:
+    get:
+      description: Return each active provider link with institution, link time, data
+        status and the read-only scope requested at link time. Requires the signed-in
+        user's Bearer token; resources are owner-scoped.
+      operationId: get_privacy_consents
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ActiveConsentResponse'
+                title: Response Active Consents Privacy Consents Get
+                type: array
+          description: Successful Response
+        '401':
+          content:
+            application/json:
+              example:
+                detail: Authentication is missing, invalid or expired.
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Authentication is missing, invalid or expired.
+        '500':
+          content:
+            application/json:
+              example:
+                detail: Internal server error.
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal server error.
+      security:
+      - HTTPBearer: []
+      summary: List active read-only links
+      tags:
+      - Accounts and linking
+  /privacy/wipe:
+    post:
+      description: Require a fresh six-digit OTP, durably queue remote unlinks, attempt
+        them immediately, delete all user-owned data and sessions, and retain only
+        the minimal wipe audit plus any unfinished encrypted unlink work. Requires
+        the signed-in user's Bearer token; resources are owner-scoped.
+      operationId: post_privacy_wipe
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WipeRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WipeResponse'
+          description: Successful Response
+        '401':
+          content:
+            application/json:
+              example:
+                detail: Authentication is missing, invalid or expired.
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Authentication is missing, invalid or expired.
+        '409':
+          content:
+            application/json:
+              example:
+                detail: Resource state prevents this operation.
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Resource state prevents this operation.
+        '422':
+          content:
+            application/json:
+              example:
+                detail: Invalid input or date range; sensitive input values are omitted.
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Invalid input or date range; sensitive input values are omitted.
+        '500':
+          content:
+            application/json:
+              example:
+                detail: Internal server error.
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal server error.
+      security:
+      - HTTPBearer: []
+      summary: Revoke all access and wipe user data
+      tags:
+      - Accounts and linking
   /recurring:
     get:
       description: Read this resource in the cashlens user journey. Protected operations
@@ -6722,6 +6883,8 @@ tags:
   name: Notifications
 - description: Grant, list and revoke scoped data-access consent.
   name: Consents
+- description: Review active links or permanently wipe user data.
+  name: Privacy
 - description: 'Link demo or Mono accounts. Mono flow: initiate, authorise at hosted
     link, receive webhook, poll status; SDK code exchange is optional.'
   name: Accounts and linking

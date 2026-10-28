@@ -346,6 +346,20 @@ Do not edit; run `python backend/scripts/gen_data_model.py`.
 | `consumed_at` | `DATETIME` | True |  |  |
 | `created_at` | `DATETIME` | False |  |  |
 
+## `pending_unlinks`
+
+| Column | Type | Nullable | Key | Protection |
+|---|---|---:|---|---|
+| `id` | `CHAR(32)` | False | PK |  |
+| `user_hash` | `VARCHAR(64)` | False |  | Hash |
+| `provider` | `VARCHAR(20)` | False |  |  |
+| `provider_account_id_encrypted` | `VARCHAR(512)` | False |  | Encrypted |
+| `provider_account_id_hash` | `VARCHAR(64)` | False |  | Hash |
+| `attempts` | `INTEGER` | False |  |  |
+| `created_at` | `DATETIME` | False |  |  |
+| `last_attempt_at` | `DATETIME` | True |  |  |
+| `completed_at` | `DATETIME` | True |  |  |
+
 ## `provider_call_logs`
 
 | Column | Type | Nullable | Key | Protection |
@@ -515,3 +529,11 @@ Do not edit; run `python backend/scripts/gen_data_model.py`.
 | `processing_started_at` | `DATETIME` | True |  |  |
 | `processing_token` | `VARCHAR(36)` | True |  |  |
 | `processed_at` | `DATETIME` | True |  |  |
+
+## `wipe_audits`
+
+| Column | Type | Nullable | Key | Protection |
+|---|---|---:|---|---|
+| `id` | `CHAR(32)` | False | PK |  |
+| `user_hash` | `VARCHAR(64)` | False |  | Hash |
+| `wiped_at` | `DATETIME` | False |  |  |

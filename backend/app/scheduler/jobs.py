@@ -25,6 +25,7 @@ from app.models import (
     NotificationPreference,
     Obligation,
     OtpCode,
+    PendingUnlink,
     ProviderCallLog,
     ProviderLink,
     SyncStatus,
@@ -32,6 +33,7 @@ from app.models import (
 )
 from app.notifications.push import PushProvider
 from app.notifications.service import send_notification
+from app.privacy.service import retry_pending_unlink as retry_queued_unlink
 
 
 async def account_sync_job(now: datetime, provider: PushProvider) -> None:
@@ -106,6 +108,12 @@ async def stale_marking_job(now: datetime) -> None:
 
 async def unlink_retry_job(now: datetime) -> None:
     async with SessionLocal() as db:
+        queued = (
+            await db.scalars(select(PendingUnlink).where(PendingUnlink.completed_at.is_(None)))
+        ).all()
+        for row in queued:
+            await retry_queued_unlink(db, row)
+            await db.commit()
         links = (
             await db.scalars(select(ProviderLink).where(ProviderLink.status == "pending_unlink"))
         ).all()
@@ -228,5 +236,8 @@ async def cleanup_job(now: datetime) -> None:
             )
         )
         await db.execute(delete(JobRun).where(JobRun.started_at < now - timedelta(days=30)))
+        await db.execute(
+            delete(PendingUnlink).where(PendingUnlink.completed_at < now - timedelta(days=30))
+        )
         await db.commit()
     cleanup_expired_inbox()

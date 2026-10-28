@@ -38,6 +38,7 @@ OTP codes expire after five minutes, are single-use, and are limited to five att
 | SME review | `/insight-profile`, `/business-personal/*` | Business/personal review |
 | Privacy | `/consents*` | Consent status and revocation |
 | Display privacy | `/privacy-preferences` | Persist the client's currency-blur toggle |
+| Privacy | `/privacy/consents`, `/privacy/wipe` | Active links and irreversible full deletion |
 | Devices | `/devices*`, `/notification-preferences` | Push registration and preferences |
 
 ## Classification review
@@ -111,6 +112,16 @@ Fetch prioritises new account activity, then sends budget, repayment and investm
 reminders according to the owner's preferences. Duplicate event/device delivery is
 suppressed. Push delivery may be disabled by the deployment without disabling financial
 sync or the API.
+
+## Consent inventory and full deletion
+
+`GET /privacy/consents` lists active read-only links with institution, link time, provider
+data status, and the scope Fetch requested. To permanently delete an account, request a
+new OTP through the normal authentication route and submit it once to `POST /privacy/wipe`.
+The response reports deletion counts and whether a remote unlink remains pending. Local
+access and financial data are removed even when Mono is unavailable; the encrypted unlink
+target remains in a retry queue. Only a keyed user-ID hash and wipe timestamp remain as the
+wipe audit record.
 
 ## Environments
 

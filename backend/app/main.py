@@ -109,6 +109,7 @@ from app.models import (
     UserSettings,
     WebhookEvent,
 )
+from app.privacy.router import router as privacy_router
 from app.providers.base import ProviderNotReady, ProviderUnavailable
 from app.providers.call_budget import reserve_refresh_call
 from app.providers.mock import MockAggregatorProvider
@@ -140,6 +141,7 @@ OPENAPI_TAGS = [
     {"name": "Obligations", "description": "Review detected and manual upcoming repayments."},
     {"name": "Notifications", "description": "Register devices and set notification preferences."},
     {"name": "Consents", "description": "Grant, list and revoke scoped data-access consent."},
+    {"name": "Privacy", "description": "Review active links or permanently wipe user data."},
     {
         "name": "Accounts and linking",
         "description": (
@@ -193,6 +195,7 @@ app.include_router(ai_router)
 app.include_router(classification_review_router)
 app.include_router(insights_phase5_router)
 app.include_router(reports_router)
+app.include_router(privacy_router)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.origins,

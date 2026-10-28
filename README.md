@@ -32,6 +32,10 @@ category before running it; global rules store a hash of the key. User rules alw
 | NTF-2 | Owner-controlled overspend, repayment and investment preferences |
 | NTF-3 | Idempotent push log and separately deployed, locked scheduler worker |
 | NTF-4 | New-money activity alerts take priority during scheduled sync |
+| PRV-1 | Active-link consent inventory with institution, date, status and scope |
+| PRV-2 | Immediate account purge with encrypted durable unlink retry |
+| PRV-3 | Fresh-OTP complete wipe with session revocation and deletion report |
+| PRV-4 | Minimal keyed user hash and wipe timestamp retained |
 
 Public review routes and API artifacts are linked from [Public API](docs/public-api.md).
 
