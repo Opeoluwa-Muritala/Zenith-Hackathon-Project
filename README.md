@@ -1,5 +1,19 @@
 # Fetch backend / cashlens
 
+Phase 4 classification review: operators can promote an agreed correction with
+`cd backend` then `python -m scripts.review_classification "normalized shop" "Transport"`.
+The command requires two independent users' confirmed corrections. Review the key and
+category before running it; global rules store a hash of the key. User rules always win.
+
+| Requirement | Phase 4 status |
+|---|---|
+| NDL-5 | Family suggestions, user confirmation, future category override |
+| NDL-6 | Weekly/monthly ajo detection, confirm/dismiss review |
+| NDL-7 | Configured AI adapter, validated JSON, bounded cache and failure fallback |
+| NDL-8 | Correction history, independent-user threshold, operator-reviewed promotion |
+
+Public review routes and API artifacts are linked from [Public API](docs/public-api.md).
+
 Fetch is a FastAPI backend for consented personal-finance data. It authenticates email or phone users with one-time codes and app-issued JWT/refresh tokens, and integrates Mono BVN Lookup and hosted Connect Link. It exposes accounts, manual assets, net position, transactions, recurring-series detection, statements, and optional AI tools; remaining MVP gaps are listed in [Known gaps](docs/KNOWN_GAPS.md).
 
 See [docs/README.md](docs/README.md) for the complete documentation index and [docs/api/openapi.json](docs/api/openapi.json) for the generated API specification.

@@ -3,6 +3,8 @@ import json
 import re
 from functools import lru_cache
 from pathlib import Path
+from collections import Counter
+from datetime import datetime
 
 CATEGORY_ALIASES = {
     "food": "Food & Dining",
@@ -28,6 +30,17 @@ FETCH_CATEGORIES = {
     "Transfers & Family",
     "Uncategorised",
 }
+
+NIGERIA_RULES = (
+    (re.compile(r"\b(?:sms|alert)\s*(?:fee|charge)\b", re.I), "SMS Alert Fee", "Bills & Utilities"),
+    (re.compile(r"\b(?:stamp\s*duty|stamping)\b", re.I), "Stamp Duty", "Bills & Utilities"),
+    (re.compile(r"\bvat\b", re.I), "VAT", "Bills & Utilities"),
+    (re.compile(r"\b(?:tax|wht|withholding|paye|cit|stamp)\s*(?:payment|remittance|deduction)?\b", re.I), "Tax", "Bills & Utilities"),
+    (re.compile(r"\bmaintenance\s*(?:fee|charge)?\b", re.I), "Account Maintenance Fee", "Bills & Utilities"),
+    (re.compile(r"\b(?:card|atm)\s*(?:fee|charge)\b", re.I), "Card Fee", "Bills & Utilities"),
+    (re.compile(r"\b(?:ussd|nip|pos|transfer)\s*(?:fee|charge)\b", re.I), "Bank Service Fee", "Bills & Utilities"),
+    (re.compile(r"\b(?:airtime|data)\b", re.I), "Airtime & Data", "Airtime & Data"),
+)
 
 
 def category_label(value: str | None) -> str:
@@ -86,6 +99,11 @@ def lender_name(value: str) -> str | None:
 
 def categorise(value, provider_category=None):
     lower = value.lower()
+    for pattern, merchant, category in NIGERIA_RULES:
+        if merchant == "Airtime & Data":
+            continue
+        if pattern.search(lower):
+            return merchant, category, False
     lender = lender_name(value)
     if lender:
         return lender, "Bills & Utilities", True
@@ -95,6 +113,17 @@ def categorise(value, provider_category=None):
             for alias in merchant["aliases"]
         ):
             return merchant["name"], merchant["category"], merchant["subscription"]
+    if re.search(r"\b(?:airtime|data)\b", lower):
+        return (" ".join(narration_parts(value))[:100] or "Airtime & Data", "Airtime & Data", False)
+    try:
+        from rapidfuzz import fuzz
+
+        candidate = counterparty_key(" ".join(narration_parts(value)))
+        best = max(merchant_aliases(), key=lambda item: max(fuzz.ratio(candidate, counterparty_key(alias)) for alias in item["aliases"]), default=None)
+        if best and max(fuzz.ratio(candidate, counterparty_key(alias)) for alias in best["aliases"]) >= 90:
+            return best["name"], best["category"], best["subscription"]
+    except ImportError:
+        pass
     name = " ".join(narration_parts(value))[:100] or "Other"
     category = category_label(provider_category)
     return name, category, False
@@ -104,3 +133,38 @@ def dedupe(account_id, external_id, posted_at, amount, direction):
     return hashlib.sha256(
         f"{account_id}|{external_id}|{posted_at.isoformat()}|{amount}|{direction}".encode()
     ).hexdigest()
+
+
+def suggest_family_transfer(narrations: list[str], *, confirmed: bool = False) -> bool:
+    """Return a suggestion for repeated family-like transfers; confirmation is explicit."""
+    if confirmed:
+        return True
+    keys = [counterparty_key(" ".join(narration_parts(value))) for value in narrations]
+    return bool(keys and max(Counter(keys).values()) >= 2)
+
+
+def detect_ajo_esusu(
+    debits: list[tuple[datetime, int, str]], credits: list[tuple[datetime, int, str]]
+) -> str | None:
+    """Suggest a recurring savings circle counterparty without changing ledger state."""
+    for counterparty in {counterparty_key(item[2]) for item in debits}:
+        recurring = [item for item in debits if counterparty_key(item[2]) == counterparty]
+        if len(recurring) < 3:
+            continue
+        amounts = {item[1] for item in recurring}
+        if len(amounts) != 1:
+            continue
+        dates = sorted({item[0].date() for item in recurring})
+        if len(dates) < 3:
+            continue
+        gaps = [(second - first).days for first, second in zip(dates, dates[1:])]
+        if not (all(5 <= gap <= 9 for gap in gaps) or all(26 <= gap <= 33 for gap in gaps)):
+            continue
+        for credit_date, credit_amount, credit_name in credits:
+            if (
+                counterparty_key(credit_name) == counterparty
+                and credit_date > max(item[0] for item in recurring)
+                and credit_amount > next(iter(amounts)) * 2
+            ):
+                return counterparty
+    return None

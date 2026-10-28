@@ -3792,6 +3792,49 @@ paths:
       summary: Delete a category rule
       tags:
       - Category rules
+  /classification-corrections/{correction_id}/confirm:
+    post:
+      description: Submit this resource in the cashlens user journey. Protected operations
+        require the signed-in user's Bearer access token and scope data to that user.
+        Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
+        may update consent, ledger, or derived insight data as described by the route.
+      operationId: post_classification_corrections_by_correction_id_confirm
+      parameters:
+      - in: path
+        name: correction_id
+        required: true
+        schema:
+          format: uuid
+          title: Correction Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+        '401':
+          content:
+            application/json:
+              schema:
+                properties:
+                  detail:
+                    type: string
+                required:
+                - detail
+                type: object
+          description: Authentication is missing or invalid.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Confirm Classification Correction
+      tags:
+      - Accounts and linking
   /consents:
     get:
       description: Return the user's active and revoked consent records. scope is
@@ -5341,6 +5384,96 @@ paths:
       summary: Reclassify a transaction
       tags:
       - Transactions
+  /transfer-suggestions:
+    get:
+      description: Read this resource in the cashlens user journey. Protected operations
+        require the signed-in user's Bearer access token and scope data to that user.
+        Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
+        may update consent, ledger, or derived insight data as described by the route.
+      operationId: get_transfer_suggestions
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  additionalProperties: true
+                  type: object
+                title: Response List Suggestions Transfer Suggestions Get
+                type: array
+          description: Successful Response
+        '401':
+          content:
+            application/json:
+              schema:
+                properties:
+                  detail:
+                    type: string
+                required:
+                - detail
+                type: object
+          description: Authentication is missing or invalid.
+      security:
+      - HTTPBearer: []
+      summary: List Suggestions
+      tags:
+      - Accounts and linking
+  /transfer-suggestions/{suggestion_id}/{action}:
+    post:
+      description: Submit this resource in the cashlens user journey. Protected operations
+        require the signed-in user's Bearer access token and scope data to that user.
+        Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
+        may update consent, ledger, or derived insight data as described by the route.
+      operationId: post_transfer_suggestions_by_suggestion_id_by_action
+      parameters:
+      - in: path
+        name: suggestion_id
+        required: true
+        schema:
+          format: uuid
+          title: Suggestion Id
+          type: string
+      - in: path
+        name: action
+        required: true
+        schema:
+          enum:
+          - confirm
+          - dismiss
+          title: Action
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Review Suggestion Transfer Suggestions  Suggestion
+                  Id   Action  Post
+                type: object
+          description: Successful Response
+        '401':
+          content:
+            application/json:
+              schema:
+                properties:
+                  detail:
+                    type: string
+                required:
+                - detail
+                type: object
+          description: Authentication is missing or invalid.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Review Suggestion
+      tags:
+      - Accounts and linking
   /webhooks/mono:
     post:
       description: Public receiver authenticated by mono-webhook-secret, compared

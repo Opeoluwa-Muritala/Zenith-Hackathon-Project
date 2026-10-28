@@ -241,6 +241,7 @@ class Transaction(Base):
     )
     source: Mapped[str] = mapped_column(String(20), default="mono")
     parse_confidence_bps: Mapped[int] = mapped_column(Integer, default=10000)
+    classification_method: Mapped[str] = mapped_column(String(20), default="rule")
     merchant: Mapped[Merchant | None] = relationship()
 
 
@@ -435,6 +436,35 @@ class CategoryRule(Base):
     category: Mapped[str] = mapped_column(String(40))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     __table_args__ = (UniqueConstraint("user_id", "counterparty_key"),)
+
+
+class ClassificationCorrection(Base):
+    __tablename__ = "classification_corrections"
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    counterparty_key: Mapped[str] = mapped_column(String(160), index=True)
+    category: Mapped[str] = mapped_column(String(40))
+    confirmed: Mapped[bool] = mapped_column(default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class TransferSuggestion(Base):
+    __tablename__ = "transfer_suggestions"
+    __table_args__ = (UniqueConstraint("user_id", "counterparty_key", "kind"),)
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    counterparty_key: Mapped[str] = mapped_column(String(160))
+    kind: Mapped[str] = mapped_column(String(20))
+    status: Mapped[str] = mapped_column(String(20), default="pending")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class ReviewedGlobalRule(Base):
+    __tablename__ = "reviewed_global_rules"
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    narration_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    category: Mapped[str] = mapped_column(String(40))
+    reviewed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
 class Budget(Base):

@@ -65,6 +65,10 @@ async def test_reclassification_rule_applies_to_future_sync_and_analytics():
         first = ProviderTransaction("fake_1", now, 1000, "debit", "NIP/POS/CHOWDECK", None, None)
         assert await ingest(db, account, [first]) == 1
         assert await ingest(db, account, [first]) == 0
+        uploaded = ProviderTransaction(
+            "upload-row-1", now, 1000, "debit", "NIP/POS/CHOWDECK", None, None, "upload"
+        )
+        assert await ingest(db, account, [uploaded]) == 0
         await db.commit()
         tx = (await db.execute(select(Transaction))).scalar_one()
         transaction_id = tx.id

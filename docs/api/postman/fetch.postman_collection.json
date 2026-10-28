@@ -4989,6 +4989,312 @@
               "status": "Internal server error."
             }
           ]
+        },
+        {
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('documented success', function () { pm.expect([200]).to.include(pm.response.code); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "name": "Confirm Classification Correction",
+          "request": {
+            "description": "Submit this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "header": [],
+            "method": "POST",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "classification-corrections",
+                "{{correction_id}}",
+                "confirm"
+              ],
+              "raw": "{{base_url}}/classification-corrections/{{correction_id}}/confirm"
+            }
+          },
+          "response": [
+            {
+              "_postman_previewlanguage": "json",
+              "body": "\"fake_de\"",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Successful Response",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "classification-corrections",
+                    "{{correction_id}}",
+                    "confirm"
+                  ],
+                  "raw": "{{base_url}}/classification-corrections/{{correction_id}}/confirm"
+                }
+              },
+              "status": "Successful Response"
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Authentication is missing or invalid.\"\n}",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Authentication is missing or invalid.",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "classification-corrections",
+                    "{{correction_id}}",
+                    "confirm"
+                  ],
+                  "raw": "{{base_url}}/classification-corrections/{{correction_id}}/confirm"
+                }
+              },
+              "status": "Authentication is missing or invalid."
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Validation Error\"\n}",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Validation Error",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "classification-corrections",
+                    "{{correction_id}}",
+                    "confirm"
+                  ],
+                  "raw": "{{base_url}}/classification-corrections/{{correction_id}}/confirm"
+                }
+              },
+              "status": "Validation Error"
+            }
+          ]
+        },
+        {
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('documented success', function () { pm.expect([200]).to.include(pm.response.code); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "name": "List Suggestions",
+          "request": {
+            "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "header": [],
+            "method": "GET",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "transfer-suggestions"
+              ],
+              "raw": "{{base_url}}/transfer-suggestions"
+            }
+          },
+          "response": [
+            {
+              "_postman_previewlanguage": "json",
+              "body": "[\n  {}\n]",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Successful Response",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "transfer-suggestions"
+                  ],
+                  "raw": "{{base_url}}/transfer-suggestions"
+                }
+              },
+              "status": "Successful Response"
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Authentication is missing or invalid.\"\n}",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Authentication is missing or invalid.",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "transfer-suggestions"
+                  ],
+                  "raw": "{{base_url}}/transfer-suggestions"
+                }
+              },
+              "status": "Authentication is missing or invalid."
+            }
+          ]
+        },
+        {
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('documented success', function () { pm.expect([200]).to.include(pm.response.code); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "name": "Review Suggestion",
+          "request": {
+            "description": "Submit this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "header": [],
+            "method": "POST",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "transfer-suggestions",
+                "{{suggestion_id}}",
+                "{{action}}"
+              ],
+              "raw": "{{base_url}}/transfer-suggestions/{{suggestion_id}}/{{action}}"
+            }
+          },
+          "response": [
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{}",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Successful Response",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "transfer-suggestions",
+                    "{{suggestion_id}}",
+                    "{{action}}"
+                  ],
+                  "raw": "{{base_url}}/transfer-suggestions/{{suggestion_id}}/{{action}}"
+                }
+              },
+              "status": "Successful Response"
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Authentication is missing or invalid.\"\n}",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Authentication is missing or invalid.",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "transfer-suggestions",
+                    "{{suggestion_id}}",
+                    "{{action}}"
+                  ],
+                  "raw": "{{base_url}}/transfer-suggestions/{{suggestion_id}}/{{action}}"
+                }
+              },
+              "status": "Authentication is missing or invalid."
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Validation Error\"\n}",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Validation Error",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "transfer-suggestions",
+                    "{{suggestion_id}}",
+                    "{{action}}"
+                  ],
+                  "raw": "{{base_url}}/transfer-suggestions/{{suggestion_id}}/{{action}}"
+                }
+              },
+              "status": "Validation Error"
+            }
+          ]
         }
       ],
       "name": "Accounts and linking"
