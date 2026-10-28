@@ -12,12 +12,15 @@ from app.main import app
 
 ROOT = Path(__file__).resolve().parents[2]
 OUTPUT = ROOT / "docs" / "api" / "openapi.json"
+BACKEND_OUTPUT = ROOT / "backend" / "openapi.json"
 
 
 def export_openapi() -> dict:
     document = app.openapi()
+    rendered_json = json.dumps(document, indent=2, sort_keys=True) + "\n"
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT.write_text(json.dumps(document, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    OUTPUT.write_text(rendered_json, encoding="utf-8")
+    BACKEND_OUTPUT.write_text(rendered_json, encoding="utf-8")
     OUTPUT.with_suffix(".yaml").write_text(
         yaml.safe_dump(document, sort_keys=True), encoding="utf-8"
     )

@@ -21,7 +21,7 @@ from app.scheduler.jobs import (
 )
 from app.scheduler.lock import run_locked
 
-logger = logging.getLogger("cashlens.scheduler")
+logger = logging.getLogger("fetch.scheduler")
 
 
 async def _run(name: str, callback: Callable[[], Awaitable[None]]) -> None:

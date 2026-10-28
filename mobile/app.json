@@ -1,14 +1,14 @@
 {
   "expo": {
-    "name": "cashlens",
-    "slug": "cashlens",
+    "name": "fetch",
+    "slug": "fetch",
     "version": "0.1.0",
-    "scheme": "cashlens",
+    "scheme": "fetch",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "android": {
-      "package": "com.cashlens",
+      "package": "com.fetch",
       "usesCleartextTraffic": true
     },
     "plugins": ["expo-secure-store"]

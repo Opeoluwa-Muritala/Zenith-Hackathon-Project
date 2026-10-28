@@ -143,6 +143,7 @@ encryption keys, BVNs, OTPs, or refresh tokens in a client bundle or URL.
 
 For endpoint schemas, authentication requirements, status codes, and examples, share:
 
+- Interactive Swagger UI: `/api-docs` on an environment where `API_DOCS_ENABLED=true`
 - [OpenAPI YAML](api/openapi.yaml)
 - [OpenAPI JSON](api/openapi.json)
 - [Postman collection](api/postman/fetch.postman_collection.json)

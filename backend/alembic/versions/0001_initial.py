@@ -1,4 +1,4 @@
-"""Initial cashlens schema.
+"""Initial fetch schema.
 
 Revision ID: 0001
 """

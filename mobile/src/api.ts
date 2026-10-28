@@ -1,8 +1,8 @@
 import * as SecureStore from 'expo-secure-store';
 
 const API_BASE_URL = (process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://10.0.2.2:8080').replace(/\/$/, '');
-const ACCESS_KEY = 'cashlens.access-token';
-const REFRESH_KEY = 'cashlens.refresh-token';
+const ACCESS_KEY = 'fetch.access-token';
+const REFRESH_KEY = 'fetch.refresh-token';
 const REQUEST_TIMEOUT_MS = 15_000;
 
 type Tokens = { access_token: string; refresh_token: string };

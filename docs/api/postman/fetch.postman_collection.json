@@ -1644,7 +1644,7 @@
               },
               "raw": "{\n  \"bvn\": \"{{test_bvn}}\"\n}"
             },
-            "description": "Submit this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "description": "Submit this resource in the fetch user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
             "header": [
               {
                 "key": "Content-Type",
@@ -2178,7 +2178,7 @@
           ],
           "name": "Get Privacy Preferences",
           "request": {
-            "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "description": "Read this resource in the fetch user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
             "header": [],
             "method": "GET",
             "url": {
@@ -2267,7 +2267,7 @@
               },
               "raw": "{\n  \"privacy_blur\": false\n}"
             },
-            "description": "Manage this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "description": "Manage this resource in the fetch user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
             "header": [
               {
                 "key": "Content-Type",
@@ -5352,7 +5352,7 @@
           ],
           "name": "Get Bookkeeper Invite",
           "request": {
-            "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "description": "Read this resource in the fetch user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
             "header": [],
             "method": "GET",
             "url": {
@@ -5441,7 +5441,7 @@
               },
               "raw": "{\n  \"email\": \"user@example.com\"\n}"
             },
-            "description": "Submit this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "description": "Submit this resource in the fetch user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
             "header": [
               {
                 "key": "Content-Type",
@@ -5551,7 +5551,7 @@
           ],
           "name": "Revoke Bookkeeper Invite",
           "request": {
-            "description": "Delete this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "description": "Delete this resource in the fetch user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
             "header": [],
             "method": "DELETE",
             "url": {
@@ -5660,7 +5660,7 @@
           ],
           "name": "Accept Bookkeeper Invite",
           "request": {
-            "description": "Submit this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "description": "Submit this resource in the fetch user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
             "header": [],
             "method": "POST",
             "url": {
@@ -5773,7 +5773,7 @@
           ],
           "name": "Bookkeeper Report",
           "request": {
-            "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "description": "Read this resource in the fetch user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
             "header": [],
             "method": "GET",
             "url": {
@@ -5898,7 +5898,7 @@
           ],
           "name": "Bookkeeper Ledger",
           "request": {
-            "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "description": "Read this resource in the fetch user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
             "header": [],
             "method": "GET",
             "url": {
@@ -6071,7 +6071,7 @@
           ],
           "name": "Business Personal Review",
           "request": {
-            "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "description": "Read this resource in the fetch user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
             "header": [],
             "method": "GET",
             "url": {
@@ -6163,7 +6163,7 @@
               },
               "raw": "{\n  \"label\": \"business\"\n}"
             },
-            "description": "Manage this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "description": "Manage this resource in the fetch user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
             "header": [
               {
                 "key": "Content-Type",
@@ -6281,7 +6281,7 @@
           ],
           "name": "Confirm Classification Correction",
           "request": {
-            "description": "Submit this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "description": "Submit this resource in the fetch user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
             "header": [],
             "method": "POST",
             "url": {
@@ -6394,7 +6394,7 @@
           ],
           "name": "List Insight Alerts",
           "request": {
-            "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "description": "Read this resource in the fetch user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
             "header": [],
             "method": "GET",
             "url": {
@@ -6531,7 +6531,7 @@
           ],
           "name": "Mark Insight Alert Read",
           "request": {
-            "description": "Submit this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "description": "Submit this resource in the fetch user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
             "header": [],
             "method": "POST",
             "url": {
@@ -6653,7 +6653,7 @@
               },
               "raw": "{\n  \"mode\": \"consumer\"\n}"
             },
-            "description": "Manage this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "description": "Manage this resource in the fetch user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
             "header": [
               {
                 "key": "Content-Type",
@@ -7152,7 +7152,7 @@
           ],
           "name": "List Report Share Links",
           "request": {
-            "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "description": "Read this resource in the fetch user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
             "header": [],
             "method": "GET",
             "url": {
@@ -7232,7 +7232,7 @@
           ],
           "name": "Revoke Report Share Link",
           "request": {
-            "description": "Delete this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "description": "Delete this resource in the fetch user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
             "header": [],
             "method": "DELETE",
             "url": {
@@ -7341,7 +7341,7 @@
           ],
           "name": "Monthly Report",
           "request": {
-            "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "description": "Read this resource in the fetch user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
             "header": [],
             "method": "GET",
             "url": {
@@ -7454,7 +7454,7 @@
           ],
           "name": "Export Monthly Report",
           "request": {
-            "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "description": "Read this resource in the fetch user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
             "header": [],
             "method": "GET",
             "url": {
@@ -7612,7 +7612,7 @@
               },
               "raw": "{\n  \"expires_in_days\": 1.0\n}"
             },
-            "description": "Submit this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "description": "Submit this resource in the fetch user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
             "header": [
               {
                 "key": "Content-Type",
@@ -7737,7 +7737,7 @@
             "auth": {
               "type": "noauth"
             },
-            "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "description": "Read this resource in the fetch user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
             "header": [],
             "method": "GET",
             "url": {
@@ -7826,7 +7826,7 @@
             "auth": {
               "type": "noauth"
             },
-            "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "description": "Read this resource in the fetch user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
             "header": [],
             "method": "GET",
             "url": {
@@ -7939,7 +7939,7 @@
           ],
           "name": "List Suggestions",
           "request": {
-            "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "description": "Read this resource in the fetch user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
             "header": [],
             "method": "GET",
             "url": {
@@ -8019,7 +8019,7 @@
           ],
           "name": "Review Suggestion",
           "request": {
-            "description": "Submit this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "description": "Submit this resource in the fetch user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
             "header": [],
             "method": "POST",
             "url": {
@@ -9155,7 +9155,7 @@
           ],
           "name": "Upload Statement",
           "request": {
-            "description": "Submit this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "description": "Submit this resource in the fetch user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
             "header": [],
             "method": "POST",
             "url": {
@@ -11533,7 +11533,7 @@
               },
               "raw": "{\n  \"platform\": \"android\",\n  \"token\": \"fake_demo_value_fake\"\n}"
             },
-            "description": "Submit this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "description": "Submit this resource in the fetch user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
             "header": [
               {
                 "key": "Content-Type",
@@ -11643,7 +11643,7 @@
           ],
           "name": "Unregister Device",
           "request": {
-            "description": "Delete this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "description": "Delete this resource in the fetch user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
             "header": [],
             "method": "DELETE",
             "url": {
@@ -11752,7 +11752,7 @@
           ],
           "name": "Get Notification Preferences",
           "request": {
-            "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "description": "Read this resource in the fetch user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
             "header": [],
             "method": "GET",
             "url": {
@@ -11841,7 +11841,7 @@
               },
               "raw": "{\n  \"investment_update_prompts\": false,\n  \"loan_repayment_reminders\": false,\n  \"overspending_alerts\": false\n}"
             },
-            "description": "Manage this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "description": "Manage this resource in the fetch user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
             "header": [
               {
                 "key": "Content-Type",
@@ -11956,7 +11956,7 @@
           ],
           "name": "Category Summary",
           "request": {
-            "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "description": "Read this resource in the fetch user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
             "header": [],
             "method": "GET",
             "url": {
@@ -12039,7 +12039,7 @@
           ],
           "name": "Monthly Summary",
           "request": {
-            "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "description": "Read this resource in the fetch user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
             "header": [],
             "method": "GET",
             "url": {
@@ -12210,7 +12210,7 @@
           ],
           "name": "Recurring",
           "request": {
-            "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "description": "Read this resource in the fetch user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
             "header": [],
             "method": "GET",
             "url": {
@@ -12295,7 +12295,7 @@
           ],
           "name": "Insights",
           "request": {
-            "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "description": "Read this resource in the fetch user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
             "header": [],
             "method": "GET",
             "url": {
@@ -12432,7 +12432,7 @@
           ],
           "name": "Run Insights",
           "request": {
-            "description": "Submit this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "description": "Submit this resource in the fetch user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
             "header": [],
             "method": "POST",
             "url": {
@@ -12515,7 +12515,7 @@
           ],
           "name": "Insight Detail",
           "request": {
-            "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "description": "Read this resource in the fetch user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
             "header": [],
             "method": "GET",
             "url": {
@@ -12624,7 +12624,7 @@
           ],
           "name": "Dismiss",
           "request": {
-            "description": "Submit this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "description": "Submit this resource in the fetch user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
             "header": [],
             "method": "POST",
             "url": {
@@ -12742,7 +12742,7 @@
           ],
           "name": "Safe To Spend Forecast",
           "request": {
-            "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "description": "Read this resource in the fetch user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
             "header": [],
             "method": "GET",
             "url": {

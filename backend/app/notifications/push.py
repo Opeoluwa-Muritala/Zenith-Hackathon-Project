@@ -8,7 +8,7 @@ from typing import Literal, Protocol
 from app.core.config import get_settings
 
 PushResult = Literal["sent", "unregistered", "failed", "disabled"]
-logger = logging.getLogger("cashlens.notifications")
+logger = logging.getLogger("fetch.notifications")
 _disabled_warning_emitted = False
 
 

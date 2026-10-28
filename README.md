@@ -1,4 +1,4 @@
-# Fetch backend / cashlens
+# Fetch backend
 
 Phase 4 classification review: operators can promote an agreed correction with
 `cd backend` then `python -m scripts.review_classification "normalized shop" "Transport"`.

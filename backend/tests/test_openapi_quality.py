@@ -69,3 +69,21 @@ def test_mono_test_page_is_loopback_only_and_not_in_public_schema():
     with TestClient(app, base_url="http://attacker.test", client=("127.0.0.1", 43120)) as rebinding:
         assert rebinding.get("/dev/mono-test").status_code == 404
     assert "/dev/mono-test" not in app.openapi()["paths"]
+
+
+def test_api_docs_alias_redirects_without_entering_public_schema():
+    with TestClient(app, follow_redirects=False) as client:
+        response = client.get("/api-docs")
+    assert response.status_code == 307
+    assert response.headers["location"] == "/docs"
+    assert "/api-docs" not in app.openapi()["paths"]
+
+
+def test_api_docs_alias_is_hidden_when_production_docs_are_disabled(monkeypatch):
+    from app.main import settings
+
+    monkeypatch.setattr(settings, "environment", "production")
+    monkeypatch.setattr(settings, "api_docs_enabled", False)
+    with TestClient(app, follow_redirects=False) as client:
+        response = client.get("/api-docs")
+    assert response.status_code == 404

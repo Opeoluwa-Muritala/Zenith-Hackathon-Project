@@ -2446,7 +2446,7 @@ info:
     Financial insights are educational information, not financial advice.
 
     '
-  title: cashlens
+  title: Fetch
   version: 1.0.0
 openapi: 3.1.0
 paths:
@@ -4065,7 +4065,7 @@ paths:
       - Accounts and linking
   /bookkeeper-invites:
     get:
-      description: Read this resource in the cashlens user journey. Protected operations
+      description: Read this resource in the fetch user journey. Protected operations
         require the signed-in user's Bearer access token and scope data to that user.
         Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
         may update consent, ledger, or derived insight data as described by the route.
@@ -4098,7 +4098,7 @@ paths:
       tags:
       - Accounts and linking
     post:
-      description: Submit this resource in the cashlens user journey. Protected operations
+      description: Submit this resource in the fetch user journey. Protected operations
         require the signed-in user's Bearer access token and scope data to that user.
         Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
         may update consent, ledger, or derived insight data as described by the route.
@@ -4142,7 +4142,7 @@ paths:
       - Accounts and linking
   /bookkeeper-invites/{invite_id}:
     delete:
-      description: Delete this resource in the cashlens user journey. Protected operations
+      description: Delete this resource in the fetch user journey. Protected operations
         require the signed-in user's Bearer access token and scope data to that user.
         Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
         may update consent, ledger, or derived insight data as described by the route.
@@ -4182,7 +4182,7 @@ paths:
       - Accounts and linking
   /bookkeeper-invites/{token}/accept:
     post:
-      description: Submit this resource in the cashlens user journey. Protected operations
+      description: Submit this resource in the fetch user journey. Protected operations
         require the signed-in user's Bearer access token and scope data to that user.
         Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
         may update consent, ledger, or derived insight data as described by the route.
@@ -4228,7 +4228,7 @@ paths:
       - Accounts and linking
   /bookkeeper/clients/{owner_id}/reports/monthly/{month}:
     get:
-      description: Read this resource in the cashlens user journey. Protected operations
+      description: Read this resource in the fetch user journey. Protected operations
         require the signed-in user's Bearer access token and scope data to that user.
         Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
         may update consent, ledger, or derived insight data as described by the route.
@@ -4278,7 +4278,7 @@ paths:
       - Accounts and linking
   /bookkeeper/clients/{owner_id}/transactions:
     get:
-      description: Read this resource in the cashlens user journey. Protected operations
+      description: Read this resource in the fetch user journey. Protected operations
         require the signed-in user's Bearer access token and scope data to that user.
         Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
         may update consent, ledger, or derived insight data as described by the route.
@@ -4466,7 +4466,7 @@ paths:
       - Budget
   /business-personal/review:
     get:
-      description: Read this resource in the cashlens user journey. Protected operations
+      description: Read this resource in the fetch user journey. Protected operations
         require the signed-in user's Bearer access token and scope data to that user.
         Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
         may update consent, ledger, or derived insight data as described by the route.
@@ -4499,7 +4499,7 @@ paths:
       - Accounts and linking
   /business-personal/transactions/{transaction_id}:
     put:
-      description: Manage this resource in the cashlens user journey. Protected operations
+      description: Manage this resource in the fetch user journey. Protected operations
         require the signed-in user's Bearer access token and scope data to that user.
         Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
         may update consent, ledger, or derived insight data as described by the route.
@@ -4641,7 +4641,7 @@ paths:
       - Category rules
   /classification-corrections/{correction_id}/confirm:
     post:
-      description: Submit this resource in the cashlens user journey. Protected operations
+      description: Submit this resource in the fetch user journey. Protected operations
         require the signed-in user's Bearer access token and scope data to that user.
         Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
         may update consent, ledger, or derived insight data as described by the route.
@@ -4822,7 +4822,7 @@ paths:
       - Consents
   /devices:
     post:
-      description: Submit this resource in the cashlens user journey. Protected operations
+      description: Submit this resource in the fetch user journey. Protected operations
         require the signed-in user's Bearer access token and scope data to that user.
         Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
         may update consent, ledger, or derived insight data as described by the route.
@@ -4863,7 +4863,7 @@ paths:
       - Notifications
   /devices/{device_id}:
     delete:
-      description: Delete this resource in the cashlens user journey. Protected operations
+      description: Delete this resource in the fetch user journey. Protected operations
         require the signed-in user's Bearer access token and scope data to that user.
         Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
         may update consent, ledger, or derived insight data as described by the route.
@@ -4903,7 +4903,7 @@ paths:
       - Notifications
   /forecast/safe-to-spend:
     get:
-      description: Read this resource in the cashlens user journey. Protected operations
+      description: Read this resource in the fetch user journey. Protected operations
         require the signed-in user's Bearer access token and scope data to that user.
         Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
         may update consent, ledger, or derived insight data as described by the route.
@@ -4955,7 +4955,7 @@ paths:
       - Health
   /identity/bvn/verify:
     post:
-      description: Submit this resource in the cashlens user journey. Protected operations
+      description: Submit this resource in the fetch user journey. Protected operations
         require the signed-in user's Bearer access token and scope data to that user.
         Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
         may update consent, ledger, or derived insight data as described by the route.
@@ -4996,7 +4996,7 @@ paths:
       - Identity
   /insight-alerts:
     get:
-      description: Read this resource in the cashlens user journey. Protected operations
+      description: Read this resource in the fetch user journey. Protected operations
         require the signed-in user's Bearer access token and scope data to that user.
         Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
         may update consent, ledger, or derived insight data as described by the route.
@@ -5047,7 +5047,7 @@ paths:
       - Accounts and linking
   /insight-alerts/{alert_id}/read:
     post:
-      description: Submit this resource in the cashlens user journey. Protected operations
+      description: Submit this resource in the fetch user journey. Protected operations
         require the signed-in user's Bearer access token and scope data to that user.
         Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
         may update consent, ledger, or derived insight data as described by the route.
@@ -5094,7 +5094,7 @@ paths:
       - Accounts and linking
   /insight-profile:
     put:
-      description: Manage this resource in the cashlens user journey. Protected operations
+      description: Manage this resource in the fetch user journey. Protected operations
         require the signed-in user's Bearer access token and scope data to that user.
         Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
         may update consent, ledger, or derived insight data as described by the route.
@@ -5138,7 +5138,7 @@ paths:
       - Accounts and linking
   /insights:
     get:
-      description: Read this resource in the cashlens user journey. Protected operations
+      description: Read this resource in the fetch user journey. Protected operations
         require the signed-in user's Bearer access token and scope data to that user.
         Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
         may update consent, ledger, or derived insight data as described by the route.
@@ -5182,7 +5182,7 @@ paths:
       - Insights
   /insights/run:
     post:
-      description: Submit this resource in the cashlens user journey. Protected operations
+      description: Submit this resource in the fetch user journey. Protected operations
         require the signed-in user's Bearer access token and scope data to that user.
         Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
         may update consent, ledger, or derived insight data as described by the route.
@@ -5211,7 +5211,7 @@ paths:
       - Insights
   /insights/{insight_id}:
     get:
-      description: Read this resource in the cashlens user journey. Protected operations
+      description: Read this resource in the fetch user journey. Protected operations
         require the signed-in user's Bearer access token and scope data to that user.
         Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
         may update consent, ledger, or derived insight data as described by the route.
@@ -5254,7 +5254,7 @@ paths:
       - Insights
   /insights/{insight_id}/dismiss:
     post:
-      description: Submit this resource in the cashlens user journey. Protected operations
+      description: Submit this resource in the fetch user journey. Protected operations
         require the signed-in user's Bearer access token and scope data to that user.
         Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
         may update consent, ledger, or derived insight data as described by the route.
@@ -5330,7 +5330,7 @@ paths:
       - Assets
   /notification-preferences:
     get:
-      description: Read this resource in the cashlens user journey. Protected operations
+      description: Read this resource in the fetch user journey. Protected operations
         require the signed-in user's Bearer access token and scope data to that user.
         Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
         may update consent, ledger, or derived insight data as described by the route.
@@ -5358,7 +5358,7 @@ paths:
       tags:
       - Notifications
     put:
-      description: Manage this resource in the cashlens user journey. Protected operations
+      description: Manage this resource in the fetch user journey. Protected operations
         require the signed-in user's Bearer access token and scope data to that user.
         Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
         may update consent, ledger, or derived insight data as described by the route.
@@ -5905,7 +5905,7 @@ paths:
       - Accounts and linking
   /privacy-preferences:
     get:
-      description: Read this resource in the cashlens user journey. Protected operations
+      description: Read this resource in the fetch user journey. Protected operations
         require the signed-in user's Bearer access token and scope data to that user.
         Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
         may update consent, ledger, or derived insight data as described by the route.
@@ -5934,7 +5934,7 @@ paths:
       tags:
       - Consents
     put:
-      description: Manage this resource in the cashlens user journey. Protected operations
+      description: Manage this resource in the fetch user journey. Protected operations
         require the signed-in user's Bearer access token and scope data to that user.
         Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
         may update consent, ledger, or derived insight data as described by the route.
@@ -6070,7 +6070,7 @@ paths:
       - Accounts and linking
   /recurring:
     get:
-      description: Read this resource in the cashlens user journey. Protected operations
+      description: Read this resource in the fetch user journey. Protected operations
         require the signed-in user's Bearer access token and scope data to that user.
         Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
         may update consent, ledger, or derived insight data as described by the route.
@@ -6099,7 +6099,7 @@ paths:
       - Recurring
   /report-share-links:
     get:
-      description: Read this resource in the cashlens user journey. Protected operations
+      description: Read this resource in the fetch user journey. Protected operations
         require the signed-in user's Bearer access token and scope data to that user.
         Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
         may update consent, ledger, or derived insight data as described by the route.
@@ -6133,7 +6133,7 @@ paths:
       - Accounts and linking
   /report-share-links/{link_id}:
     delete:
-      description: Delete this resource in the cashlens user journey. Protected operations
+      description: Delete this resource in the fetch user journey. Protected operations
         require the signed-in user's Bearer access token and scope data to that user.
         Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
         may update consent, ledger, or derived insight data as described by the route.
@@ -6173,7 +6173,7 @@ paths:
       - Accounts and linking
   /reports/monthly/{month}:
     get:
-      description: Read this resource in the cashlens user journey. Protected operations
+      description: Read this resource in the fetch user journey. Protected operations
         require the signed-in user's Bearer access token and scope data to that user.
         Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
         may update consent, ledger, or derived insight data as described by the route.
@@ -6216,7 +6216,7 @@ paths:
       - Accounts and linking
   /reports/monthly/{month}/export:
     get:
-      description: Read this resource in the cashlens user journey. Protected operations
+      description: Read this resource in the fetch user journey. Protected operations
         require the signed-in user's Bearer access token and scope data to that user.
         Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
         may update consent, ledger, or derived insight data as described by the route.
@@ -6267,7 +6267,7 @@ paths:
       - Accounts and linking
   /reports/monthly/{month}/share-links:
     post:
-      description: Submit this resource in the cashlens user journey. Protected operations
+      description: Submit this resource in the fetch user journey. Protected operations
         require the signed-in user's Bearer access token and scope data to that user.
         Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
         may update consent, ledger, or derived insight data as described by the route.
@@ -6358,7 +6358,7 @@ paths:
       - AI
   /shared/reports/{token}:
     get:
-      description: Read this resource in the cashlens user journey. Protected operations
+      description: Read this resource in the fetch user journey. Protected operations
         require the signed-in user's Bearer access token and scope data to that user.
         Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
         may update consent, ledger, or derived insight data as described by the route.
@@ -6389,7 +6389,7 @@ paths:
       - Accounts and linking
   /shared/reports/{token}/export:
     get:
-      description: Read this resource in the cashlens user journey. Protected operations
+      description: Read this resource in the fetch user journey. Protected operations
         require the signed-in user's Bearer access token and scope data to that user.
         Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
         may update consent, ledger, or derived insight data as described by the route.
@@ -6428,7 +6428,7 @@ paths:
       - Accounts and linking
   /statements/upload:
     post:
-      description: Submit this resource in the cashlens user journey. Protected operations
+      description: Submit this resource in the fetch user journey. Protected operations
         require the signed-in user's Bearer access token and scope data to that user.
         Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
         may update consent, ledger, or derived insight data as described by the route.
@@ -6477,7 +6477,7 @@ paths:
       - Sync and statements
   /summary/categories:
     get:
-      description: Read this resource in the cashlens user journey. Protected operations
+      description: Read this resource in the fetch user journey. Protected operations
         require the signed-in user's Bearer access token and scope data to that user.
         Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
         may update consent, ledger, or derived insight data as described by the route.
@@ -6506,7 +6506,7 @@ paths:
       - Summary
   /summary/monthly:
     get:
-      description: Read this resource in the cashlens user journey. Protected operations
+      description: Read this resource in the fetch user journey. Protected operations
         require the signed-in user's Bearer access token and scope data to that user.
         Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
         may update consent, ledger, or derived insight data as described by the route.
@@ -6874,7 +6874,7 @@ paths:
       - Transactions
   /transfer-suggestions:
     get:
-      description: Read this resource in the cashlens user journey. Protected operations
+      description: Read this resource in the fetch user journey. Protected operations
         require the signed-in user's Bearer access token and scope data to that user.
         Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
         may update consent, ledger, or derived insight data as described by the route.
@@ -6908,7 +6908,7 @@ paths:
       - Accounts and linking
   /transfer-suggestions/{suggestion_id}/{action}:
     post:
-      description: Submit this resource in the cashlens user journey. Protected operations
+      description: Submit this resource in the fetch user journey. Protected operations
         require the signed-in user's Bearer access token and scope data to that user.
         Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
         may update consent, ledger, or derived insight data as described by the route.

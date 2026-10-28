@@ -15,7 +15,7 @@ npm install
 npx expo start --android
 ```
 
-For Expo Go, run the Expo Go app in the emulator. To test the `cashlens://mono/callback` custom scheme, use a native development build instead:
+For Expo Go, run the Expo Go app in the emulator. To test the `fetch://mono/callback` custom scheme, use a native development build instead:
 
 ```powershell
 npx expo run:android

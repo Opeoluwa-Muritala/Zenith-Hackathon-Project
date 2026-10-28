@@ -1,4 +1,4 @@
-"""cashlens FastAPI entry point."""
+"""fetch FastAPI entry point."""
 
 import hashlib
 import hmac
@@ -27,7 +27,7 @@ from fastapi import (
 )
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from pydantic import BaseModel, EmailStr, Field, model_validator
 from sqlalchemy import and_, delete, func, or_, select, update
@@ -122,7 +122,7 @@ from app.reports.router import router as reports_router
 
 settings = get_settings()
 settings.validate_runtime()
-logger = logging.getLogger("cashlens")
+logger = logging.getLogger("fetch")
 API_VERSION = "1.0.0"
 API_DESCRIPTION = """Fetch consolidates user-consented financial data using Mono Connect or a
 mock provider. Authentication uses app-issued JWTs after email or phone OTP verification; refresh
@@ -666,6 +666,14 @@ async def safe_internal_error(_request, exc):
 @app.get("/health", response_model=api.HealthResponse)
 async def health():
     return {"status": "ok", "product": PRODUCT_NAME}
+
+
+@app.get("/api-docs", include_in_schema=False)
+async def api_docs_alias():
+    """Provide a stable, shareable alias for the configured Swagger UI."""
+    if settings.environment == "production" and not settings.api_docs_enabled:
+        raise HTTPException(404, "Not found")
+    return RedirectResponse(url="/docs", status_code=307)
 
 
 @app.get("/dev/mono-test", include_in_schema=False)
@@ -3012,7 +3020,7 @@ def _document_operation(path: str, method: str, operation: dict) -> None:
     operation.setdefault(
         "description",
         (
-            f"{verb} this resource in the cashlens user journey. Protected operations "
+            f"{verb} this resource in the fetch user journey. Protected operations "
             "require the signed-in user's Bearer access token and scope data to that user. "
             "Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations "
             "may update consent, ledger, or derived insight data as described by the route."

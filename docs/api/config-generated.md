@@ -4,7 +4,7 @@ Do not edit; run `python backend/scripts/gen_config_docs.py`.
 
 | Setting | Type | Default |
 |---|---|---|
-| `database_url` | `<class 'str'>` | `postgresql+asyncpg://localhost/cashlens` |
+| `database_url` | `<class 'str'>` | `postgresql+asyncpg://localhost/fetch` |
 | `jwt_secret` | `<class 'str'>` | `` |
 | `environment` | `<class 'str'>` | `development` |
 | `redis_url` | `<class 'str'>` | `` |
@@ -36,8 +36,8 @@ Do not edit; run `python backend/scripts/gen_config_docs.py`.
 | `refresh_days` | `<class 'int'>` | `30` |
 | `live_sync_trial_days` | `<class 'int'>` | `14` |
 | `free_live_account_limit` | `<class 'int'>` | `2` |
-| `jwt_issuer` | `<class 'str'>` | `cashlens-api` |
-| `jwt_audience` | `<class 'str'>` | `cashlens-mobile` |
+| `jwt_issuer` | `<class 'str'>` | `fetch-api` |
+| `jwt_audience` | `<class 'str'>` | `fetch-mobile` |
 | `bvn_pepper` | `<class 'str'>` | `` |
 | `aggregator_provider` | `<class 'str'>` | `mock` |
 | `mono_base_url` | `<class 'str'>` | `https://api.withmono.com` |
@@ -45,7 +45,7 @@ Do not edit; run `python backend/scripts/gen_config_docs.py`.
 | `mono_lookup_secret_key` | `<class 'str'>` | `` |
 | `mono_public_key` | `<class 'str'>` | `` |
 | `webhook_secure_key` | `<class 'str'>` | `` |
-| `mono_redirect_url` | `<class 'str'>` | `cashlens://mono/callback` |
+| `mono_redirect_url` | `<class 'str'>` | `fetch://mono/callback` |
 | `mono_account_match_enabled` | `<class 'bool'>` | `False` |
 | `ai_enabled_global` | `<class 'bool'>` | `False` |
 | `ai_provider` | `<class 'str'>` | `groq` |
