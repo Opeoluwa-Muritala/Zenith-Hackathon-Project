@@ -114,7 +114,7 @@ DEMO_OPERATIONS = {
     ),
     ("post", "/accounts/{account_id}/unlink"): (
         "Unlink and purge one account",
-        "Purge linked local transactions, recurring records and obligations, revoke consent, then attempt Mono unlink. Failure retains an encrypted pending_unlink target; no automatic retry worker exists. User-level derived insights and AI conversations are also purged.",
+        "Purge linked local transactions, recurring records and obligations, revoke consent, then attempt Mono unlink. Failure retains an encrypted durable retry target processed by the scheduler. User-level derived insights and AI conversations are also purged.",
         (401, 404, 422),
     ),
     ("post", "/sync"): (
@@ -224,8 +224,18 @@ DEMO_OPERATIONS = {
     ),
     ("delete", "/consents/{consent_id}"): (
         "Revoke consent and purge linked accounts",
-        "Revoke owned consent, purge linked account data and attempt remote unlink. Failed unlinks remain pending; no automatic retry worker exists.",
+        "Revoke owned consent, purge linked account data and attempt remote unlink. Failed unlinks remain in the encrypted scheduler queue.",
         (401, 404, 422),
+    ),
+    ("get", "/privacy/consents"): (
+        "List active read-only links",
+        "Return each active provider link with institution, link time, data status and the read-only scope requested at link time.",
+        (401,),
+    ),
+    ("post", "/privacy/wipe"): (
+        "Revoke all access and wipe user data",
+        "Require a fresh six-digit OTP, durably queue remote unlinks, attempt them immediately, delete all user-owned data and sessions, and retain only the minimal wipe audit plus any unfinished encrypted unlink work.",
+        (401, 409, 422),
     ),
     ("post", "/webhooks/mono"): (
         "Receive verified Mono events",

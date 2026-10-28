@@ -18,6 +18,7 @@ from app.models import (
     Base,
     Consent,
     Institution,
+    PendingUnlink,
     ProviderLink,
     Transaction,
     User,
@@ -26,7 +27,7 @@ from app.providers.base import ProviderTransaction, ProviderUnavailable
 
 
 @pytest.mark.asyncio
-async def test_account_unlink_purges_local_data_and_retries_remote(monkeypatch):
+async def test_PRV_2_account_unlink_purges_local_data_and_retries_remote(monkeypatch):
     engine = create_async_engine("sqlite+aiosqlite:///:memory:")
     sessions = async_sessionmaker(engine, expire_on_commit=False)
     async with engine.begin() as connection:
@@ -109,6 +110,9 @@ async def test_account_unlink_purges_local_data_and_retries_remote(monkeypatch):
             assert await db.get(Account, account_id) is None
             assert (await db.execute(select(Transaction))).scalar_one_or_none() is None
             link = await db.get(ProviderLink, link_id)
+            queued = (await db.scalars(select(PendingUnlink))).one()
+            assert queued.provider_account_id_encrypted
+            assert "acc_fake_unlink" not in queued.provider_account_id_encrypted
             assert link.provider_account_id_encrypted
             assert link.provider_account_id == "acc_fake_unlink"
             monkeypatch.setattr(unlink_module, "MonoProvider", WorkingMono)
@@ -116,6 +120,7 @@ async def test_account_unlink_purges_local_data_and_retries_remote(monkeypatch):
             await db.commit()
             assert link.status == "unlinked"
             assert link.provider_account_id_encrypted is None
+            assert queued.completed_at is not None
     finally:
         main.app.dependency_overrides.clear()
         await engine.dispose()

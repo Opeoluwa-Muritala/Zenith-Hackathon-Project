@@ -2017,7 +2017,7 @@
           ],
           "name": "Revoke consent and purge linked accounts",
           "request": {
-            "description": "Revoke owned consent, purge linked account data and attempt remote unlink. Failed unlinks remain pending; no automatic retry worker exists. Requires the signed-in user's Bearer token; resources are owner-scoped.",
+            "description": "Revoke owned consent, purge linked account data and attempt remote unlink. Failed unlinks remain in the encrypted scheduler queue. Requires the signed-in user's Bearer token; resources are owner-scoped.",
             "header": [],
             "method": "DELETE",
             "url": {
@@ -5036,7 +5036,7 @@
           ],
           "name": "Unlink and purge one account",
           "request": {
-            "description": "Purge linked local transactions, recurring records and obligations, revoke consent, then attempt Mono unlink. Failure retains an encrypted pending_unlink target; no automatic retry worker exists. User-level derived insights and AI conversations are also purged. Requires the signed-in user's Bearer token; resources are owner-scoped.",
+            "description": "Purge linked local transactions, recurring records and obligations, revoke consent, then attempt Mono unlink. Failure retains an encrypted durable retry target processed by the scheduler. User-level derived insights and AI conversations are also purged. Requires the signed-in user's Bearer token; resources are owner-scoped.",
             "header": [],
             "method": "POST",
             "url": {
@@ -6597,6 +6597,290 @@
                 }
               },
               "status": "Validation Error"
+            }
+          ]
+        },
+        {
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('documented success', function () { pm.expect([200]).to.include(pm.response.code); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "name": "List active read-only links",
+          "request": {
+            "description": "Return each active provider link with institution, link time, data status and the read-only scope requested at link time. Requires the signed-in user's Bearer token; resources are owner-scoped.",
+            "header": [],
+            "method": "GET",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "privacy",
+                "consents"
+              ],
+              "raw": "{{base_url}}/privacy/consents"
+            }
+          },
+          "response": [
+            {
+              "_postman_previewlanguage": "json",
+              "body": "[\n  {\n    \"consent_id\": \"{{consent_id}}\",\n    \"data_status\": \"fake_de\",\n    \"institution\": \"fake_de\",\n    \"link_id\": \"{{link_id}}\",\n    \"linked_at\": \"2026-01-01T00:00:00Z\",\n    \"read_only\": false,\n    \"scope\": \"fake_de\"\n  }\n]",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Successful Response",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "privacy",
+                    "consents"
+                  ],
+                  "raw": "{{base_url}}/privacy/consents"
+                }
+              },
+              "status": "Successful Response"
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Authentication is missing, invalid or expired.\"\n}",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Authentication is missing, invalid or expired.",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "privacy",
+                    "consents"
+                  ],
+                  "raw": "{{base_url}}/privacy/consents"
+                }
+              },
+              "status": "Authentication is missing, invalid or expired."
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Internal server error.\"\n}",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Internal server error.",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "privacy",
+                    "consents"
+                  ],
+                  "raw": "{{base_url}}/privacy/consents"
+                }
+              },
+              "status": "Internal server error."
+            }
+          ]
+        },
+        {
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('documented success', function () { pm.expect([200]).to.include(pm.response.code); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "name": "Revoke all access and wipe user data",
+          "request": {
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"otp\": \"{{otp_code}}\"\n}"
+            },
+            "description": "Require a fresh six-digit OTP, durably queue remote unlinks, attempt them immediately, delete all user-owned data and sessions, and retain only the minimal wipe audit plus any unfinished encrypted unlink work. Requires the signed-in user's Bearer token; resources are owner-scoped.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "privacy",
+                "wipe"
+              ],
+              "raw": "{{base_url}}/privacy/wipe"
+            }
+          },
+          "response": [
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"deleted\": {\n    \"NGN\": 1\n  },\n  \"status\": \"fake_de\",\n  \"unlink_pending\": false\n}",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Successful Response",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "privacy",
+                    "wipe"
+                  ],
+                  "raw": "{{base_url}}/privacy/wipe"
+                }
+              },
+              "status": "Successful Response"
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Authentication is missing, invalid or expired.\"\n}",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Authentication is missing, invalid or expired.",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "privacy",
+                    "wipe"
+                  ],
+                  "raw": "{{base_url}}/privacy/wipe"
+                }
+              },
+              "status": "Authentication is missing, invalid or expired."
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Resource state prevents this operation.\"\n}",
+              "code": 409,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Resource state prevents this operation.",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "privacy",
+                    "wipe"
+                  ],
+                  "raw": "{{base_url}}/privacy/wipe"
+                }
+              },
+              "status": "Resource state prevents this operation."
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Invalid input or date range; sensitive input values are omitted.\"\n}",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Invalid input or date range; sensitive input values are omitted.",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "privacy",
+                    "wipe"
+                  ],
+                  "raw": "{{base_url}}/privacy/wipe"
+                }
+              },
+              "status": "Invalid input or date range; sensitive input values are omitted."
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Internal server error.\"\n}",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Internal server error.",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "privacy",
+                    "wipe"
+                  ],
+                  "raw": "{{base_url}}/privacy/wipe"
+                }
+              },
+              "status": "Internal server error."
             }
           ]
         },
