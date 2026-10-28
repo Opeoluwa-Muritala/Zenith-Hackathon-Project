@@ -5195,6 +5195,155 @@
               "listen": "test",
               "script": {
                 "exec": [
+                  "pm.test('documented success', function () { pm.expect([202]).to.include(pm.response.code); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "name": "Record an upgrade tap",
+          "request": {
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"desired_tier\": \"fake_de\",\n  \"surface\": \"home\"\n}"
+            },
+            "description": "Record the authenticated user's paywall surface and desired SME tier for pricing research. This route never starts checkout or charges a payment method. Requires the signed-in user's Bearer token; resources are owner-scoped.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "billing",
+                "upgrade-events"
+              ],
+              "raw": "{{base_url}}/billing/upgrade-events"
+            }
+          },
+          "response": [
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"status\": \"fake_de\"\n}",
+              "code": 202,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Successful Response",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "billing",
+                    "upgrade-events"
+                  ],
+                  "raw": "{{base_url}}/billing/upgrade-events"
+                }
+              },
+              "status": "Successful Response"
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Authentication is missing, invalid or expired.\"\n}",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Authentication is missing, invalid or expired.",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "billing",
+                    "upgrade-events"
+                  ],
+                  "raw": "{{base_url}}/billing/upgrade-events"
+                }
+              },
+              "status": "Authentication is missing, invalid or expired."
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Invalid input or date range; sensitive input values are omitted.\"\n}",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Invalid input or date range; sensitive input values are omitted.",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "billing",
+                    "upgrade-events"
+                  ],
+                  "raw": "{{base_url}}/billing/upgrade-events"
+                }
+              },
+              "status": "Invalid input or date range; sensitive input values are omitted."
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Internal server error.\"\n}",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Internal server error.",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "billing",
+                    "upgrade-events"
+                  ],
+                  "raw": "{{base_url}}/billing/upgrade-events"
+                }
+              },
+              "status": "Internal server error."
+            }
+          ]
+        },
+        {
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
                   "pm.test('documented success', function () { pm.expect([200]).to.include(pm.response.code); });"
                 ],
                 "type": "text/javascript"
@@ -6597,6 +6746,111 @@
                 }
               },
               "status": "Validation Error"
+            }
+          ]
+        },
+        {
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('documented success', function () { pm.expect([200]).to.include(pm.response.code); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "name": "Read plan and entitlements",
+          "request": {
+            "description": "Return the free or paid SME flag, live-sync trial state, account cap and feature entitlements. Reading this route does not start the trial. Requires the signed-in user's Bearer token; resources are owner-scoped.",
+            "header": [],
+            "method": "GET",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "plan"
+              ],
+              "raw": "{{base_url}}/plan"
+            }
+          },
+          "response": [
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"entitlements\": {\n    \"NGN\": false\n  },\n  \"free_live_account_limit\": 1,\n  \"paid_sme\": false,\n  \"tier\": \"free\",\n  \"trial_ends_at\": \"2026-01-01T00:00:00Z\",\n  \"trial_started_at\": \"2026-01-01T00:00:00Z\",\n  \"trial_status\": \"not_started\"\n}",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Successful Response",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "plan"
+                  ],
+                  "raw": "{{base_url}}/plan"
+                }
+              },
+              "status": "Successful Response"
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Authentication is missing, invalid or expired.\"\n}",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Authentication is missing, invalid or expired.",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "plan"
+                  ],
+                  "raw": "{{base_url}}/plan"
+                }
+              },
+              "status": "Authentication is missing, invalid or expired."
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Internal server error.\"\n}",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Internal server error.",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "plan"
+                  ],
+                  "raw": "{{base_url}}/plan"
+                }
+              },
+              "status": "Internal server error."
             }
           ]
         },

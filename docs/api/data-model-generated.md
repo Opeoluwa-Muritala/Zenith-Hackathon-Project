@@ -493,6 +493,26 @@ Do not edit; run `python backend/scripts/gen_data_model.py`.
 | `status` | `VARCHAR(20)` | False |  |  |
 | `created_at` | `DATETIME` | False |  |  |
 
+## `upgrade_tap_events`
+
+| Column | Type | Nullable | Key | Protection |
+|---|---|---:|---|---|
+| `id` | `CHAR(32)` | False | PK |  |
+| `user_id` | `CHAR(32)` | False | FK |  |
+| `surface` | `VARCHAR(40)` | False |  |  |
+| `desired_tier` | `VARCHAR(20)` | False |  |  |
+| `occurred_at` | `DATETIME` | False |  |  |
+
+## `user_plans`
+
+| Column | Type | Nullable | Key | Protection |
+|---|---|---:|---|---|
+| `user_id` | `CHAR(32)` | False | PK |  |
+| `paid_sme` | `BOOLEAN` | False |  |  |
+| `trial_started_at` | `DATETIME` | True |  |  |
+| `trial_ends_at` | `DATETIME` | True |  |  |
+| `updated_at` | `DATETIME` | False |  |  |
+
 ## `user_settings`
 
 | Column | Type | Nullable | Key | Protection |

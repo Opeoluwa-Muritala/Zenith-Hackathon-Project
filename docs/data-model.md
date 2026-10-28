@@ -34,5 +34,6 @@ Sensitive fields include `users.bvn_hash` (hashed), `refresh_tokens.token_hash` 
 | 0013â€“0022 | Statement, classification, insights, money views and reports. |
 | 0023 | Notification delivery log, device validity and scheduler job-run locks. |
 | 0024 | User-independent encrypted unlink retry queue and minimal wipe audit. |
+| 0025 | User plan/trial entitlement and upgrade-tap event records. |
 
 Revision 0009 now emits guarded offline schema SQL, but populated identifier encryption/decryption still requires its online Python migration and configured key. The initial revision uses current model metadata and several older revisions skip offline operations; SQL generation is not proof of a complete executable PostgreSQL migration history. Review and verify on disposable storage before changing Neon.

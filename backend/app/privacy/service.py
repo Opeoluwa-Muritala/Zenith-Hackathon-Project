@@ -57,6 +57,8 @@ PURGE_USER_FOREIGN_KEYS = {
     "security_audit_events.user_id",
     "transaction_use_labels.user_id",
     "transfer_suggestions.user_id",
+    "upgrade_tap_events.user_id",
+    "user_plans.user_id",
     "user_settings.user_id",
 }
 

@@ -104,6 +104,26 @@ class User(Base):
     sessions_revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
+class UserPlan(Base):
+    __tablename__ = "user_plans"
+    user_id: Mapped[UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+    paid_sme: Mapped[bool] = mapped_column(default=False)
+    trial_started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    trial_ends_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class UpgradeTapEvent(Base):
+    __tablename__ = "upgrade_tap_events"
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    surface: Mapped[str] = mapped_column(String(40))
+    desired_tier: Mapped[str] = mapped_column(String(20), default="sme")
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+
+
 class OtpCode(Base):
     __tablename__ = "otp_codes"
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)

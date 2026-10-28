@@ -109,6 +109,8 @@ from app.models import (
     UserSettings,
     WebhookEvent,
 )
+from app.plans.router import router as plans_router
+from app.plans.service import require_live_sync
 from app.privacy.router import router as privacy_router
 from app.providers.base import ProviderNotReady, ProviderUnavailable
 from app.providers.call_budget import reserve_refresh_call
@@ -142,6 +144,7 @@ OPENAPI_TAGS = [
     {"name": "Notifications", "description": "Register devices and set notification preferences."},
     {"name": "Consents", "description": "Grant, list and revoke scoped data-access consent."},
     {"name": "Privacy", "description": "Review active links or permanently wipe user data."},
+    {"name": "Plans", "description": "Read entitlements and record upgrade intent."},
     {
         "name": "Accounts and linking",
         "description": (
@@ -196,6 +199,7 @@ app.include_router(classification_review_router)
 app.include_router(insights_phase5_router)
 app.include_router(reports_router)
 app.include_router(privacy_router)
+app.include_router(plans_router)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.origins,
@@ -1145,6 +1149,7 @@ async def initiate_link(
     await rate_limit("link:" + str(user.id))
     if settings.aggregator_provider != "mono":
         raise HTTPException(409, "Mono linking is disabled")
+    await require_live_sync(db, user.id, now_utc(), new_account=True)
     await owned_consent(db, user.id, body.consent_id)
     link = ProviderLink(
         user_id=user.id,
@@ -1200,6 +1205,7 @@ async def exchange_link(
 ):
     if settings.aggregator_provider != "mono":
         raise HTTPException(409, "Mono linking is disabled")
+    await require_live_sync(db, user.id, now_utc(), new_account=True)
     await owned_consent(db, user.id, body.consent_id)
     provider_id = await mono_call(lambda: provider().exchange(body.code))
     if not provider_id:
@@ -1809,6 +1815,8 @@ async def sync_owned_account(
     await owned_consent(db, account.user_id, account.consent_id)
     if link.status != "connected" or account.sync_paused:
         raise HTTPException(409, "Account is not connected")
+    if link.provider == "mono":
+        await require_live_sync(db, account.user_id, now)
     try:
         start = sync_window_start(account.sync_cursor_at or account.last_synced_at, now)
         rows = await provider().transactions(link.provider_account_id, start, now)
@@ -1888,6 +1896,8 @@ async def refresh_account(
     ).scalar_one_or_none()
     if link is None:
         raise HTTPException(404, "Link not found")
+    if link.provider == "mono":
+        await require_live_sync(db, user.id, now_utc())
     if account.sync_paused:
         raise HTTPException(409, "Sync is paused for this account")
     if link.provider == "mono" and link.data_status not in {"AVAILABLE", "PARTIAL"}:

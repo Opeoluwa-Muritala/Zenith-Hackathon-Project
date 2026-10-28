@@ -36,6 +36,10 @@ category before running it; global rules store a hash of the key. User rules alw
 | PRV-2 | Immediate account purge with encrypted durable unlink retry |
 | PRV-3 | Fresh-OTP complete wipe with session revocation and deletion report |
 | PRV-4 | Minimal keyed user hash and wipe timestamp retained |
+| BIL-1 | Free local tools plus a 14-day, two-account live-sync trial |
+| BIL-2 | Operator-controlled paid SME entitlement for continuous sync and outcomes |
+| BIL-3 | Entitlements separate free tools from business reports, separation and team access |
+| BIL-4 | Upgrade-tap intent logging without prices or payment processing |
 
 Public review routes and API artifacts are linked from [Public API](docs/public-api.md).
 

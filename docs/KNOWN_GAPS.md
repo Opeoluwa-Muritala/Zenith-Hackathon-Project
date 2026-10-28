@@ -18,6 +18,7 @@ This table records MVP features that are still missing or only partially impleme
 | Budget | partial | Monthly limit, velocity and scheduled overspending alerts exist; category-specific budgets remain outside MVP. |
 | Obligations | partial | Detected lender debits, historical payment matching, manual review and scheduled reminders exist; bank mandate data is unavailable. |
 | Push notifications and scheduler | partial | FCM adapter, duplicate-safe log, invalid-token handling and seven locked jobs exist. Live FCM credentials and delivery remain unverified. |
+| Plans and billing | partial | Free trial/account limits, SME entitlement flags and upgrade-tap events exist. Pricing is deliberately unset and no payment provider is integrated. The web subscription-management UI is outside this backend. |
 | Consent wipe | done | Fresh-OTP full wipe queues remote unlinks first, deletes user-owned rows and sessions, and retains only the minimal audit plus unfinished encrypted retry work. |
 | Privacy retention operations | partial | Complete wipe exists. Configurable raw-narration and uploaded-statement retention is P1 and remains unimplemented. |
 | OpenAPI and Postman detail | partial | Demo operations have named responses, explicit security and documented errors. JSON/YAML standard validation and drift checks pass; Postman covers each operation. Other legacy operation modelling and actual Postman-app import remain pending. |

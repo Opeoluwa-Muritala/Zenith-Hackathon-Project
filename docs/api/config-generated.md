@@ -34,6 +34,8 @@ Do not edit; run `python backend/scripts/gen_config_docs.py`.
 | `fx_ttl_hours` | `<class 'int'>` | `6` |
 | `access_minutes` | `<class 'int'>` | `15` |
 | `refresh_days` | `<class 'int'>` | `30` |
+| `live_sync_trial_days` | `<class 'int'>` | `14` |
+| `free_live_account_limit` | `<class 'int'>` | `2` |
 | `jwt_issuer` | `<class 'str'>` | `cashlens-api` |
 | `jwt_audience` | `<class 'str'>` | `cashlens-mobile` |
 | `bvn_pepper` | `<class 'str'>` | `` |
