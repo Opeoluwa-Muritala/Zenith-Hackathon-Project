@@ -38,6 +38,21 @@ OTP codes expire after five minutes, are single-use, and are limited to five att
 
 ## Environments
 
+## Classification review
+
+`GET /transfer-suggestions` lists the signed-in user's family and ajo suggestions.
+`POST /transfer-suggestions/{id}/confirm` confirms a suggestion;
+`POST /transfer-suggestions/{id}/dismiss` dismisses it. Confirmation of a family
+suggestion creates a future category rule unless an explicit user rule already exists.
+Suggestions remain local to the user. Ajo confirmation records the review decision.
+
+Global rule promotion is an operator action requiring two independent confirmed
+corrections. It is deliberately unavailable through public user credentials.
+
+The optional narration classifier uses the configured AI client when
+`AI_ENABLED_GLOBAL=true`. Invalid responses and provider failures retain the
+deterministic result. Its normalized-narration cache is process-local.
+
 Set the API base URL supplied by the Fetch deployment. Do not place Mono keys, JWT secrets,
 encryption keys, BVNs, OTPs, or refresh tokens in a client bundle or URL.
 

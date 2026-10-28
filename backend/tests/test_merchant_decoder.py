@@ -3,7 +3,7 @@
 import pytest
 
 from app.ledger.normalise import categorise, detect_ajo_esusu, narration_parts, suggest_family_transfer
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 
 @pytest.mark.parametrize(
@@ -37,7 +37,7 @@ def test_NDL_5_NDL_6_family_and_ajo_are_suggestions_until_confirmed():
     assert suggest_family_transfer(["NIP TO AMAKA", "NIP TO AMAKA"])
     assert not suggest_family_transfer(["NIP TO AMAKA"])
     day = datetime(2026, 1, 1, tzinfo=UTC)
-    debits = [(day, 10_000, "AMAKA"), (day, 10_000, "AMAKA"), (day, 10_000, "AMAKA")]
-    credits = [(day, 50_000, "AMAKA")]
+    debits = [(day + timedelta(days=7 * index), 10_000, "AMAKA") for index in range(3)]
+    credits = [(day + timedelta(days=30), 50_000, "AMAKA")]
     assert detect_ajo_esusu(debits, credits) == "amaka"
     assert categorise("AIRTIME PURCHASE")[1] == "Airtime & Data"

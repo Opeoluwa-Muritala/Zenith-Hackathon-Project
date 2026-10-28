@@ -25,3 +25,12 @@ async def test_NDL_7_strict_json_classifier_is_cached_by_normalised_narration():
 def test_NDL_7_classifier_rejects_extra_fields_and_invalid_categories():
     with pytest.raises(ValidationError):
         Classification(merchant="x", category="Food & Dining", confidence=0.5, raw="secret")
+
+
+@pytest.mark.asyncio
+async def test_NDL_7_provider_failure_preserves_deterministic_fallback():
+    class Unavailable:
+        async def classify(self, narration):
+            raise TimeoutError
+
+    assert await CachedClassifier(Unavailable()).classify("unknown shop") is None

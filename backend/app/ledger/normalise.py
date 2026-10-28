@@ -154,7 +154,17 @@ def detect_ajo_esusu(
         amounts = {item[1] for item in recurring}
         if len(amounts) != 1:
             continue
+        dates = sorted({item[0].date() for item in recurring})
+        if len(dates) < 3:
+            continue
+        gaps = [(second - first).days for first, second in zip(dates, dates[1:])]
+        if not (all(5 <= gap <= 9 for gap in gaps) or all(26 <= gap <= 33 for gap in gaps)):
+            continue
         for credit_date, credit_amount, credit_name in credits:
-            if counterparty_key(credit_name) == counterparty and credit_amount > amounts.pop() * 2:
+            if (
+                counterparty_key(credit_name) == counterparty
+                and credit_date > max(item[0] for item in recurring)
+                and credit_amount > next(iter(amounts)) * 2
+            ):
                 return counterparty
     return None

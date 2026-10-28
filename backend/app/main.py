@@ -70,6 +70,7 @@ from app.ledger.normalise import (
 )
 from app.ledger.obligations import sync_detected_obligations
 from app.ledger.recurring import rebuild_account
+from app.ledger.review import router as classification_review_router
 from app.ledger.service import active_accounts, as_utc, ingest, ledger_view
 from app.ledger.unlink import purge_linked_account, retry_pending_link
 from app.models import (
@@ -184,6 +185,7 @@ app = FastAPI(
     },
 )
 app.include_router(ai_router)
+app.include_router(classification_review_router)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.origins,
@@ -2329,6 +2331,25 @@ async def category_rules(user: User = Depends(current_user), db: AsyncSession = 
         {"id": row.id, "counterparty_key": row.counterparty_key, "category": row.category}
         for row in rows
     ]
+
+
+@app.post("/classification-corrections/{correction_id}/confirm")
+async def confirm_classification_correction(
+    correction_id: UUID, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
+):
+    correction = (
+        await db.execute(
+            select(ClassificationCorrection).where(
+                ClassificationCorrection.id == correction_id,
+                ClassificationCorrection.user_id == user.id,
+            )
+        )
+    ).scalar_one_or_none()
+    if correction is None:
+        raise HTTPException(404, "Correction not found")
+    correction.confirmed = True
+    await db.commit()
+    return {"id": correction.id, "confirmed": correction.confirmed}
 
 
 @app.delete("/category-rules/{rule_id}", status_code=204)

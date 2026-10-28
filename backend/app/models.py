@@ -448,6 +448,25 @@ class ClassificationCorrection(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
+class TransferSuggestion(Base):
+    __tablename__ = "transfer_suggestions"
+    __table_args__ = (UniqueConstraint("user_id", "counterparty_key", "kind"),)
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    counterparty_key: Mapped[str] = mapped_column(String(160))
+    kind: Mapped[str] = mapped_column(String(20))
+    status: Mapped[str] = mapped_column(String(20), default="pending")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class ReviewedGlobalRule(Base):
+    __tablename__ = "reviewed_global_rules"
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    narration_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    category: Mapped[str] = mapped_column(String(40))
+    reviewed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
 class Budget(Base):
     __tablename__ = "budgets"
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
