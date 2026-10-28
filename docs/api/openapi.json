@@ -2354,6 +2354,78 @@
         "title": "PhoneIn",
         "type": "object"
       },
+      "PlanResponse": {
+        "properties": {
+          "entitlements": {
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "title": "Entitlements",
+            "type": "object"
+          },
+          "free_live_account_limit": {
+            "title": "Free Live Account Limit",
+            "type": "integer"
+          },
+          "paid_sme": {
+            "title": "Paid Sme",
+            "type": "boolean"
+          },
+          "tier": {
+            "enum": [
+              "free",
+              "sme"
+            ],
+            "title": "Tier",
+            "type": "string"
+          },
+          "trial_ends_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trial Ends At"
+          },
+          "trial_started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trial Started At"
+          },
+          "trial_status": {
+            "enum": [
+              "not_started",
+              "active",
+              "expired",
+              "paid"
+            ],
+            "title": "Trial Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tier",
+          "paid_sme",
+          "trial_status",
+          "trial_started_at",
+          "trial_ends_at",
+          "free_live_account_limit",
+          "entitlements"
+        ],
+        "title": "PlanResponse",
+        "type": "object"
+      },
       "PrivacyPreferenceIn": {
         "properties": {
           "privacy_blur": {
@@ -3102,6 +3174,48 @@
         ],
         "title": "UpdateCadence",
         "type": "string"
+      },
+      "UpgradeTapRequest": {
+        "properties": {
+          "desired_tier": {
+            "const": "sme",
+            "default": "sme",
+            "title": "Desired Tier",
+            "type": "string"
+          },
+          "surface": {
+            "enum": [
+              "home",
+              "report",
+              "business_separator",
+              "alerts",
+              "account_limit",
+              "trial_expired",
+              "settings"
+            ],
+            "title": "Surface",
+            "type": "string"
+          }
+        },
+        "required": [
+          "surface"
+        ],
+        "title": "UpgradeTapRequest",
+        "type": "object"
+      },
+      "UpgradeTapResponse": {
+        "properties": {
+          "status": {
+            "const": "recorded",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "UpgradeTapResponse",
+        "type": "object"
       },
       "UseReviewInput": {
         "additionalProperties": false,
@@ -5709,6 +5823,82 @@
         "summary": "Rotate refresh token",
         "tags": [
           "Auth"
+        ]
+      }
+    },
+    "/billing/upgrade-events": {
+      "post": {
+        "description": "Record the authenticated user's paywall surface and desired SME tier for pricing research. This route never starts checkout or charges a payment method. Requires the signed-in user's Bearer token; resources are owner-scoped.",
+        "operationId": "post_billing_upgrade_events",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpgradeTapRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpgradeTapResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Authentication is missing, invalid or expired."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Authentication is missing, invalid or expired."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Invalid input or date range; sensitive input values are omitted."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid input or date range; sensitive input values are omitted."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Internal server error."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal server error."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Record an upgrade tap",
+        "tags": [
+          "Accounts and linking"
         ]
       }
     },
@@ -8479,6 +8669,59 @@
         ]
       }
     },
+    "/plan": {
+      "get": {
+        "description": "Return the free or paid SME flag, live-sync trial state, account cap and feature entitlements. Reading this route does not start the trial. Requires the signed-in user's Bearer token; resources are owner-scoped.",
+        "operationId": "get_plan",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Authentication is missing, invalid or expired."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Authentication is missing, invalid or expired."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Internal server error."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal server error."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Read plan and entitlements",
+        "tags": [
+          "Accounts and linking"
+        ]
+      }
+    },
     "/privacy-preferences": {
       "get": {
         "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
@@ -10251,6 +10494,10 @@
     {
       "description": "Review active links or permanently wipe user data.",
       "name": "Privacy"
+    },
+    {
+      "description": "Read entitlements and record upgrade intent.",
+      "name": "Plans"
     },
     {
       "description": "Link demo or Mono accounts. Mono flow: initiate, authorise at hosted link, receive webhook, poll status; SDK code exchange is optional.",

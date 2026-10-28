@@ -9,7 +9,9 @@ class FakeClassifier:
 
     async def classify(self, narration):
         self.calls += 1
-        return Classification(merchant="Unknown Shop", category="Shopping & Transfers", confidence=0.8)
+        return Classification(
+            merchant="Unknown Shop", category="Shopping & Transfers", confidence=0.8
+        )
 
 
 @pytest.mark.asyncio

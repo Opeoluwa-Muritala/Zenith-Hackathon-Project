@@ -2,7 +2,7 @@
 
 import hashlib
 from datetime import UTC, datetime
-from typing import cast
+from typing import cast, overload
 from uuid import UUID
 
 from sqlalchemy import select
@@ -35,6 +35,14 @@ from app.models import (
     UserSettings,
 )
 from app.providers.base import ProviderTransaction
+
+
+@overload
+def as_utc(value: datetime) -> datetime: ...
+
+
+@overload
+def as_utc(value: None) -> None: ...
 
 
 def as_utc(value: datetime | None) -> datetime | None:

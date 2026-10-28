@@ -36,6 +36,10 @@ category before running it; global rules store a hash of the key. User rules alw
 | PRV-2 | Immediate account purge with encrypted durable unlink retry |
 | PRV-3 | Fresh-OTP complete wipe with session revocation and deletion report |
 | PRV-4 | Minimal keyed user hash and wipe timestamp retained |
+| BIL-1 | Free local tools plus a 14-day, two-account live-sync trial |
+| BIL-2 | Operator-controlled paid SME entitlement for continuous sync and outcomes |
+| BIL-3 | Entitlements separate free tools from business reports, separation and team access |
+| BIL-4 | Upgrade-tap intent logging without prices or payment processing |
 
 Public review routes and API artifacts are linked from [Public API](docs/public-api.md).
 
@@ -43,7 +47,7 @@ Fetch is a FastAPI backend for consented personal-finance data. It authenticates
 
 See [docs/README.md](docs/README.md) for the complete documentation index and [docs/api/openapi.json](docs/api/openapi.json) for the generated API specification.
 
-For the mobile backend demo with Mono sandbox and an existing Neon database, follow the [backend demo walkthrough](docs/demo-backend-walkthrough.md). The presenter can read generated login codes from a protected backend page; finance endpoints continue using the existing Mono integration. Neon was verified at Phase 9 revision 0024 with rollback-only smoke inserts. Mono sandbox behavior remains unverified.
+For the mobile backend demo with Mono sandbox and an existing Neon database, follow the [backend demo walkthrough](docs/demo-backend-walkthrough.md). The presenter can read generated login codes from a protected backend page; finance endpoints continue using the existing Mono integration. Neon was verified at Phase 10 revision 0025 with rollback-only smoke inserts. Mono sandbox behavior remains unverified.
 
 ## Five-minute quickstart
 

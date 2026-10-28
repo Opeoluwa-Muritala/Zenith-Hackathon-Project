@@ -42,6 +42,8 @@ class Settings(BaseSettings):
     fx_ttl_hours: int = Field(6, ge=1, le=168)
     access_minutes: int = 15
     refresh_days: int = 30
+    live_sync_trial_days: int = Field(14, ge=1, le=90)
+    free_live_account_limit: int = Field(2, ge=1, le=2)
     jwt_issuer: str = "cashlens-api"
     jwt_audience: str = "cashlens-mobile"
     bvn_pepper: str = ""

@@ -39,6 +39,7 @@ OTP codes expire after five minutes, are single-use, and are limited to five att
 | Privacy | `/consents*` | Consent status and revocation |
 | Display privacy | `/privacy-preferences` | Persist the client's currency-blur toggle |
 | Privacy | `/privacy/consents`, `/privacy/wipe` | Active links and irreversible full deletion |
+| Plans | `/plan`, `/billing/upgrade-events` | Entitlements and upgrade intent only |
 | Devices | `/devices*`, `/notification-preferences` | Push registration and preferences |
 
 ## Classification review
@@ -122,6 +123,18 @@ The response reports deletion counts and whether a remote unlink remains pending
 access and financial data are removed even when Mono is unavailable; the encrypted unlink
 target remains in a retry queue. Only a keyed user-ID hash and wipe timestamp remain as the
 wipe audit record.
+
+## Plans and upgrade intent
+
+`GET /plan` returns the free/SME flag, live-sync trial dates, the free linked-account cap,
+and feature entitlements. Free users retain statement upload, manual assets, budgets and
+categories. The live-sync trial starts on the first Mono link or sync attempt and lasts 14
+days for at most two live accounts. An operator-controlled paid SME flag enables continuous
+sync and identifies business outcomes such as separation, reports, alerts and team access.
+
+`POST /billing/upgrade-events` records where an authenticated user tapped upgrade. It does
+not accept prices or payment details, create checkout sessions, or charge anything. Final
+pricing remains intentionally outside the API while the product test is running.
 
 ## Environments
 

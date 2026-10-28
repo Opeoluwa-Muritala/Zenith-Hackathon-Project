@@ -11,8 +11,13 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.add_column("transactions", sa.Column("source", sa.String(20), nullable=False, server_default="mono"))
-    op.add_column("transactions", sa.Column("parse_confidence_bps", sa.Integer(), nullable=False, server_default="10000"))
+    op.add_column(
+        "transactions", sa.Column("source", sa.String(20), nullable=False, server_default="mono")
+    )
+    op.add_column(
+        "transactions",
+        sa.Column("parse_confidence_bps", sa.Integer(), nullable=False, server_default="10000"),
+    )
 
 
 def downgrade() -> None:

@@ -237,6 +237,16 @@ DEMO_OPERATIONS = {
         "Require a fresh six-digit OTP, durably queue remote unlinks, attempt them immediately, delete all user-owned data and sessions, and retain only the minimal wipe audit plus any unfinished encrypted unlink work.",
         (401, 409, 422),
     ),
+    ("get", "/plan"): (
+        "Read plan and entitlements",
+        "Return the free or paid SME flag, live-sync trial state, account cap and feature entitlements. Reading this route does not start the trial.",
+        (401,),
+    ),
+    ("post", "/billing/upgrade-events"): (
+        "Record an upgrade tap",
+        "Record the authenticated user's paywall surface and desired SME tier for pricing research. This route never starts checkout or charges a payment method.",
+        (401, 422),
+    ),
     ("post", "/webhooks/mono"): (
         "Receive verified Mono events",
         "Public receiver authenticated by mono-webhook-secret, compared in constant time. Handles account_connected, account_updated and account_unlinked. Saves event-key processing metadata but no raw payload. Completed duplicates are ignored; failed deliveries may retry on redelivery. Returns receipt acknowledgement before background processing.",

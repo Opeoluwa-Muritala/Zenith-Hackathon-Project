@@ -1,9 +1,15 @@
 """Narration formats and category fallback use synthetic financial data."""
 
+from datetime import UTC, datetime, timedelta
+
 import pytest
 
-from app.ledger.normalise import categorise, detect_ajo_esusu, narration_parts, suggest_family_transfer
-from datetime import UTC, datetime, timedelta
+from app.ledger.normalise import (
+    categorise,
+    detect_ajo_esusu,
+    narration_parts,
+    suggest_family_transfer,
+)
 
 
 @pytest.mark.parametrize(

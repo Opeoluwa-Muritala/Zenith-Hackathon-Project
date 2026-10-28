@@ -11,7 +11,10 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.add_column("transactions", sa.Column("classification_method", sa.String(20), nullable=False, server_default="rule"))
+    op.add_column(
+        "transactions",
+        sa.Column("classification_method", sa.String(20), nullable=False, server_default="rule"),
+    )
 
 
 def downgrade() -> None:
