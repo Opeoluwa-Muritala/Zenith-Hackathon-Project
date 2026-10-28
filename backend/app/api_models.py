@@ -245,6 +245,16 @@ class ManualAssetResponse(ApiModel):
     next_reminder_at: Timestamp | None
 
 
+class NetPositionBreakdownResponse(ApiModel):
+    id: ResourceID
+    source: Literal["account", "manual_asset"]
+    label: str
+    value_ngn_minor: NgnMoney
+    currency: str
+    paused: bool
+    fx_rate_ppm: int | None = None
+
+
 class NetPositionResponse(ApiModel):
     cash_minor: NgnMoney
     investments_minor: NgnMoney
@@ -252,6 +262,12 @@ class NetPositionResponse(ApiModel):
     currency: Literal["NGN"]
     as_of: Timestamp
     fx_rate_warning: bool
+    paused_accounts_included: int
+    breakdown: list[NetPositionBreakdownResponse]
+
+
+class PrivacyPreferenceResponse(ApiModel):
+    privacy_blur: bool
 
 
 class TransactionResponse(ApiModel):
@@ -333,6 +349,7 @@ class ObligationResponse(ApiModel):
     confidence_bps: int
     status: str
     source: Literal["manual", "detected"]
+    due_date_estimated: bool
 
 
 class ObligationPaymentResponse(ApiModel):

@@ -2163,6 +2163,205 @@
               "status": "Internal server error."
             }
           ]
+        },
+        {
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('documented success', function () { pm.expect([200]).to.include(pm.response.code); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "name": "Get Privacy Preferences",
+          "request": {
+            "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "header": [],
+            "method": "GET",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "privacy-preferences"
+              ],
+              "raw": "{{base_url}}/privacy-preferences"
+            }
+          },
+          "response": [
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"privacy_blur\": false\n}",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Successful Response",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "privacy-preferences"
+                  ],
+                  "raw": "{{base_url}}/privacy-preferences"
+                }
+              },
+              "status": "Successful Response"
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Authentication is missing or invalid.\"\n}",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Authentication is missing or invalid.",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "privacy-preferences"
+                  ],
+                  "raw": "{{base_url}}/privacy-preferences"
+                }
+              },
+              "status": "Authentication is missing or invalid."
+            }
+          ]
+        },
+        {
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('documented success', function () { pm.expect([200]).to.include(pm.response.code); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "name": "Put Privacy Preferences",
+          "request": {
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"privacy_blur\": false\n}"
+            },
+            "description": "Manage this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "method": "PUT",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "privacy-preferences"
+              ],
+              "raw": "{{base_url}}/privacy-preferences"
+            }
+          },
+          "response": [
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"privacy_blur\": false\n}",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Successful Response",
+              "originalRequest": {
+                "method": "PUT",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "privacy-preferences"
+                  ],
+                  "raw": "{{base_url}}/privacy-preferences"
+                }
+              },
+              "status": "Successful Response"
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Authentication is missing or invalid.\"\n}",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Authentication is missing or invalid.",
+              "originalRequest": {
+                "method": "PUT",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "privacy-preferences"
+                  ],
+                  "raw": "{{base_url}}/privacy-preferences"
+                }
+              },
+              "status": "Authentication is missing or invalid."
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Validation Error\"\n}",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Validation Error",
+              "originalRequest": {
+                "method": "PUT",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "privacy-preferences"
+                  ],
+                  "raw": "{{base_url}}/privacy-preferences"
+                }
+              },
+              "status": "Validation Error"
+            }
+          ]
         }
       ],
       "name": "Consents"
@@ -6547,7 +6746,7 @@
           "response": [
             {
               "_postman_previewlanguage": "json",
-              "body": "{\n  \"as_of\": \"2026-10-14T12:00:00Z\",\n  \"cash_minor\": 10000,\n  \"currency\": \"fake_de\",\n  \"fx_rate_warning\": false,\n  \"investments_minor\": 10000,\n  \"total_minor\": 10000\n}",
+              "body": "{\n  \"as_of\": \"2026-10-14T12:00:00Z\",\n  \"breakdown\": [\n    {\n      \"currency\": \"fake_de\",\n      \"fx_rate_ppm\": 1,\n      \"id\": \"00000000-0000-4000-8000-000000000001\",\n      \"label\": \"fake_de\",\n      \"paused\": false,\n      \"source\": \"account\",\n      \"value_ngn_minor\": 10000\n    }\n  ],\n  \"cash_minor\": 10000,\n  \"currency\": \"fake_de\",\n  \"fx_rate_warning\": false,\n  \"investments_minor\": 10000,\n  \"paused_accounts_included\": 1,\n  \"total_minor\": 10000\n}",
               "code": 200,
               "header": [
                 {
@@ -7296,6 +7495,12 @@
                 {
                   "description": "",
                   "disabled": true,
+                  "key": "merchant",
+                  "value": "f"
+                },
+                {
+                  "description": "",
+                  "disabled": true,
                   "key": "from_date",
                   "value": "2026-01-01T00:00:00Z"
                 },
@@ -7366,6 +7571,12 @@
                       "disabled": true,
                       "key": "merchant_id",
                       "value": "{{merchant_id}}"
+                    },
+                    {
+                      "description": "",
+                      "disabled": true,
+                      "key": "merchant",
+                      "value": "f"
                     },
                     {
                       "description": "",
@@ -7445,6 +7656,12 @@
                     {
                       "description": "",
                       "disabled": true,
+                      "key": "merchant",
+                      "value": "f"
+                    },
+                    {
+                      "description": "",
+                      "disabled": true,
                       "key": "from_date",
                       "value": "2026-01-01T00:00:00Z"
                     },
@@ -7520,6 +7737,12 @@
                     {
                       "description": "",
                       "disabled": true,
+                      "key": "merchant",
+                      "value": "f"
+                    },
+                    {
+                      "description": "",
+                      "disabled": true,
                       "key": "from_date",
                       "value": "2026-01-01T00:00:00Z"
                     },
@@ -7591,6 +7814,12 @@
                       "disabled": true,
                       "key": "merchant_id",
                       "value": "{{merchant_id}}"
+                    },
+                    {
+                      "description": "",
+                      "disabled": true,
+                      "key": "merchant",
+                      "value": "f"
                     },
                     {
                       "description": "",
@@ -8357,7 +8586,7 @@
                   "language": "json"
                 }
               },
-              "raw": "{\n  \"monthly_limit_minor\": 20000000\n}"
+              "raw": "{\n  \"effective_from\": \"2026-01-01T00:00:00Z\",\n  \"monthly_limit_minor\": 20000000\n}"
             },
             "description": "Append a new budget setting effective immediately. Amounts are NGN kobo. Requires the signed-in user's Bearer token; resources are owner-scoped.",
             "header": [
@@ -8650,7 +8879,7 @@
           "response": [
             {
               "_postman_previewlanguage": "json",
-              "body": "[\n  {\n    \"account_id\": \"{{account_id}}\",\n    \"amount_minor\": 10000,\n    \"cadence_days\": 1,\n    \"confidence_bps\": 1,\n    \"days_until_due\": 1,\n    \"id\": \"00000000-0000-4000-8000-000000000001\",\n    \"kind\": \"loan\",\n    \"lender_name\": \"fake_de\",\n    \"next_due_date\": \"2026-10-17\",\n    \"source\": \"manual\",\n    \"status\": \"fake_de\"\n  }\n]",
+              "body": "[\n  {\n    \"account_id\": \"{{account_id}}\",\n    \"amount_minor\": 10000,\n    \"cadence_days\": 1,\n    \"confidence_bps\": 1,\n    \"days_until_due\": 1,\n    \"due_date_estimated\": false,\n    \"id\": \"00000000-0000-4000-8000-000000000001\",\n    \"kind\": \"loan\",\n    \"lender_name\": \"fake_de\",\n    \"next_due_date\": \"2026-10-17\",\n    \"source\": \"manual\",\n    \"status\": \"fake_de\"\n  }\n]",
               "code": 200,
               "header": [
                 {
@@ -8770,7 +8999,7 @@
           "response": [
             {
               "_postman_previewlanguage": "json",
-              "body": "{\n  \"account_id\": \"{{account_id}}\",\n  \"amount_minor\": 10000,\n  \"cadence_days\": 1,\n  \"confidence_bps\": 1,\n  \"days_until_due\": 1,\n  \"id\": \"00000000-0000-4000-8000-000000000001\",\n  \"kind\": \"loan\",\n  \"lender_name\": \"fake_de\",\n  \"next_due_date\": \"2026-10-17\",\n  \"source\": \"manual\",\n  \"status\": \"fake_de\"\n}",
+              "body": "{\n  \"account_id\": \"{{account_id}}\",\n  \"amount_minor\": 10000,\n  \"cadence_days\": 1,\n  \"confidence_bps\": 1,\n  \"days_until_due\": 1,\n  \"due_date_estimated\": false,\n  \"id\": \"00000000-0000-4000-8000-000000000001\",\n  \"kind\": \"loan\",\n  \"lender_name\": \"fake_de\",\n  \"next_due_date\": \"2026-10-17\",\n  \"source\": \"manual\",\n  \"status\": \"fake_de\"\n}",
               "code": 201,
               "header": [
                 {
@@ -8926,7 +9155,7 @@
           "response": [
             {
               "_postman_previewlanguage": "json",
-              "body": "{\n  \"account_id\": \"{{account_id}}\",\n  \"amount_minor\": 10000,\n  \"cadence_days\": 1,\n  \"confidence_bps\": 1,\n  \"days_until_due\": 1,\n  \"id\": \"00000000-0000-4000-8000-000000000001\",\n  \"kind\": \"loan\",\n  \"lender_name\": \"fake_de\",\n  \"next_due_date\": \"2026-10-17\",\n  \"payments\": [\n    {\n      \"amount_minor\": 10000,\n      \"paid_at\": \"2026-10-14T12:00:00Z\",\n      \"transaction_id\": \"{{transaction_id}}\"\n    }\n  ],\n  \"source\": \"manual\",\n  \"status\": \"fake_de\"\n}",
+              "body": "{\n  \"account_id\": \"{{account_id}}\",\n  \"amount_minor\": 10000,\n  \"cadence_days\": 1,\n  \"confidence_bps\": 1,\n  \"days_until_due\": 1,\n  \"due_date_estimated\": false,\n  \"id\": \"00000000-0000-4000-8000-000000000001\",\n  \"kind\": \"loan\",\n  \"lender_name\": \"fake_de\",\n  \"next_due_date\": \"2026-10-17\",\n  \"payments\": [\n    {\n      \"amount_minor\": 10000,\n      \"paid_at\": \"2026-10-14T12:00:00Z\",\n      \"transaction_id\": \"{{transaction_id}}\"\n    }\n  ],\n  \"source\": \"manual\",\n  \"status\": \"fake_de\"\n}",
               "code": 200,
               "header": [
                 {
@@ -9077,7 +9306,7 @@
                   "language": "json"
                 }
               },
-              "raw": "{\n  \"amount_minor\": 1,\n  \"cadence_days\": 1.0,\n  \"lender_name\": \"fa\",\n  \"next_due_date\": \"2026-10-17\",\n  \"status\": \"upcoming\"\n}"
+              "raw": "{\n  \"account_id\": \"{{account_id}}\",\n  \"amount_minor\": 1,\n  \"cadence_days\": 1.0,\n  \"kind\": \"loan\",\n  \"lender_name\": \"fa\",\n  \"next_due_date\": \"2026-10-17\",\n  \"status\": \"upcoming\"\n}"
             },
             "description": "Update the owned obligation's supported fields; status can confirm or dismiss it. Existing matched payments are retained. Requires the signed-in user's Bearer token; resources are owner-scoped.",
             "header": [
@@ -9101,7 +9330,7 @@
           "response": [
             {
               "_postman_previewlanguage": "json",
-              "body": "{\n  \"account_id\": \"{{account_id}}\",\n  \"amount_minor\": 10000,\n  \"cadence_days\": 1,\n  \"confidence_bps\": 1,\n  \"days_until_due\": 1,\n  \"id\": \"00000000-0000-4000-8000-000000000001\",\n  \"kind\": \"loan\",\n  \"lender_name\": \"fake_de\",\n  \"next_due_date\": \"2026-10-17\",\n  \"source\": \"manual\",\n  \"status\": \"fake_de\"\n}",
+              "body": "{\n  \"account_id\": \"{{account_id}}\",\n  \"amount_minor\": 10000,\n  \"cadence_days\": 1,\n  \"confidence_bps\": 1,\n  \"days_until_due\": 1,\n  \"due_date_estimated\": false,\n  \"id\": \"00000000-0000-4000-8000-000000000001\",\n  \"kind\": \"loan\",\n  \"lender_name\": \"fake_de\",\n  \"next_due_date\": \"2026-10-17\",\n  \"source\": \"manual\",\n  \"status\": \"fake_de\"\n}",
               "code": 200,
               "header": [
                 {

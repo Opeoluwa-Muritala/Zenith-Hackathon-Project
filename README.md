@@ -19,6 +19,11 @@ category before running it; global rules store a hash of the key. User rules alw
 | INS-6 | Persisted alerts for leaks, unusual transfers, overspending and repayments |
 | INS-7 | Low-confidence labels and owner-correctable SME suggestions |
 | INS-8 | Code-only calculations; validated phrasing retries once then uses templates |
+| NET-1–5 | Account/asset breakdown, paused balances, read-time FX and reminders |
+| NET-6 | Persisted privacy-blur preference for clients |
+| SPD-1–3 | Filtered/recent transactions, spending ranges and reusable category rules |
+| BUD-1 | Effective-date budgets and deterministic spending velocity |
+| OBL-1–3 | Generic repayment detection, owner review and matched payment history |
 
 Public review routes and API artifacts are linked from [Public API](docs/public-api.md).
 
@@ -26,7 +31,7 @@ Fetch is a FastAPI backend for consented personal-finance data. It authenticates
 
 See [docs/README.md](docs/README.md) for the complete documentation index and [docs/api/openapi.json](docs/api/openapi.json) for the generated API specification.
 
-For the mobile backend demo with Mono sandbox and an existing Neon database, follow the [backend demo walkthrough](docs/demo-backend-walkthrough.md). The presenter can read generated login codes from a protected backend page; finance endpoints continue using the existing Mono integration. Neon was verified at Phase 5 revision 0020 with rollback-only smoke inserts. Mono sandbox behavior remains unverified.
+For the mobile backend demo with Mono sandbox and an existing Neon database, follow the [backend demo walkthrough](docs/demo-backend-walkthrough.md). The presenter can read generated login codes from a protected backend page; finance endpoints continue using the existing Mono integration. Neon was verified at Phase 6 revision 0021 with rollback-only smoke inserts. Mono sandbox behavior remains unverified.
 
 ## Five-minute quickstart
 

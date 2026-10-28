@@ -418,6 +418,19 @@
       },
       "BudgetIn": {
         "properties": {
+          "effective_from": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "UTC time when this budget starts applying.",
+            "title": "Effective From"
+          },
           "monthly_limit_minor": {
             "description": "Monthly budget in NGN kobo.",
             "examples": [
@@ -1458,6 +1471,73 @@
         "title": "ModeInput",
         "type": "object"
       },
+      "NetPositionBreakdownResponse": {
+        "properties": {
+          "currency": {
+            "description": "Currency.",
+            "title": "Currency",
+            "type": "string"
+          },
+          "fx_rate_ppm": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Fx rate ppm.",
+            "title": "Fx Rate Ppm"
+          },
+          "id": {
+            "description": "Application resource identifier.",
+            "examples": [
+              "00000000-0000-4000-8000-000000000001"
+            ],
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "description": "Label.",
+            "title": "Label",
+            "type": "string"
+          },
+          "paused": {
+            "description": "Paused.",
+            "title": "Paused",
+            "type": "boolean"
+          },
+          "source": {
+            "description": "Source.",
+            "enum": [
+              "account",
+              "manual_asset"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "value_ngn_minor": {
+            "description": "Integer NGN minor units (kobo).",
+            "examples": [
+              10000
+            ],
+            "title": "Value Ngn Minor",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "source",
+          "label",
+          "value_ngn_minor",
+          "currency",
+          "paused"
+        ],
+        "title": "NetPositionBreakdownResponse",
+        "type": "object"
+      },
       "NetPositionResponse": {
         "properties": {
           "as_of": {
@@ -1468,6 +1548,14 @@
             "format": "date-time",
             "title": "As Of",
             "type": "string"
+          },
+          "breakdown": {
+            "description": "Breakdown.",
+            "items": {
+              "$ref": "#/components/schemas/NetPositionBreakdownResponse"
+            },
+            "title": "Breakdown",
+            "type": "array"
           },
           "cash_minor": {
             "description": "Integer NGN minor units (kobo).",
@@ -1496,6 +1584,11 @@
             "title": "Investments Minor",
             "type": "integer"
           },
+          "paused_accounts_included": {
+            "description": "Paused accounts included.",
+            "title": "Paused Accounts Included",
+            "type": "integer"
+          },
           "total_minor": {
             "description": "Integer NGN minor units (kobo).",
             "examples": [
@@ -1511,7 +1604,9 @@
           "total_minor",
           "currency",
           "as_of",
-          "fx_rate_warning"
+          "fx_rate_warning",
+          "paused_accounts_included",
+          "breakdown"
         ],
         "title": "NetPositionResponse",
         "type": "object"
@@ -1579,6 +1674,11 @@
             "title": "Days Until Due",
             "type": "integer"
           },
+          "due_date_estimated": {
+            "description": "Due date estimated.",
+            "title": "Due Date Estimated",
+            "type": "boolean"
+          },
           "id": {
             "description": "Application resource identifier.",
             "examples": [
@@ -1644,6 +1744,7 @@
           "confidence_bps",
           "status",
           "source",
+          "due_date_estimated",
           "payments"
         ],
         "title": "ObligationDetailResponse",
@@ -1797,6 +1898,11 @@
             "title": "Days Until Due",
             "type": "integer"
           },
+          "due_date_estimated": {
+            "description": "Due date estimated.",
+            "title": "Due Date Estimated",
+            "type": "boolean"
+          },
           "id": {
             "description": "Application resource identifier.",
             "examples": [
@@ -1853,13 +1959,26 @@
           "days_until_due",
           "confidence_bps",
           "status",
-          "source"
+          "source",
+          "due_date_estimated"
         ],
         "title": "ObligationResponse",
         "type": "object"
       },
       "ObligationUpdateIn": {
         "properties": {
+          "account_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account Id"
+          },
           "amount_minor": {
             "anyOf": [
               {
@@ -1886,6 +2005,22 @@
               }
             ],
             "title": "Cadence Days"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "loan",
+                  "direct_debit",
+                  "subscription"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
           },
           "lender_name": {
             "anyOf": [
@@ -2060,6 +2195,33 @@
           }
         },
         "title": "PhoneIn",
+        "type": "object"
+      },
+      "PrivacyPreferenceIn": {
+        "properties": {
+          "privacy_blur": {
+            "title": "Privacy Blur",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "privacy_blur"
+        ],
+        "title": "PrivacyPreferenceIn",
+        "type": "object"
+      },
+      "PrivacyPreferenceResponse": {
+        "properties": {
+          "privacy_blur": {
+            "description": "Privacy blur.",
+            "title": "Privacy Blur",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "privacy_blur"
+        ],
+        "title": "PrivacyPreferenceResponse",
         "type": "object"
       },
       "RecentTransactionResponse": {
@@ -7611,6 +7773,114 @@
         ]
       }
     },
+    "/privacy-preferences": {
+      "get": {
+        "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "get_privacy_preferences",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrivacyPreferenceResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Privacy Preferences",
+        "tags": [
+          "Consents"
+        ]
+      },
+      "put": {
+        "description": "Manage this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "put_privacy_preferences",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrivacyPreferenceIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrivacyPreferenceResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Put Privacy Preferences",
+        "tags": [
+          "Consents"
+        ]
+      }
+    },
     "/recurring": {
       "get": {
         "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
@@ -8079,6 +8349,24 @@
                 }
               ],
               "title": "Merchant Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "merchant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Merchant"
             }
           },
           {

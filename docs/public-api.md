@@ -35,6 +35,7 @@ OTP codes expire after five minutes, are single-use, and are limited to five att
 | Insights | `/insights*`, `/insight-alerts*` | Evidence-linked findings and alerts |
 | SME review | `/insight-profile`, `/business-personal/*` | Business/personal review |
 | Privacy | `/consents*` | Consent status and revocation |
+| Display privacy | `/privacy-preferences` | Persist the client's currency-blur toggle |
 | Devices | `/devices*`, `/notification-preferences` | Push registration and preferences |
 
 ## Classification review
@@ -64,6 +65,22 @@ Set `PUT /insight-profile` to `{"mode":"sme"}` to enable the separator.
 split totals. `PUT /business-personal/transactions/{transaction_id}` records the
 owner's correction. `GET /insight-alerts` lists alerts and
 `POST /insight-alerts/{alert_id}/read` marks one read.
+
+## Money views
+
+`GET /net-position` includes linked cash, manual investments, the combined total,
+an account/asset breakdown, paused-account flags, the valuation time and an FX warning.
+Paused linked accounts remain included at their last known balance; unlinked or revoked
+accounts are excluded. USD manual assets use the current configured cached reference
+rate when available and retain their entry-time rate as a warned fallback.
+
+`GET /transactions` supports account, date, category, merchant name, direction, limit
+and offset filters. `GET /transactions/recent` defaults to five and accepts at most 20.
+Spending analytics support this month, last month and bounded custom ranges.
+
+Budgets accept an optional `effective_from` UTC timestamp. Obligation endpoints support
+manual creation, confirmation, editing and dismissal; detected due dates are explicitly
+marked as estimates and detail responses include matched payment transactions.
 
 ## Environments
 

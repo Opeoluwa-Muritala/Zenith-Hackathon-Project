@@ -39,7 +39,7 @@ from app.ai.chat.router import router as ai_router
 from app.ai.client import GroqClient
 from app.ai.client_factory import client_for
 from app.api_documentation import DEMO_OPERATIONS, ERROR_MESSAGES
-from app.assets.fx import RATE_SCALE, get_usd_ngn_rate
+from app.assets.fx import RATE_SCALE, convert_minor, get_usd_ngn_rate
 from app.assets.service import asset_value_ngn_minor, next_reminder
 from app.core.clock import now_utc
 from app.core.config import PRODUCT_NAME, get_settings
@@ -59,8 +59,8 @@ from app.identity.otp import (
     sender,
 )
 from app.insights.detectors.velocity_warning import projected_month_end_spend
-from app.insights.runner import run_for_user
 from app.insights.router import router as insights_phase5_router
+from app.insights.runner import run_for_user
 from app.ledger.account_categories import category_for_institution
 from app.ledger.balances import balance_state
 from app.ledger.normalise import (
@@ -82,9 +82,9 @@ from app.models import (
     BvnLookupSession,
     CategoryRule,
     CategorySource,
+    ClassificationCorrection,
     Consent,
     ConsentAudit,
-    ClassificationCorrection,
     DeviceToken,
     Direction,
     DiscoveredAccount,
@@ -94,6 +94,7 @@ from app.models import (
     ManualAsset,
     ManualAssetCategory,
     ManualAssetPlatform,
+    Merchant,
     NotificationPreference,
     Obligation,
     ObligationPayment,
@@ -105,6 +106,7 @@ from app.models import (
     Transaction,
     UpdateCadence,
     User,
+    UserSettings,
     WebhookEvent,
 )
 from app.providers.base import ProviderNotReady, ProviderUnavailable
@@ -361,6 +363,13 @@ class BudgetIn(BaseModel):
     monthly_limit_minor: int = Field(
         gt=0, le=2**63 - 1, description="Monthly budget in NGN kobo.", examples=[20000000]
     )
+    effective_from: datetime | None = Field(
+        default=None, description="UTC time when this budget starts applying."
+    )
+
+
+class PrivacyPreferenceIn(BaseModel):
+    privacy_blur: bool
 
 
 class ObligationIn(BaseModel):
@@ -384,6 +393,8 @@ class ObligationUpdateIn(BaseModel):
     )
     cadence_days: int | None = Field(default=None, ge=1, le=366)
     next_due_date: date | None = None
+    kind: Literal["loan", "direct_debit", "subscription"] | None = None
+    account_id: UUID | None = None
     status: Literal["upcoming", "confirmed", "dismissed"] | None = None
 
 
@@ -2089,33 +2100,29 @@ async def delete_manual_asset(
 @app.get("/net-position", response_model=api.NetPositionResponse)
 async def net_position(user: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
     linked = (
-        (
-            await db.execute(
-                select(Account)
-                .join(Consent, Account.consent_id == Consent.id)
-                .join(ProviderLink, ProviderLink.consent_id == Account.consent_id)
-                .where(
-                    Account.user_id == user.id,
-                    Account.sync_paused.is_(False),
-                    ProviderLink.user_id == user.id,
-                    ProviderLink.status == "connected",
-                    Account.currency == "NGN",
-                    Consent.revoked_at.is_(None),
-                    Consent.expires_at > now_utc(),
-                )
+        await db.execute(
+            select(Account, Institution)
+            .join(Institution, Account.institution_id == Institution.id)
+            .join(Consent, Account.consent_id == Consent.id)
+            .join(ProviderLink, ProviderLink.consent_id == Account.consent_id)
+            .where(
+                Account.user_id == user.id,
+                ProviderLink.user_id == user.id,
+                ProviderLink.status == "connected",
+                Account.currency == "NGN",
+                Consent.revoked_at.is_(None),
+                Consent.expires_at > now_utc(),
             )
         )
-        .scalars()
-        .all()
-    )
+    ).all()
     cash = sum(
         account.current_balance_minor
-        for account in linked
+        for account, _ in linked
         if account.category != AccountCategory.investment
     )
     linked_investments = sum(
         account.current_balance_minor
-        for account in linked
+        for account, _ in linked
         if account.category == AccountCategory.investment
     )
     assets = (
@@ -2123,22 +2130,56 @@ async def net_position(user: User = Depends(current_user), db: AsyncSession = De
         .scalars()
         .all()
     )
-    investments = linked_investments + sum(asset_value_ngn_minor(asset) for asset in assets)
+    usd_assets = [asset for asset in assets if asset.currency == "USD"]
+    read_rate: int | None = None
+    fx_rate_warning = False
+    if usd_assets:
+        try:
+            read_rate, _ = await get_usd_ngn_rate(db, None)
+            await db.commit()
+        except HTTPException:
+            fx_rate_warning = True
+    asset_values = {
+        asset.id: (
+            convert_minor(asset.amount_minor, read_rate)
+            if asset.currency == "USD" and read_rate is not None
+            else asset_value_ngn_minor(asset)
+        )
+        for asset in assets
+    }
+    investments = linked_investments + sum(asset_values.values())
+    breakdown = [
+        {
+            "id": account.id,
+            "source": "account",
+            "label": institution.name,
+            "value_ngn_minor": account.current_balance_minor,
+            "currency": account.currency,
+            "paused": account.sync_paused,
+            "fx_rate_ppm": None,
+        }
+        for account, institution in linked
+    ] + [
+        {
+            "id": asset.id,
+            "source": "manual_asset",
+            "label": asset.platform.value,
+            "value_ngn_minor": asset_values[asset.id],
+            "currency": asset.currency,
+            "paused": False,
+            "fx_rate_ppm": read_rate if asset.currency == "USD" else None,
+        }
+        for asset in assets
+    ]
     return {
         "cash_minor": cash,
         "investments_minor": investments,
         "total_minor": cash + investments,
         "currency": "NGN",
         "as_of": now_utc(),
-        "fx_rate_warning": any(
-            asset.currency == "USD"
-            and (
-                asset.last_updated_at is None
-                or now_utc() - as_utc(asset.last_updated_at)
-                > timedelta(hours=settings.fx_ttl_hours)
-            )
-            for asset in assets
-        ),
+        "fx_rate_warning": fx_rate_warning,
+        "paused_accounts_included": sum(account.sync_paused for account, _ in linked),
+        "breakdown": breakdown,
     }
 
 
@@ -2181,6 +2222,7 @@ async def transactions(
     category: str | None = None,
     account_id: UUID | None = None,
     merchant_id: UUID | None = None,
+    merchant: str | None = Query(default=None, min_length=1, max_length=100),
     from_date: datetime | None = None,
     to_date: datetime | None = None,
     type: Literal["credit", "debit"] | None = None,
@@ -2208,6 +2250,13 @@ async def transactions(
         q = q.where(Transaction.category.in_(labels))
     q = q.where(Transaction.account_id == account_id) if account_id else q
     q = q.where(Transaction.merchant_id == merchant_id) if merchant_id else q
+    if merchant:
+        q = q.outerjoin(Merchant, Transaction.merchant_id == Merchant.id).where(
+            or_(
+                Transaction.decoded_merchant.ilike(f"%{merchant}%"),
+                Merchant.canonical_name.ilike(f"%{merchant}%"),
+            )
+        )
     q = q.where(Transaction.posted_at >= from_date) if from_date else q
     q = q.where(Transaction.posted_at <= to_date) if to_date else q
     q = q.where(Transaction.direction == Direction(type)) if type else q
@@ -2442,12 +2491,41 @@ async def get_budget(user: User = Depends(current_user), db: AsyncSession = Depe
     return {"monthly_limit_minor": row.monthly_limit_minor, "effective_from": row.effective_from}
 
 
+@app.get("/privacy-preferences", response_model=api.PrivacyPreferenceResponse)
+async def get_privacy_preferences(
+    user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
+):
+    row = await db.get(UserSettings, user.id)
+    return {"privacy_blur": row.privacy_blur if row else False}
+
+
+@app.put("/privacy-preferences", response_model=api.PrivacyPreferenceResponse)
+async def put_privacy_preferences(
+    body: PrivacyPreferenceIn,
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    row = await db.get(UserSettings, user.id)
+    if row is None:
+        row = UserSettings(user_id=user.id, privacy_blur=body.privacy_blur)
+        db.add(row)
+    else:
+        row.privacy_blur = body.privacy_blur
+    await db.commit()
+    return {"privacy_blur": row.privacy_blur}
+
+
 @app.put("/budget", response_model=api.BudgetResponse)
 async def put_budget(
     body: BudgetIn, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
 ):
+    effective_from = as_utc(body.effective_from) or now_utc()
+    if effective_from > now_utc() + timedelta(days=366):
+        raise HTTPException(422, "Budget effective date is too far in the future")
     row = Budget(
-        user_id=user.id, monthly_limit_minor=body.monthly_limit_minor, effective_from=now_utc()
+        user_id=user.id,
+        monthly_limit_minor=body.monthly_limit_minor,
+        effective_from=effective_from,
     )
     db.add(row)
     await db.commit()
@@ -2509,6 +2587,7 @@ def obligation_response(row: Obligation) -> dict:
         "confidence_bps": row.confidence_bps,
         "status": row.status,
         "source": row.source,
+        "due_date_estimated": row.source == "detected",
     }
 
 
@@ -2598,6 +2677,12 @@ async def update_obligation(
     ).scalar_one_or_none()
     if row is None:
         raise HTTPException(404, "Obligation not found")
+    if body.account_id is not None:
+        account = await db.scalar(
+            select(Account).where(Account.id == body.account_id, Account.user_id == user.id)
+        )
+        if account is None:
+            raise HTTPException(404, "Account not found")
     for name, value in body.model_dump(exclude_unset=True).items():
         if value is not None:
             setattr(row, name, value)
@@ -2875,6 +2960,7 @@ def _document_operation(path: str, method: str, operation: dict) -> None:
         "/analytics/": "Analytics",
         "/budget": "Budget",
         "/obligations": "Obligations",
+        "/privacy-preferences": "Consents",
         "/devices": "Notifications",
         "/notification-preferences": "Notifications",
         "/consents": "Consents",
