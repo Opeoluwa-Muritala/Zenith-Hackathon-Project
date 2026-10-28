@@ -29,6 +29,10 @@ OUT_OF_SCOPE_RE = re.compile(
     r"someone else'?s account|another person'?s account)\b",
     re.I,
 )
+INJECTION_ATTEMPT_RE = re.compile(
+    r"(?i)(?:ignore|disregard|forget)\s+(?:all\s+)?(?:previous|prior|above|the)\s+"
+    r"(?:instructions?|prompts?|rules?)|system\s+prompt|jailbreak"
+)
 
 
 def _fallback(results: list[dict]) -> str:
@@ -65,7 +69,7 @@ def _safety_reply(question: str) -> str | None:
             "I'm sorry you're facing this. I won't try to optimise this situation. "
             "Please consider contacting someone you trust or local support services."
         )
-    if OUT_OF_SCOPE_RE.search(question):
+    if OUT_OF_SCOPE_RE.search(question) or INJECTION_ATTEMPT_RE.search(question):
         return (
             "I can help explain your own connected financial data, "
             "but I can't help with that request."
@@ -193,7 +197,8 @@ async def converse(question, view, settings, now, db, user_id, client: LLMClient
                     {
                         "role": "tool",
                         "tool_call_id": call.id,
-                        "content": json.dumps(result, ensure_ascii=False),
+                        # Delimit tool JSON as data so merchant strings cannot act as instructions.
+                        "content": facts_message({"tool": call.name, "result": result}),
                     }
                 )
             if round_index == MAX_ROUND_TRIPS - 1:
