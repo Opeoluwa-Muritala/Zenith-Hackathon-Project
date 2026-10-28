@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     otp_lockout_base_seconds: int = Field(60, ge=10, le=3600)
     balance_stale_minutes: int = Field(45, ge=1, le=1440)
     account_refresh_cooldown_seconds: int = Field(3600, ge=60, le=86400)
+    mono_refresh_monthly_limit: int = Field(2, ge=0, le=100)
     fx_provider_name: str = ""
     fx_provider_url: str = ""
     fx_provider_key: str = ""

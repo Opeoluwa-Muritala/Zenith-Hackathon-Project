@@ -100,6 +100,7 @@ from app.models import (
     WebhookEvent,
 )
 from app.providers.base import ProviderNotReady, ProviderUnavailable
+from app.providers.call_budget import reserve_refresh_call
 from app.providers.mock import MockAggregatorProvider
 from app.providers.mono import MonoProvider
 from app.providers.mono_lookup import MonoLookupProvider
@@ -1136,6 +1137,7 @@ async def initiate_link(
         )
     )
     await db.commit()
+    record_auth_event(db, "link.initiated", user_id=user.id)
     return {"ref": link.id, "url": url, "status": "pending"}
 
 
@@ -1187,6 +1189,7 @@ async def exchange_link(
     )
     db.add(link)
     await db.commit()
+    record_auth_event(db, "link.exchanged", user_id=user.id)
     return {"ref": link.id, "status": "connected"}
 
 
@@ -1299,6 +1302,7 @@ async def apply_mono_event(event: dict):
                     )
                 )
             await db.commit()
+            record_auth_event(db, "link.unlinked_by_provider", user_id=link.user_id)
             return
         if consent.revoked_at or as_utc(consent.expires_at) <= now_utc():
             return
@@ -1327,6 +1331,7 @@ async def apply_mono_event(event: dict):
             if discovered:
                 discovered.status = DiscoveredAccountStatus.linked
             await db.commit()
+            record_auth_event(db, "link.connected", user_id=link.user_id)
             return
         link.data_status = str(meta.get("data_status") or "PROCESSING").upper()
         if (

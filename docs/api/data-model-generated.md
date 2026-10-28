@@ -15,6 +15,7 @@ Do not edit; run `python backend/scripts/gen_data_model.py`.
 | `currency` | `VARCHAR(3)` | False |  |  |
 | `current_balance_minor` | `BIGINT` | False |  |  |
 | `last_synced_at` | `DATETIME` | True |  |  |
+| `sync_cursor_at` | `DATETIME` | True |  |  |
 | `category` | `VARCHAR(19)` | False |  |  |
 | `available_balance_minor` | `BIGINT` | True |  |  |
 | `ledger_balance_minor` | `BIGINT` | True |  |  |
@@ -269,6 +270,18 @@ Do not edit; run `python backend/scripts/gen_data_model.py`.
 | `attempts` | `INTEGER` | False |  |  |
 | `consumed_at` | `DATETIME` | True |  |  |
 | `created_at` | `DATETIME` | False |  |  |
+
+## `provider_call_logs`
+
+| Column | Type | Nullable | Key | Protection |
+|---|---|---:|---|---|
+| `id` | `CHAR(32)` | False | PK |  |
+| `user_id` | `CHAR(32)` | False | FK |  |
+| `provider` | `VARCHAR(20)` | False |  |  |
+| `operation` | `VARCHAR(60)` | False |  |  |
+| `account_id` | `CHAR(32)` | True | FK |  |
+| `requested_at` | `DATETIME` | False |  |  |
+| `outcome` | `VARCHAR(20)` | False |  |  |
 
 ## `provider_links`
 

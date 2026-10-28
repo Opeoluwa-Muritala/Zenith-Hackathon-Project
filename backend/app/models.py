@@ -135,6 +135,17 @@ class SecurityAuditEvent(Base):
     occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
 
 
+class ProviderCallLog(Base):
+    __tablename__ = "provider_call_logs"
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    provider: Mapped[str] = mapped_column(String(20))
+    operation: Mapped[str] = mapped_column(String(60))
+    account_id: Mapped[UUID | None] = mapped_column(ForeignKey("accounts.id", ondelete="SET NULL"))
+    requested_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    outcome: Mapped[str] = mapped_column(String(20))
+
+
 class RefreshToken(Base):
     __tablename__ = "refresh_tokens"
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
@@ -186,6 +197,7 @@ class Account(Base):
     currency: Mapped[str] = mapped_column(String(3), default="NGN")
     current_balance_minor: Mapped[int] = mapped_column(BigInteger)
     last_synced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    sync_cursor_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     category: Mapped[AccountCategory] = mapped_column(
         Enum(AccountCategory), default=AccountCategory.commercial_bank
     )
