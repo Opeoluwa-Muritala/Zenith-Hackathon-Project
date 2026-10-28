@@ -26,7 +26,7 @@ Fetch is a FastAPI backend for consented personal-finance data. It authenticates
 
 See [docs/README.md](docs/README.md) for the complete documentation index and [docs/api/openapi.json](docs/api/openapi.json) for the generated API specification.
 
-For the mobile backend demo with Mono sandbox and an existing Neon database, follow the [backend demo walkthrough](docs/demo-backend-walkthrough.md). The presenter can read generated login codes from a protected backend page; finance endpoints continue using the existing Mono integration. Neon was last verified at revision 0012; new development migrations continue from 0013. Mono sandbox behavior remains unverified.
+For the mobile backend demo with Mono sandbox and an existing Neon database, follow the [backend demo walkthrough](docs/demo-backend-walkthrough.md). The presenter can read generated login codes from a protected backend page; finance endpoints continue using the existing Mono integration. Neon was verified at Phase 4 revision 0019 with rollback-only smoke inserts; Phase 5 revision 0020 remains unapplied online. Mono sandbox behavior remains unverified.
 
 ## Five-minute quickstart
 
