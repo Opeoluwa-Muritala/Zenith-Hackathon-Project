@@ -4,7 +4,7 @@ import asyncio
 import hashlib
 import hmac
 import secrets
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Protocol
 
 import httpx
@@ -14,7 +14,7 @@ from app.core.config import get_settings
 
 _development_secret = secrets.token_urlsafe(48)
 _development_inbox: dict[str, str] = {}
-_inbox_expires = {}
+_inbox_expires: dict[str, datetime] = {}
 
 
 def forget_code(identifier: str) -> None:
@@ -30,10 +30,18 @@ def inbox_code(identifier: str) -> str | None:
     return _development_inbox.get(identifier)
 
 
-def expire_inbox_entry(identifier, expiry):
+def expire_inbox_entry(identifier: str, expiry: datetime) -> None:
     # A timer for an older resend must not delete its replacement code.
     if _inbox_expires.get(identifier) == expiry:
         forget_code(identifier)
+
+
+def cleanup_expired_inbox() -> int:
+    """Remove expired entries in this process; normal timers remain the primary cleanup."""
+    expired = [identifier for identifier, expiry in _inbox_expires.items() if expiry <= now_utc()]
+    for identifier in expired:
+        forget_code(identifier)
+    return len(expired)
 
 
 def new_code() -> str:

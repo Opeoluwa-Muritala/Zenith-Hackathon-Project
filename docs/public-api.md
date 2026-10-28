@@ -102,6 +102,16 @@ invited email before accepting. Accepted bookkeepers receive bounded, read-only 
 and monthly-report access; they cannot modify transactions, reports or account data.
 Revocation removes access immediately.
 
+## Notifications and scheduled work
+
+Clients register an Android or iOS token with `POST /devices`, remove it with
+`DELETE /devices/{id}`, and manage the three notification categories through
+`GET`/`PUT /notification-preferences`. Tokens are encrypted at rest and never returned.
+Fetch prioritises new account activity, then sends budget, repayment and investment
+reminders according to the owner's preferences. Duplicate event/device delivery is
+suppressed. Push delivery may be disabled by the deployment without disabling financial
+sync or the API.
+
 ## Environments
 
 Set the API base URL supplied by the Fetch deployment. Do not place Mono keys, JWT secrets,

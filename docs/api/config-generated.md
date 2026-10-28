@@ -58,6 +58,7 @@ Do not edit; run `python backend/scripts/gen_config_docs.py`.
 | `ai_request_timeout_s` | `<class 'float'>` | `20.0` |
 | `ai_chat_requests_per_minute` | `<class 'int'>` | `10` |
 | `assistant_retention_days` | `<class 'int'>` | `30` |
+| `fcm_credentials_json` | `<class 'str'>` | `` |
 | `field_encryption_key` | `<class 'str'>` | `` |
 | `field_encryption_key_id` | `<class 'str'>` | `primary` |
 | `field_encryption_previous_keys` | `<class 'str'>` | `{}` |
