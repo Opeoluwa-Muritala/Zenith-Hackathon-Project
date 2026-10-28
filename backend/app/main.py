@@ -115,6 +115,7 @@ from app.providers.mock import MockAggregatorProvider
 from app.providers.mono import MonoProvider
 from app.providers.mono_lookup import MonoLookupProvider
 from app.providers.statement import ProviderError, StatementUploadProvider
+from app.reports.router import router as reports_router
 
 settings = get_settings()
 settings.validate_runtime()
@@ -157,6 +158,7 @@ OPENAPI_TAGS = [
     {"name": "Summary", "description": "Read account totals and spending aggregates."},
     {"name": "Recurring", "description": "Read recurring bills and subscriptions."},
     {"name": "Insights", "description": "Read, run and dismiss deterministic detector results."},
+    {"name": "Reports", "description": "Generate, export and selectively share monthly reports."},
     {"name": "Forecast", "description": "Read the safe-to-spend calculation."},
     {
         "name": "AI",
@@ -190,6 +192,7 @@ app = FastAPI(
 app.include_router(ai_router)
 app.include_router(classification_review_router)
 app.include_router(insights_phase5_router)
+app.include_router(reports_router)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.origins,

@@ -69,6 +69,20 @@ Do not edit; run `python backend/scripts/gen_data_model.py`.
 | `locked_until` | `DATETIME` | True |  |  |
 | `updated_at` | `DATETIME` | False |  |  |
 
+## `bookkeeper_invites`
+
+| Column | Type | Nullable | Key | Protection |
+|---|---|---:|---|---|
+| `id` | `CHAR(32)` | False | PK |  |
+| `owner_user_id` | `CHAR(32)` | False | FK |  |
+| `email` | `VARCHAR(254)` | False |  |  |
+| `token_hash` | `VARCHAR(64)` | False |  | Hash |
+| `status` | `VARCHAR(20)` | False |  |  |
+| `accepted_by_user_id` | `CHAR(32)` | True | FK |  |
+| `created_at` | `DATETIME` | False |  |  |
+| `expires_at` | `DATETIME` | False |  |  |
+| `revoked_at` | `DATETIME` | True |  |  |
+
 ## `budgets`
 
 | Column | Type | Nullable | Key | Protection |
@@ -360,6 +374,18 @@ Do not edit; run `python backend/scripts/gen_data_model.py`.
 | `expires_at` | `DATETIME` | False |  |  |
 | `used_at` | `DATETIME` | True |  |  |
 | `family_id` | `CHAR(32)` | False |  |  |
+| `revoked_at` | `DATETIME` | True |  |  |
+
+## `report_share_links`
+
+| Column | Type | Nullable | Key | Protection |
+|---|---|---:|---|---|
+| `id` | `CHAR(32)` | False | PK |  |
+| `user_id` | `CHAR(32)` | False | FK |  |
+| `month` | `DATE` | False |  |  |
+| `token_hash` | `VARCHAR(64)` | False |  | Hash |
+| `created_at` | `DATETIME` | False |  |  |
+| `expires_at` | `DATETIME` | False |  |  |
 | `revoked_at` | `DATETIME` | True |  |  |
 
 ## `reviewed_global_rules`

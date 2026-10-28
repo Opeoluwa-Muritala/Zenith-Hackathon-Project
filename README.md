@@ -24,6 +24,10 @@ category before running it; global rules store a hash of the key. User rules alw
 | SPD-1–3 | Filtered/recent transactions, spending ranges and reusable category rules |
 | BUD-1 | Effective-date budgets and deterministic spending velocity |
 | OBL-1–3 | Generic repayment detection, owner review and matched payment history |
+| RPT-1 | Deterministic monthly income, expenses, use split and cash-flow report |
+| RPT-2 | PDF/CSV exports and expiring, revocable owner-created share links |
+| RPT-3 | One revocable bookkeeper invite with read-only ledger/report access |
+| RPT-4 | Unsure and low-confidence report items are explicitly labelled |
 
 Public review routes and API artifacts are linked from [Public API](docs/public-api.md).
 

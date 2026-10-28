@@ -32,6 +32,8 @@ OTP codes expire after five minutes, are single-use, and are limited to five att
 | Ledger | `/transactions*`, `/statements/upload` | Read and classify the unified ledger |
 | Money views | `/net-position`, `/assets`, `/analytics/spending` | Cash, investments, and spending |
 | Planning | `/budget*`, `/obligations*` | Budgets, velocity, and obligations |
+| Reports | `/reports*`, `/report-share-links*` | Monthly reports, exports and controlled sharing |
+| Bookkeeper | `/bookkeeper-invites*`, `/bookkeeper/clients/*` | One read-only delegated user |
 | Insights | `/insights*`, `/insight-alerts*` | Evidence-linked findings and alerts |
 | SME review | `/insight-profile`, `/business-personal/*` | Business/personal review |
 | Privacy | `/consents*` | Consent status and revocation |
@@ -81,6 +83,24 @@ Spending analytics support this month, last month and bounded custom ranges.
 Budgets accept an optional `effective_from` UTC timestamp. Obligation endpoints support
 manual creation, confirmation, editing and dismissal; detected due dates are explicitly
 marked as estimates and detail responses include matched payment transactions.
+
+## Reports and delegated access
+
+`GET /reports/monthly/{YYYY-MM}` returns income, expenses, net cash flow and the
+business/personal/unsure split from the consented ledger. PDF and CSV exports come from
+the same computed dataset. Unsure or sub-70% confidence classifications are labelled
+and are never presented as confirmed facts.
+
+Owners explicitly create expiring share links with
+`POST /reports/monthly/{month}/share-links`; the raw secret is returned once and only a
+salted hash is stored. `DELETE /report-share-links/{id}` revokes access immediately.
+Public shared-report routes require the unexpired secret and stop returning data if the
+underlying account consent is revoked.
+
+An SME can maintain one bookkeeper invite. The invited user must sign in with the exact
+invited email before accepting. Accepted bookkeepers receive bounded, read-only ledger
+and monthly-report access; they cannot modify transactions, reports or account data.
+Revocation removes access immediately.
 
 ## Environments
 
