@@ -1,5 +1,6 @@
 from fastapi.testclient import TestClient
 
+from app.api_documentation import DEMO_OPERATIONS
 from app.main import OPENAPI_TAGS, app
 
 
@@ -35,6 +36,24 @@ def test_ai_chat_security_scheme_is_bearer_auth():
     chat = schema["paths"]["/ai/chat"]["post"]
     assert chat.get("security")
     assert "HTTPBearer" in schema["components"]["securitySchemes"]
+
+
+def test_demo_operations_have_named_response_contracts_and_explicit_security():
+    schema = app.openapi()
+    for method, path in DEMO_OPERATIONS:
+        operation = schema["paths"][path][method]
+        assert "security" in operation
+        for code, response in operation["responses"].items():
+            if code.startswith("2") and code != "204":
+                contract = response["content"]["application/json"]["schema"]
+                assert "$ref" in contract or "$ref" in contract.get("items", {})
+    assert "/dev/otp-inbox/page" not in schema["paths"]
+
+
+def test_openapi_is_valid_against_standard():
+    from openapi_spec_validator import validate
+
+    validate(app.openapi())
 
 
 def test_mono_test_page_is_loopback_only_and_not_in_public_schema():

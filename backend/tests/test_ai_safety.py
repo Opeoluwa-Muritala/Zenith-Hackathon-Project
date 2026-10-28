@@ -205,7 +205,7 @@ async def test_groq_request_uses_openai_tools_without_openrouter_fields():
         return httpx.Response(
             200,
             json={
-                "model": "llama-3.3-70b-versatile",
+                "model": "openai/gpt-oss-120b",
                 "choices": [{"finish_reason": "stop", "message": {"content": "Ready"}}],
                 "usage": {"prompt_tokens": 5, "completion_tokens": 2},
             },
@@ -219,7 +219,7 @@ async def test_groq_request_uses_openai_tools_without_openrouter_fields():
         client=http,
     )
     result = await provider.complete(
-        model="llama-3.3-70b-versatile",
+        model="openai/gpt-oss-120b",
         system="safe",
         messages=[],
         tools=[

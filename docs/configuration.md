@@ -1,0 +1,7 @@
+# Configuration
+
+Settings are defined in `backend/app/core/config.py`. The generated table is [config-generated.md](api/config-generated.md); regenerate it with `python backend/scripts/gen_config_docs.py`.
+
+Production validation checks JWT, BVN and OTP secrets, HTTPS HTTP OTP delivery, disabled development inbox, CORS wildcard, Mono secret when Mono is selected, Lookup secret, stable field encryption material, and Groq key when AI is enabled. Field encryption uses `FIELD_ENCRYPTION_KEY` when set; otherwise it derives a separate key from an existing `MONO_SECRET_KEY` of at least 24 characters. This requires retaining the original Mono secret across key rotations. `API_DOCS_ENABLED` defaults off in production; `/docs` and `/redoc` remain on in development. `PUBLIC_BASE_URL` supplies the OpenAPI server URL. Empty development secret settings use process-random fallbacks where applicable and must not be used with persistent real data.
+
+For the hosted demo, `DEMO_MODE` additionally requires JWT/OTP/encryption secrets, `DEMO_IDENTIFIERS`, and a `DEMO_OTP_INBOX_PASSWORD` of at least 16 characters. Use canonical E.164 phones or lowercase emails in the allowlist. Set `OTP_SENDER=dev_inbox` and `OTP_DEV_INBOX_ENABLED=true`. Demo mode is rejected in production. `ACCOUNT_REFRESH_COOLDOWN_SECONDS` defaults to 3600 and accepts 60–86400; the sandbox walkthrough uses 300 and Mono enforces at least five minutes. The OTP inbox and throttles require one web worker.

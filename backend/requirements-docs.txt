@@ -1,0 +1,2 @@
+# Development-only validation of generated OpenAPI artifacts.
+openapi-spec-validator>=0.7,<0.9

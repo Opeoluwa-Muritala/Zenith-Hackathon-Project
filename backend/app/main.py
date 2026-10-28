@@ -8,9 +8,11 @@ import logging
 import re
 import time
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
+from decimal import Decimal
+from html import escape
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID, uuid4
 
 from fastapi import (
@@ -20,64 +22,109 @@ from fastapi import (
     File,
     Header,
     HTTPException,
+    Query,
     Request,
     UploadFile,
 )
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
-from pydantic import BaseModel, EmailStr, Field
-from sqlalchemy import delete, func, select
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from pydantic import BaseModel, EmailStr, Field, model_validator
+from sqlalchemy import and_, delete, func, or_, select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app import api_models as api
 from app.ai.chat.router import router as ai_router
 from app.ai.client import GroqClient
 from app.ai.client_factory import client_for
+from app.api_documentation import DEMO_OPERATIONS, ERROR_MESSAGES
+from app.assets.fx import RATE_SCALE, get_usd_ngn_rate
+from app.assets.service import asset_value_ngn_minor, next_reminder
 from app.core.clock import now_utc
 from app.core.config import PRODUCT_NAME, get_settings
 from app.core.db import SessionLocal, get_db
+from app.core.encryption import decrypt_field, encrypt_field, hash_field
 from app.core.security import access_token, current_user, hash_secret, new_refresh
+from app.identity.otp import (
+    code_digest,
+    code_matches,
+    forget_code,
+    inbox_code,
+    new_code,
+    new_salt,
+    sender,
+)
+from app.insights.detectors.velocity_warning import projected_month_end_spend
 from app.insights.runner import run_for_user
+from app.ledger.account_categories import category_for_institution
+from app.ledger.balances import balance_state
+from app.ledger.normalise import CATEGORY_ALIASES, category_label, counterparty_key
+from app.ledger.obligations import sync_detected_obligations
 from app.ledger.recurring import rebuild_account
-from app.ledger.service import active_accounts, ingest, ledger_view
+from app.ledger.service import active_accounts, as_utc, ingest, ledger_view
+from app.ledger.unlink import purge_linked_account, retry_pending_link
 from app.models import (
     Account,
+    AccountCategory,
     AccountType,
+    Budget,
+    BvnLookupSession,
+    CategoryRule,
+    CategorySource,
     Consent,
     ConsentAudit,
+    DeviceToken,
     Direction,
+    DiscoveredAccount,
+    DiscoveredAccountStatus,
     InsightRecord,
     Institution,
+    ManualAsset,
+    ManualAssetCategory,
+    ManualAssetPlatform,
+    NotificationPreference,
+    Obligation,
+    ObligationPayment,
+    OtpCode,
     ProviderLink,
     RecurringSeries,
     RefreshToken,
+    SyncStatus,
     Transaction,
+    UpdateCadence,
     User,
     WebhookEvent,
 )
 from app.providers.base import ProviderNotReady, ProviderUnavailable
 from app.providers.mock import MockAggregatorProvider
 from app.providers.mono import MonoProvider
+from app.providers.mono_lookup import MonoLookupProvider
 from app.providers.statement import ProviderError, StatementUploadProvider
 
 settings = get_settings()
 settings.validate_runtime()
 logger = logging.getLogger("cashlens")
 API_VERSION = "1.0.0"
-API_DESCRIPTION = """The cashlens API consolidates financial data from user-consented accounts and
-returns rule-based summaries and insights. BVN is used only for mocked identity verification;
-transaction data comes from the configured aggregator or CSV statements. Money amounts are
-integer kobo and timestamps use UTC ISO 8601.
-
-Journey: request and verify an OTP, verify identity, grant consent, link an account, sync
-transactions, then read summaries and insights. Protected endpoints use a Bearer access token
-obtained from `POST /auth/otp/verify`; refresh tokens are single-use. List endpoints use bounded
-`limit`/`offset` pagination where available. Errors use FastAPI's current `detail` response;
-validation errors may have a different shape. OTP and account refresh endpoints are rate limited.
-Wealth insights are educational information, not financial advice.
+API_DESCRIPTION = """Fetch consolidates user-consented financial data using Mono Connect or a
+mock provider. Authentication uses app-issued JWTs after email or phone OTP verification; refresh
+tokens rotate on use. Mono BVN Lookup discovers accounts but does not link them or return balances.
+Amounts ending in `_minor` are integer minor units (NGN kobo); timestamps are UTC ISO 8601.
+Protected routes require a Bearer access token. Errors use FastAPI's `detail` convention.
+Some endpoints use process-local throttles; see the API guide for current limitations.
+Financial insights are educational information, not financial advice.
 """
 OPENAPI_TAGS = [
     {"name": "Auth", "description": "Request an OTP, obtain or rotate tokens, and end a session."},
+    {"name": "Onboarding", "description": "Discover accounts through Mono BVN Lookup."},
     {"name": "Identity", "description": "Verify identity; BVN is not a transaction-data source."},
+    {"name": "Assets", "description": "Maintain manual asset values and read net position."},
+    {"name": "Category rules", "description": "Manage user-chosen counterparty categories."},
+    {"name": "Analytics", "description": "Read spending aggregates across linked accounts."},
+    {"name": "Budget", "description": "Set a monthly limit and read spending velocity."},
+    {"name": "Obligations", "description": "Review detected and manual upcoming repayments."},
+    {"name": "Notifications", "description": "Register devices and set notification preferences."},
     {"name": "Consents", "description": "Grant, list and revoke scoped data-access consent."},
     {
         "name": "Accounts and linking",
@@ -110,12 +157,17 @@ OPENAPI_TAGS = [
 ]
 app = FastAPI(
     title=PRODUCT_NAME,
+    summary="Consented personal-finance data API",
     version=API_VERSION,
     description=API_DESCRIPTION,
     openapi_tags=OPENAPI_TAGS,
     contact={"name": "Project maintainers"},
     license_info={"name": "Unspecified"},
-    servers=[{"url": "http://localhost:8000", "description": "Local development"}],
+    servers=[{"url": settings.public_base_url, "description": "Configured API base URL"}],
+    docs_url="/docs" if settings.environment != "production" or settings.api_docs_enabled else None,
+    redoc_url="/redoc"
+    if settings.environment != "production" or settings.api_docs_enabled
+    else None,
     swagger_ui_parameters={
         "persistAuthorization": True,
         "displayRequestDuration": True,
@@ -131,6 +183,8 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type"],
 )
 _otp_attempts: dict[str, list[float]] = defaultdict(list)
+_refresh_requests: dict[UUID, float] = {}
+presenter_auth = HTTPBasic(auto_error=False)
 
 
 @app.on_event("startup")
@@ -162,20 +216,69 @@ async def close_ai_http_client():
 
 
 class PhoneIn(BaseModel):
-    phone: str = Field(pattern=r"^\+[1-9]\d{7,14}$")
+    phone: str | None = Field(
+        None,
+        description="E.164 phone; Nigerian local format is normalised. "
+        "Supply phone or email, not both.",
+        examples=["+2348000000000"],
+    )
+    email: EmailStr | None = Field(
+        None,
+        description="Login email; supply phone or email, not both.",
+        examples=["user@example.com"],
+    )
+
+    @model_validator(mode="after")
+    def normalise_identifier(self):
+        if (self.phone is None) == (self.email is None):
+            raise ValueError("Provide one phone or email")
+        if self.phone:
+            value = self.phone.strip()
+            if value.startswith("0") and len(value) == 11 and value.isascii() and value.isdigit():
+                value = "+234" + value[1:]
+            if not re.fullmatch(r"\+[1-9][0-9]{7,14}", value):
+                raise ValueError("Phone must be in E.164 format")
+            self.phone = value
+        if self.email:
+            self.email = str(self.email).strip().lower()
+        return self
+
+    @property
+    def identifier(self) -> str:
+        return self.phone or str(self.email)
 
 
 class OtpIn(PhoneIn):
-    otp: str = Field(min_length=6, max_length=6)
+    otp: str = Field(pattern=r"^[0-9]{6}$")
 
 
 class BvnIn(BaseModel):
-    bvn: str = Field(pattern=r"^\d{11}$")
+    bvn: str = Field(pattern=r"^[0-9]{11}$")
+
+
+class BvnMethodIn(BaseModel):
+    session_id: str | None = Field(default=None, max_length=100)
+    method: Literal["email", "phone", "phone_1", "alternate_phone"]
+    phone_number: str | None = Field(default=None, max_length=20)
+
+    @model_validator(mode="after")
+    def validate_alternate_phone(self):
+        if self.method == "alternate_phone" and not (
+            self.phone_number
+            and re.fullmatch(r"(?:\+[1-9][0-9]{7,14}|0[0-9]{10})", self.phone_number)
+        ):
+            raise ValueError("A valid phone_number is required for alternate_phone")
+        return self
+
+
+class BvnConfirmIn(BaseModel):
+    session_id: str | None = Field(default=None, max_length=100)
+    otp: str = Field(pattern=r"^[0-9]{4,8}$")
 
 
 class ConsentIn(BaseModel):
-    institution: str = Field(min_length=2, max_length=80)
-    scope: str = Field(pattern=r"^[a-z,_-]{1,100}$")
+    institution: str = Field(min_length=2, max_length=80, examples=["Demo Bank"])
+    scope: str = Field(pattern=r"^[a-z,_-]{1,100}$", examples=["auth"])
     expires_in_days: int = Field(30, ge=1, le=365)
 
 
@@ -195,8 +298,92 @@ class ExchangeIn(BaseModel):
 
 class InitiateIn(BaseModel):
     consent_id: UUID
-    name: str = Field(min_length=2, max_length=100)
+    name: str = Field(min_length=2, max_length=100, examples=["Fake User"])
     email: EmailStr
+
+
+class SelectDiscoveredIn(BaseModel):
+    ids: list[UUID] = Field(max_length=100)
+
+
+class LinkDiscoveredIn(BaseModel):
+    email: EmailStr
+
+
+class ManualAssetIn(BaseModel):
+    platform: ManualAssetPlatform
+    category: ManualAssetCategory
+    currency: Literal["NGN", "USD"]
+    amount_minor: int = Field(
+        ge=0,
+        le=2**63 - 1,
+        description="Integer minor units; NGN kobo or USD cents.",
+        examples=[10000],
+    )
+    fx_rate: Decimal | None = Field(
+        None,
+        description="NGN per USD reference rate, required for USD "
+        "when no FX provider is configured.",
+        examples=["1500"],
+    )
+    update_cadence: UpdateCadence
+
+
+CategoryName = Literal[
+    "Food & Dining",
+    "Bills & Utilities",
+    "Transport",
+    "Airtime & Data",
+    "Shopping & Transfers",
+    "Transfers & Family",
+    "Uncategorised",
+]
+
+
+class ReclassifyIn(BaseModel):
+    category: CategoryName
+    apply_to_future: bool = False
+
+
+class BudgetIn(BaseModel):
+    monthly_limit_minor: int = Field(
+        gt=0, le=2**63 - 1, description="Monthly budget in NGN kobo.", examples=[20000000]
+    )
+
+
+class ObligationIn(BaseModel):
+    lender_name: str = Field(min_length=2, max_length=120)
+    kind: Literal["loan", "direct_debit", "subscription"]
+    amount_minor: int = Field(
+        gt=0,
+        le=2**63 - 1,
+        description="Integer minor units; NGN kobo in the demo.",
+        examples=[1000000],
+    )
+    cadence_days: int = Field(ge=1, le=366)
+    next_due_date: date
+    account_id: UUID | None = None
+
+
+class ObligationUpdateIn(BaseModel):
+    lender_name: str | None = Field(default=None, min_length=2, max_length=120)
+    amount_minor: int | None = Field(
+        default=None, gt=0, le=2**63 - 1, description="Integer minor units; NGN kobo in the demo."
+    )
+    cadence_days: int | None = Field(default=None, ge=1, le=366)
+    next_due_date: date | None = None
+    status: Literal["upcoming", "confirmed", "dismissed"] | None = None
+
+
+class DeviceIn(BaseModel):
+    token: str = Field(min_length=20, max_length=400)
+    platform: Literal["android", "ios"]
+
+
+class NotificationPreferencesIn(BaseModel):
+    overspending_alerts: bool = True
+    loan_repayment_reminders: bool = True
+    investment_update_prompts: bool = True
 
 
 async def owned_consent(db: AsyncSession, user_id: UUID, consent_id: UUID) -> Consent:
@@ -221,6 +408,194 @@ def provider():
     return MockAggregatorProvider()
 
 
+def lookup_provider():
+    return MonoLookupProvider(settings.mono_lookup_secret_key, settings.mono_base_url)
+
+
+_institution_coverage: tuple[float, list[dict]] | None = None
+
+
+async def resolve_institution(row: DiscoveredAccount) -> dict | None:
+    """Map exact bank/NIP codes only; ambiguous coverage remains unmapped."""
+    global _institution_coverage
+    if _institution_coverage is None or time.monotonic() > _institution_coverage[0]:
+        coverage = await provider().institutions()
+        _institution_coverage = (time.monotonic() + 3600, coverage)
+    matches = [
+        item
+        for item in _institution_coverage[1]
+        if (item.get("bank_code") and str(item["bank_code"]) == row.bank_code)
+        or (row.nip_code and str(item.get("nip_code", "")) == row.nip_code)
+    ]
+    if len(matches) != 1:
+        return None
+    item = matches[0]
+    methods = [m.get("type") for m in item.get("auth_methods", []) if m.get("type")]
+    identifier = item.get("_id") or item.get("id")
+    if not identifier or len(methods) != 1:
+        return None
+    return {"id": str(identifier), "auth_method": methods[0]}
+
+
+def lookup_session_or_410(row: BvnLookupSession | None):
+    if row is None or as_utc(row.expires_at) <= now_utc():
+        raise HTTPException(410, "BVN lookup session expired; restart the lookup")
+    return row
+
+
+async def mono_call(call):
+    """Never forward provider response bodies or credentials to clients."""
+    try:
+        return await call()
+    except ProviderUnavailable:
+        raise HTTPException(503, "Mono temporarily unavailable; try again later") from None
+    except (ProviderError, ValueError, KeyError, TypeError):
+        raise HTTPException(502, "Mono could not complete this request") from None
+
+
+async def owned_lookup_session(db, user_id, session_id):
+    query = select(BvnLookupSession).where(BvnLookupSession.user_id == user_id)
+    if session_id:
+        query = query.where(BvnLookupSession.mono_session_id == session_id)
+    query = query.order_by(BvnLookupSession.created_at.desc()).limit(1)
+    row = lookup_session_or_410((await db.execute(query)).scalar_one_or_none())
+    if row.status in {"failed", "initiating"}:
+        raise HTTPException(409, "Lookup is not ready; restart after the cooldown")
+    return row
+
+
+@app.post("/onboarding/bvn/start", response_model=api.LookupStartResponse)
+async def start_bvn_lookup(
+    body: BvnIn, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
+):
+    rate_limit("lookup-start:" + str(user.id))
+    await db.execute(select(User.id).where(User.id == user.id).with_for_update())
+    recent = (
+        await db.execute(
+            select(BvnLookupSession)
+            .where(
+                BvnLookupSession.user_id == user.id,
+                BvnLookupSession.created_at >= now_utc() - timedelta(minutes=10),
+            )
+            .order_by(BvnLookupSession.created_at.desc())
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+    if recent:
+        raise HTTPException(429, "BVN lookup recently started; try again later")
+    row = BvnLookupSession(
+        user_id=user.id,
+        mono_session_id="pending:" + str(uuid4()),
+        scope="bank_accounts",
+        expires_at=now_utc() + timedelta(minutes=10),
+        status="initiating",
+        created_at=now_utc(),
+    )
+    db.add(row)
+    await db.commit()
+    try:
+        session_id, methods = await mono_call(lambda: lookup_provider().initiate_lookup(body.bvn))
+    except HTTPException:
+        row.status = "failed"
+        await db.commit()
+        raise
+    row.mono_session_id = session_id
+    row.status = "initiated"
+    user.bvn_hash = hash_secret(body.bvn, settings.bvn_pepper)
+    user.bvn_last4 = body.bvn[-4:]
+    await db.commit()
+    return {
+        "session_id": session_id,
+        "methods": [{"method": x.get("method"), "hint": x.get("hint")} for x in methods],
+    }
+
+
+@app.post("/onboarding/bvn/send-otp", response_model=api.StatusResponse)
+async def send_bvn_otp(
+    body: BvnMethodIn, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
+):
+    rate_limit("lookup-otp:" + str(user.id))
+    row = await owned_lookup_session(db, user.id, body.session_id)
+    if row.status == "confirmed":
+        raise HTTPException(409, "Lookup already confirmed")
+    await mono_call(
+        lambda: lookup_provider().verify_lookup(row.mono_session_id, body.method, body.phone_number)
+    )
+    row.status = "otp_sent"
+    await db.commit()
+    return {"status": "otp_sent"}
+
+
+@app.post("/onboarding/bvn/confirm", response_model=list[api.DiscoveredAccountResponse])
+async def confirm_bvn(
+    body: BvnConfirmIn, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
+):
+    rate_limit("lookup-confirm:" + str(user.id))
+    row = await owned_lookup_session(db, user.id, body.session_id)
+    if row.status not in {"otp_sent", "confirmed"}:
+        raise HTTPException(409, "Request the BVN OTP before confirming")
+    accounts = (
+        []
+        if row.status == "confirmed"
+        else await mono_call(
+            lambda: lookup_provider().lookup_details(row.mono_session_id, body.otp)
+        )
+    )
+    for item in accounts:
+        institution = item.get("institution") or {}
+        number = str(item.get("account_number", ""))
+        if not number:
+            continue
+        values = {
+            "account_name": item.get("account_name", "")[:160],
+            "account_designation": item.get("account_designation", "")[:40],
+            "bank_code": institution.get("bank_code", "")[:10],
+            "nip_code": institution.get("nip_code"),
+            "institution_name": institution.get("name", "")[:120],
+            "account_type": item.get("account_type", "")[:40],
+            "account_number_encrypted": encrypt_field(number),
+            "account_number_last4": number[-4:],
+            "account_number_hash": hash_field(number),
+            "status": DiscoveredAccountStatus.discovered,
+            "discovered_at": now_utc(),
+        }
+        existing = (
+            await db.execute(
+                select(DiscoveredAccount).where(
+                    DiscoveredAccount.user_id == user.id,
+                    DiscoveredAccount.bank_code == values["bank_code"],
+                    DiscoveredAccount.account_number_hash == values["account_number_hash"],
+                )
+            )
+        ).scalar_one_or_none()
+        if existing:
+            if existing.status == DiscoveredAccountStatus.linked:
+                values.pop("status")
+            for key, value in values.items():
+                setattr(existing, key, value)
+        else:
+            db.add(DiscoveredAccount(user_id=user.id, provider="mono", **values))
+    row.status = "confirmed"
+    await db.commit()
+    rows = (
+        await db.execute(select(DiscoveredAccount).where(DiscoveredAccount.user_id == user.id))
+    ).scalars()
+    return [
+        {
+            "id": x.id,
+            "account_name": x.account_name,
+            "account_designation": x.account_designation,
+            "bank_code": x.bank_code,
+            "nip_code": x.nip_code,
+            "institution_name": x.institution_name,
+            "account_type": x.account_type,
+            "account_number_last4": x.account_number_last4,
+            "status": x.status,
+        }
+        for x in rows
+    ]
+
+
 @app.middleware("http")
 async def security_headers(request, call_next):
     response = await call_next(request)
@@ -235,7 +610,27 @@ async def security_headers(request, call_next):
     return response
 
 
-@app.get("/health")
+@app.exception_handler(RequestValidationError)
+async def safe_validation_error(_request, exc):
+    # Pydantic's default errors echo the input, including BVNs, OTPs and tokens.
+    return JSONResponse(
+        status_code=422,
+        content={
+            "detail": [
+                {"loc": list(error["loc"]), "type": error["type"], "msg": "Invalid value"}
+                for error in exc.errors()
+            ]
+        },
+    )
+
+
+@app.exception_handler(Exception)
+async def safe_internal_error(_request, exc):
+    logger.error("request_failed", extra={"error_type": type(exc).__name__})
+    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
+
+
+@app.get("/health", response_model=api.HealthResponse)
 async def health():
     return {"status": "ok", "product": PRODUCT_NAME}
 
@@ -274,21 +669,94 @@ def rate_limit(phone):
     _otp_attempts[phone].append(now)
 
 
-@app.post("/auth/otp/request", status_code=202)
-async def request_otp(body: PhoneIn):
-    rate_limit(body.phone)
+@app.post("/auth/otp/request", status_code=202, response_model=api.StatusResponse)
+async def request_otp(body: PhoneIn, request: Request, db: AsyncSession = Depends(get_db)):
+    identifier = body.identifier
+    rate_limit("otp-send:" + identifier)
+    rate_limit("otp-send-ip:" + (request.client.host if request.client else "unknown"))
+    if settings.demo_mode and identifier not in settings.demo_identity_allowlist:
+        return {"status": "sent"}
+    now = now_utc()
+    previous = (
+        await db.execute(
+            select(OtpCode)
+            .where(OtpCode.identifier == identifier)
+            .order_by(OtpCode.created_at.desc())
+            .limit(1)
+            .with_for_update()
+        )
+    ).scalar_one_or_none()
+    if previous and now - as_utc(previous.created_at) < timedelta(
+        seconds=settings.otp_resend_cooldown_seconds
+    ):
+        raise HTTPException(429, "Try again later")
+    code = new_code()
+    salt = new_salt()
+    try:
+        await sender().send(identifier, code)
+    except (RuntimeError, OSError) as exc:
+        logger.warning("otp_delivery_failed", extra={"error_type": type(exc).__name__})
+        raise HTTPException(503, "OTP delivery unavailable") from None
+    if previous and previous.consumed_at is None:
+        previous.consumed_at = now
+    db.add(
+        OtpCode(
+            identifier=identifier,
+            code_hash=code_digest(identifier, code, salt),
+            salt=salt,
+            expires_at=now + timedelta(seconds=settings.otp_expiry_seconds),
+            attempts=0,
+            consumed_at=None,
+            created_at=now,
+        )
+    )
+    await db.commit()
     return {"status": "sent"}
 
 
-@app.post("/auth/otp/verify")
-async def verify_otp(body: OtpIn, db: AsyncSession = Depends(get_db)):
-    rate_limit(body.phone)
-    if settings.environment == "production" or not hmac.compare_digest(body.otp, settings.dev_otp):
+@app.post("/auth/otp/verify", response_model=api.TokenResponse)
+async def verify_otp(body: OtpIn, request: Request, db: AsyncSession = Depends(get_db)):
+    identifier = body.identifier
+    rate_limit("otp-verify:" + identifier)
+    rate_limit("otp-verify-ip:" + (request.client.host if request.client else "unknown"))
+    code_row = (
+        await db.execute(
+            select(OtpCode)
+            .where(OtpCode.identifier == identifier)
+            .order_by(OtpCode.created_at.desc())
+            .limit(1)
+            .with_for_update()
+        )
+    ).scalar_one_or_none()
+    now = now_utc()
+    valid = bool(
+        code_row
+        and code_row.consumed_at is None
+        and as_utc(code_row.expires_at) > now
+        and code_row.attempts < settings.otp_max_attempts
+        and code_matches(identifier, body.otp, code_row.salt, code_row.code_hash)
+    )
+    if not valid:
+        if code_row and code_row.consumed_at is None:
+            code_row.attempts += 1
+            if code_row.attempts >= settings.otp_max_attempts:
+                code_row.consumed_at = now
+                forget_code(identifier)
+            await db.commit()
+        if code_row and as_utc(code_row.expires_at) <= now:
+            forget_code(identifier)
         raise HTTPException(401, "Invalid code")
-    user = (await db.execute(select(User).where(User.phone == body.phone))).scalar_one_or_none()
+    code_row.consumed_at = now
+    forget_code(identifier)
+    condition = User.phone == body.phone if body.phone else User.email == str(body.email)
+    user = (await db.execute(select(User).where(condition))).scalar_one_or_none()
     if not user:
         user = User(
-            phone=body.phone, email=None, bvn_hash=None, bvn_last4=None, created_at=now_utc()
+            phone=body.phone,
+            email=str(body.email) if body.email else None,
+            bvn_hash=None,
+            bvn_last4=None,
+            created_at=now,
         )
         db.add(user)
         await db.flush()
@@ -305,7 +773,84 @@ async def verify_otp(body: OtpIn, db: AsyncSession = Depends(get_db)):
     return {"access_token": access_token(user.id), "refresh_token": raw, "token_type": "bearer"}
 
 
-@app.post("/auth/refresh")
+@app.get("/dev/otp-inbox", include_in_schema=False)
+async def dev_otp_inbox(
+    identifier: str,
+    request: Request,
+    credentials: HTTPBasicCredentials | None = Depends(presenter_auth),
+):
+    if settings.demo_mode:
+        require_presenter(credentials)
+        if identifier not in settings.demo_identity_allowlist:
+            raise HTTPException(404, "Not found")
+        return {"code": inbox_code(identifier)}
+    client_host = request.client.host if request.client else ""
+    try:
+        loopback = ipaddress.ip_address(client_host).is_loopback
+    except ValueError:
+        loopback = False
+    local_host = request.url.hostname in {"localhost", "127.0.0.1", "::1", "testserver"}
+    if not (
+        loopback
+        and local_host
+        and settings.environment != "production"
+        and settings.otp_dev_inbox_enabled
+    ):
+        raise HTTPException(404, "Not found")
+    return {"code": inbox_code(identifier)}
+
+
+def require_presenter(credentials: HTTPBasicCredentials | None) -> None:
+    if (
+        not settings.demo_mode
+        or settings.environment == "production"
+        or not settings.demo_otp_inbox_password
+    ):
+        raise HTTPException(404, "Not found")
+    if not credentials or not (
+        hmac.compare_digest(credentials.username.encode(), b"demo")
+        and hmac.compare_digest(
+            credentials.password.encode(), settings.demo_otp_inbox_password.encode()
+        )
+    ):
+        raise HTTPException(
+            401, "Presenter authentication required", headers={"WWW-Authenticate": "Basic"}
+        )
+
+
+@app.get("/dev/otp-inbox/page", include_in_schema=False, response_class=HTMLResponse)
+async def presenter_otp_page(
+    identifier: str = "",
+    credentials: HTTPBasicCredentials | None = Depends(presenter_auth),
+):
+    require_presenter(credentials)
+    if identifier and identifier not in settings.demo_identity_allowlist:
+        raise HTTPException(404, "Not found")
+    options = "".join(
+        f'<option value="{escape(item, quote=True)}"'
+        + (" selected" if item == identifier else "")
+        + f">{escape(item)}</option>"
+        for item in sorted(settings.demo_identity_allowlist)
+    )
+    code = inbox_code(identifier) if identifier else None
+    content = (
+        '<!doctype html><html lang="en"><meta charset="utf-8"><title>Demo OTP inbox</title>'
+        "<h1>Demo login OTP</h1><p>Request a code from the mobile app, then refresh this page.</p>"
+        f'<form method="get"><select name="identifier">{options}</select>'
+        "<button>Refresh</button></form>"
+        f"<p>{escape(code) if code else 'No active code.'}</p>"
+        "</html>"
+    )
+    return HTMLResponse(
+        content,
+        headers={
+            "Content-Security-Policy": "default-src 'none'; form-action 'self'; "
+            "frame-ancestors 'none'; base-uri 'none'"
+        },
+    )
+
+
+@app.post("/auth/refresh", response_model=api.TokenResponse)
 async def refresh(body: RefreshIn, db: AsyncSession = Depends(get_db)):
     """Rotate a refresh token once; replay revokes its entire family."""
     digest = hash_secret(body.refresh_token)
@@ -322,14 +867,19 @@ async def refresh(body: RefreshIn, db: AsyncSession = Depends(get_db)):
             row.revoked_at = now
             await db.commit()
             raise HTTPException(401, "Invalid refresh token")
+        selector = (
+            RefreshToken.family_id == row.family_id if row.family_id else RefreshToken.id == row.id
+        )
         family = (
-            await db.execute(select(RefreshToken).where(RefreshToken.family_id == row.family_id))
+            await db.execute(
+                select(RefreshToken).where(selector, RefreshToken.user_id == row.user_id)
+            )
         ).scalars()
         for token in family:
             token.revoked_at = now
         await db.commit()
         raise HTTPException(401, "Invalid refresh token")
-    if row.revoked_at or row.expires_at <= now:
+    if row.revoked_at or as_utc(row.expires_at) <= now:
         raise HTTPException(401, "Invalid refresh token")
     if row.family_id is None:
         row.family_id = uuid4()
@@ -362,18 +912,35 @@ async def logout(
         )
     ).scalar_one_or_none()
     if row:
+        selector = (
+            RefreshToken.family_id == row.family_id if row.family_id else RefreshToken.id == row.id
+        )
         family = (
-            await db.execute(select(RefreshToken).where(RefreshToken.family_id == row.family_id))
+            await db.execute(select(RefreshToken).where(selector, RefreshToken.user_id == user.id))
         ).scalars()
         for token in family:
             token.revoked_at = now_utc()
         await db.commit()
 
 
+@app.post("/auth/logout-all", status_code=204)
+async def logout_all(user: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
+    now = now_utc()
+    user.sessions_revoked_at = now
+    tokens = (
+        await db.execute(select(RefreshToken).where(RefreshToken.user_id == user.id))
+    ).scalars()
+    for token in tokens:
+        token.revoked_at = now
+    await db.commit()
+
+
 @app.post("/identity/bvn/verify")
 async def verify_bvn(
     body: BvnIn, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
 ):
+    if settings.environment == "production" or settings.aggregator_provider != "mock":
+        raise HTTPException(404, "Not found")
     user.bvn_hash = hash_secret(body.bvn, settings.bvn_pepper)
     user.bvn_last4 = body.bvn[-4:]
     await db.commit()
@@ -383,7 +950,7 @@ async def verify_bvn(
     }
 
 
-@app.post("/consents", status_code=201)
+@app.post("/consents", status_code=201, response_model=api.ConsentCreatedResponse)
 async def create_consent(
     body: ConsentIn, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
 ):
@@ -403,7 +970,7 @@ async def create_consent(
     return {"id": consent.id, "institution": consent.institution, "scope": consent.scope}
 
 
-@app.get("/consents")
+@app.get("/consents", response_model=list[api.ConsentResponse])
 async def consents(user: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
     rows = (await db.execute(select(Consent).where(Consent.user_id == user.id))).scalars()
     return [
@@ -415,7 +982,6 @@ async def consents(user: User = Depends(current_user), db: AsyncSession = Depend
 @app.delete("/consents/{consent_id}", status_code=204)
 async def revoke(
     consent_id: UUID,
-    background: BackgroundTasks,
     user: User = Depends(current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -444,25 +1010,35 @@ async def revoke(
             .scalars()
             .all()
         )
+        accounts_to_purge = (
+            (
+                await db.execute(
+                    select(Account).where(
+                        Account.user_id == user.id, Account.consent_id == consent.id
+                    )
+                )
+            )
+            .scalars()
+            .all()
+        )
+        if links:
+            for account in accounts_to_purge:
+                await purge_linked_account(db, account, links[0])
         for link in links:
-            link.status = "unlinked"
-            if link.provider == "mono" and link.provider_account_id:
-                background.add_task(unlink_mono, link.provider_account_id)
+            link.status = (
+                "pending_unlink"
+                if link.provider == "mono" and link.provider_account_id
+                else "unlinked"
+            )
         await db.execute(delete(InsightRecord).where(InsightRecord.user_id == user.id))
+        await db.commit()
+        for link in links:
+            if link.status == "pending_unlink":
+                await retry_pending_link(db, link)
         await db.commit()
 
 
-async def unlink_mono(provider_account_id: str):
-    """Attempt remote unlink after local revocation; failures do not restore access."""
-    try:
-        await MonoProvider(settings.mono_secret_key, settings.mono_base_url).unlink(
-            provider_account_id
-        )
-    except Exception:
-        logger.warning("Remote provider unlink requires retry")
-
-
-@app.post("/accounts/link", status_code=201)
+@app.post("/accounts/link", status_code=201, response_model=api.MockLinkResponse)
 async def link_mock(
     body: LinkIn, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
 ):
@@ -509,11 +1085,11 @@ async def link_mock(
             provider="mock",
             provider_account_id=(
                 "salaried"
-                if user.phone.endswith("001")
+                if (user.phone or "").endswith("001")
                 else "freelancer"
-                if user.phone.endswith("002")
+                if (user.phone or "").endswith("002")
                 else "student"
-                if user.phone.endswith("003")
+                if (user.phone or "").endswith("003")
                 else "demo"
             )
             + ":"
@@ -528,10 +1104,11 @@ async def link_mock(
     return {"id": account.id, "status": "connected"}
 
 
-@app.post("/accounts/link/initiate", status_code=201)
+@app.post("/accounts/link/initiate", status_code=201, response_model=api.InitiateLinkResponse)
 async def initiate_link(
     body: InitiateIn, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
 ):
+    rate_limit("link:" + str(user.id))
     if settings.aggregator_provider != "mono":
         raise HTTPException(409, "Mono linking is disabled")
     await owned_consent(db, user.id, body.consent_id)
@@ -547,14 +1124,16 @@ async def initiate_link(
     )
     db.add(link)
     await db.flush()
-    url = await provider().initiate(
-        body.name, str(body.email), str(link.id), settings.mono_redirect_url
+    url = await mono_call(
+        lambda: provider().initiate(
+            body.name, str(body.email), str(link.id), settings.mono_redirect_url
+        )
     )
     await db.commit()
     return {"ref": link.id, "url": url, "status": "pending"}
 
 
-@app.get("/accounts/link/status")
+@app.get("/accounts/link/status", response_model=api.LinkStatusResponse)
 async def link_status(
     ref: UUID, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
 ):
@@ -565,17 +1144,29 @@ async def link_status(
     ).scalar_one_or_none()
     if link is None:
         raise HTTPException(404, "Link not found")
-    return {"ref": link.id, "status": link.status, "data_status": link.data_status}
+    account_id = (
+        await db.execute(
+            select(Account.id).where(
+                Account.user_id == user.id, Account.consent_id == link.consent_id
+            )
+        )
+    ).scalar_one_or_none()
+    return {
+        "ref": link.id,
+        "status": link.status,
+        "data_status": link.data_status,
+        "account_id": account_id,
+    }
 
 
-@app.post("/accounts/link/exchange")
+@app.post("/accounts/link/exchange", response_model=api.ExchangeLinkResponse)
 async def exchange_link(
     body: ExchangeIn, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
 ):
     if settings.aggregator_provider != "mono":
         raise HTTPException(409, "Mono linking is disabled")
     await owned_consent(db, user.id, body.consent_id)
-    provider_id = await provider().exchange(body.code)
+    provider_id = await mono_call(lambda: provider().exchange(body.code))
     if not provider_id:
         raise HTTPException(502, "Provider did not return an account")
     link = ProviderLink(
@@ -593,7 +1184,54 @@ async def exchange_link(
     return {"ref": link.id, "status": "connected"}
 
 
-async def process_mono_event(event: dict):
+async def process_mono_event(event: dict, event_key: str | None = None):
+    """Claim one delivery; keep failed events eligible for a later redelivery."""
+    if event_key is None:
+        return await apply_mono_event(event)
+    token = str(uuid4())
+    async with SessionLocal() as db:
+        claimed = await db.execute(
+            update(WebhookEvent)
+            .where(
+                WebhookEvent.event_key == event_key,
+                or_(
+                    WebhookEvent.processing_status.in_(["pending", "failed"]),
+                    and_(
+                        WebhookEvent.processing_status == "processing",
+                        WebhookEvent.processing_started_at < now_utc() - timedelta(minutes=2),
+                    ),
+                ),
+            )
+            .values(
+                processing_status="processing",
+                processing_started_at=now_utc(),
+                processing_token=token,
+            )
+        )
+        await db.commit()
+        if not claimed.rowcount:
+            return
+    status = "processed"
+    try:
+        await apply_mono_event(event)
+    except Exception as exc:
+        status = "failed"
+        logger.warning("mono_webhook_processing_failed", extra={"error_type": type(exc).__name__})
+    async with SessionLocal() as db:
+        await db.execute(
+            update(WebhookEvent)
+            .where(
+                WebhookEvent.event_key == event_key,
+                WebhookEvent.processing_token == token,
+            )
+            .values(
+                processing_status=status, processed_at=now_utc() if status == "processed" else None
+            )
+        )
+        await db.commit()
+
+
+async def apply_mono_event(event: dict):
     """Apply an authenticated Mono event, then sync if account data is ready."""
     name = event.get("event")
     data = event.get("data") or {}
@@ -617,42 +1255,91 @@ async def process_mono_event(event: dict):
                 await db.execute(
                     select(ProviderLink).where(
                         ProviderLink.provider == "mono",
-                        ProviderLink.provider_account_id == account_id,
+                        ProviderLink.provider_account_id_hash == hash_field(str(account_id)),
                     )
                 )
             ).scalar_one_or_none()
         if link is None:
             return
         consent = await db.get(Consent, link.consent_id)
-        if consent is None or consent.revoked_at or consent.expires_at <= now_utc():
+        if consent is None:
             return
-        link.last_webhook_at = now_utc()
         if name == "mono.events.account_unlinked":
-            link.status = "unlinked"
-            consent.revoked_at = now_utc()
-            db.add(
-                ConsentAudit(
-                    consent_id=consent.id,
-                    event="revoked_by_provider",
-                    actor="mono",
-                    at=consent.revoked_at,
+            if link.status == "unlinked":
+                return
+            accounts_to_purge = (
+                (
+                    await db.execute(
+                        select(Account).where(
+                            Account.user_id == link.user_id, Account.consent_id == consent.id
+                        )
+                    )
                 )
+                .scalars()
+                .all()
             )
-            await db.execute(delete(InsightRecord).where(InsightRecord.user_id == link.user_id))
+            for account in accounts_to_purge:
+                await purge_linked_account(db, account, link)
+            link.status = "unlinked"
+            link.provider_account_id = None
+            if consent.revoked_at is None:
+                consent.revoked_at = now_utc()
+                db.add(
+                    ConsentAudit(
+                        consent_id=consent.id,
+                        event="revoked_by_provider",
+                        actor="mono",
+                        at=consent.revoked_at,
+                    )
+                )
             await db.commit()
             return
+        if consent.revoked_at or as_utc(consent.expires_at) <= now_utc():
+            return
+        link.last_webhook_at = now_utc()
+        discovered = (
+            await db.execute(
+                select(DiscoveredAccount).where(DiscoveredAccount.link_ref == str(link.id))
+            )
+        ).scalar_one_or_none()
         if name not in {"mono.events.account_connected", "mono.events.account_updated"}:
             return
+        if name == "mono.events.account_connected" and link.data_status in {
+            "AVAILABLE",
+            "PARTIAL",
+            "UNAVAILABLE",
+            "FAILED",
+        }:
+            return
+        if account_id and link.provider_account_id and link.provider_account_id != str(account_id):
+            raise ValueError("Webhook account identifier mismatch")
         if account_id:
             link.provider_account_id = str(account_id)
             link.status = "connected"
-        link.data_status = meta.get("data_status")
-        if link.data_status not in {"AVAILABLE", "PARTIAL"} or not link.provider_account_id:
+        if name == "mono.events.account_connected":
+            link.data_status = "PROCESSING"
+            if discovered:
+                discovered.status = DiscoveredAccountStatus.linked
             await db.commit()
             return
-        details = await provider().details(link.provider_account_id)
-        details_data = details.get("data") or {}
-        info = details_data.get("account") or {}
+        link.data_status = str(meta.get("data_status") or "PROCESSING").upper()
+        if (
+            discovered
+            and discovered.account_match_requested
+            and account_data.get("account_match") is not True
+        ):
+            link.status = "mismatch"
+            await db.commit()
+            return
+        if link.data_status not in {"AVAILABLE", "PARTIAL"} or not link.provider_account_id:
+            await db.execute(
+                update(Account)
+                .where(Account.consent_id == consent.id, Account.user_id == link.user_id)
+                .values(sync_status=SyncStatus.delayed)
+            )
+            await db.commit()
+            return
+        info = account_data
         bank = info.get("institution") or {}
         code = str(bank.get("bank_code") or bank.get("bankCode") or consent.institution)[:20]
         institution = (
@@ -675,6 +1362,7 @@ async def process_mono_event(event: dict):
             )
         ).scalar_one_or_none()
         if account is None:
+            account_category, _ = category_for_institution(institution.code, institution.name)
             account = Account(
                 user_id=link.user_id,
                 consent_id=consent.id,
@@ -687,22 +1375,46 @@ async def process_mono_event(event: dict):
                 currency="NGN",
                 current_balance_minor=int(info.get("balance") or 0),
                 last_synced_at=None,
+                available_balance_minor=(
+                    int(info["balance"])
+                    if "balance" in (meta.get("retrieved_data") or [])
+                    and info.get("balance") is not None
+                    else None
+                ),
+                balance_synced_at=(
+                    now_utc()
+                    if "balance" in (meta.get("retrieved_data") or [])
+                    and info.get("balance") is not None
+                    else None
+                ),
+                sync_status=SyncStatus.ok,
+                category=account_category,
             )
             db.add(account)
             await db.flush()
         else:
-            account.current_balance_minor = int(
-                info.get("balance") or account.current_balance_minor
-            )
+            if "balance" in (meta.get("retrieved_data") or []) and info.get("balance") is not None:
+                account.current_balance_minor = int(info["balance"])
+                account.available_balance_minor = account.current_balance_minor
+                account.balance_synced_at = now_utc()
+                account.sync_status = SyncStatus.ok
         await db.commit()
+        if "transactions" not in (meta.get("retrieved_data") or []) or account.sync_paused:
+            return
+        local_account_id = account.id
         try:
             await sync_owned_account(db, account, link, now_utc())
             await db.commit()
         except (ProviderNotReady, ProviderUnavailable, HTTPException):
             await db.rollback()
+            account = await db.get(Account, local_account_id)
+            if account:
+                account.sync_status = SyncStatus.delayed
+                await db.commit()
+            raise
 
 
-@app.post("/webhooks/mono")
+@app.post("/webhooks/mono", response_model=api.WebhookResponse)
 async def mono_webhook(
     request: Request,
     background: BackgroundTasks,
@@ -725,45 +1437,331 @@ async def mono_webhook(
         raise HTTPException(422, "Invalid webhook") from exc
     event_key = hashlib.sha256(str(event.get("event_id") or raw.hex()).encode()).hexdigest()
     async with SessionLocal() as db:
-        if (
-            await db.execute(select(WebhookEvent.id).where(WebhookEvent.event_key == event_key))
-        ).scalar_one_or_none():
+        existing = (
+            await db.execute(select(WebhookEvent).where(WebhookEvent.event_key == event_key))
+        ).scalar_one_or_none()
+        if existing and existing.processing_status == "processed":
             return {"received": True}
-        db.add(
-            WebhookEvent(
-                event_key=event_key, event_name=event["event"][:100], received_at=now_utc()
+        if existing is None:
+            db.add(
+                WebhookEvent(
+                    event_key=event_key, event_name=event["event"][:100], received_at=now_utc()
+                )
             )
-        )
-        await db.commit()
+            try:
+                await db.commit()
+            except IntegrityError:
+                await db.rollback()
     if event["event"] in {
         "mono.events.account_connected",
         "mono.events.account_updated",
         "mono.events.account_unlinked",
     }:
-        background.add_task(process_mono_event, event)
+        background.add_task(process_mono_event, event, event_key)
     return {"received": True}
 
 
-@app.get("/accounts")
+@app.post("/accounts/discovered/select", response_model=api.SelectionResponse)
+async def select_discovered_accounts(
+    body: SelectDiscoveredIn,
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    selected = set(body.ids)
+    rows = (
+        (await db.execute(select(DiscoveredAccount).where(DiscoveredAccount.user_id == user.id)))
+        .scalars()
+        .all()
+    )
+    if not selected.issubset({row.id for row in rows}):
+        raise HTTPException(404, "Discovered account not found")
+    for row in rows:
+        if row.status == DiscoveredAccountStatus.linked:
+            continue
+        row.status = (
+            DiscoveredAccountStatus.discovered
+            if row.id in selected
+            else DiscoveredAccountStatus.skipped
+        )
+    await db.commit()
+    return {
+        "selected": len(selected),
+        "skipped": sum(row.status == DiscoveredAccountStatus.skipped for row in rows),
+    }
+
+
+@app.get("/accounts/skipped", response_model=list[api.SkippedAccountResponse])
+async def skipped_accounts(user: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
+    rows = (
+        (
+            await db.execute(
+                select(DiscoveredAccount).where(
+                    DiscoveredAccount.user_id == user.id,
+                    DiscoveredAccount.status == DiscoveredAccountStatus.skipped,
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return [
+        {
+            "id": row.id,
+            "institution_name": row.institution_name,
+            "account_type": row.account_type,
+            "account_number_last4": row.account_number_last4,
+        }
+        for row in rows
+    ]
+
+
+async def link_discovered_account(
+    row_id: UUID,
+    body: LinkDiscoveredIn,
+    user: User,
+    db: AsyncSession,
+    skipped_only: bool = False,
+):
+    rate_limit("link:" + str(user.id))
+    if settings.aggregator_provider != "mono":
+        raise HTTPException(409, "Mono linking is disabled")
+    row = (
+        await db.execute(
+            select(DiscoveredAccount).where(
+                DiscoveredAccount.id == row_id, DiscoveredAccount.user_id == user.id
+            )
+        )
+    ).scalar_one_or_none()
+    if row is None or row.status == DiscoveredAccountStatus.linked:
+        raise HTTPException(404, "Discovered account not found")
+    if skipped_only and row.status != DiscoveredAccountStatus.skipped:
+        raise HTTPException(404, "Skipped account not found")
+    if row.link_ref:
+        raise HTTPException(409, "A link is already pending for this account")
+    institution = await mono_call(lambda: resolve_institution(row))
+    consent = Consent(
+        user_id=user.id,
+        institution=row.institution_name[:80],
+        scope="auth",
+        granted_at=now_utc(),
+        expires_at=now_utc() + timedelta(days=30),
+        revoked_at=None,
+    )
+    db.add(consent)
+    await db.flush()
+    link = ProviderLink(
+        user_id=user.id,
+        consent_id=consent.id,
+        provider="mono",
+        provider_account_id=None,
+        status="pending",
+        data_status="PROCESSING",
+        created_at=now_utc(),
+        last_webhook_at=None,
+    )
+    db.add(link)
+    await db.flush()
+    ref = str(link.id)
+    account_number = (
+        decrypt_field(row.account_number_encrypted)
+        if settings.mono_account_match_enabled and institution
+        else None
+    )
+    url = await mono_call(
+        lambda: provider().initiate(
+            row.account_name,
+            str(body.email),
+            ref,
+            settings.mono_redirect_url,
+            institution=institution,
+            account_number=account_number,
+        )
+    )
+    row.link_ref = ref
+    row.institution_id = institution["id"] if institution else None
+    row.institution_auth_method = institution["auth_method"] if institution else None
+    row.account_match_requested = account_number is not None
+    await db.commit()
+    return {"ref": ref, "mono_url": url, "institution_mapped": institution is not None}
+
+
+@app.post("/accounts/discovered/{row_id}/link", response_model=api.HostedLinkResponse)
+async def link_selected_account(
+    row_id: UUID,
+    body: LinkDiscoveredIn,
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    return await link_discovered_account(row_id, body, user, db)
+
+
+@app.post("/accounts/skipped/{row_id}/link", response_model=api.HostedLinkResponse)
+async def link_skipped_account(
+    row_id: UUID,
+    body: LinkDiscoveredIn,
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    return await link_discovered_account(row_id, body, user, db, skipped_only=True)
+
+
+@app.get("/accounts", response_model=api.AccountsResponse)
 async def accounts(user: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
     q = (
-        select(Account)
+        select(Account, Institution)
         .join(Consent, Account.consent_id == Consent.id)
+        .join(Institution, Account.institution_id == Institution.id)
         .where(
             Account.user_id == user.id, Consent.revoked_at.is_(None), Consent.expires_at > now_utc()
         )
     )
-    rows = (await db.execute(q)).scalars()
-    return [
-        {
-            "id": x.id,
-            "type": x.type,
-            "currency": x.currency,
-            "balance_minor": x.current_balance_minor,
-            "account_number_masked": x.account_number_masked,
-        }
-        for x in rows
-    ]
+    groups = {
+        category.value: {"count": 0, "totals_minor_by_currency": {}, "accounts": []}
+        for category in AccountCategory
+    }
+    links = {
+        link.consent_id: link
+        for link in (
+            await db.execute(select(ProviderLink).where(ProviderLink.user_id == user.id))
+        ).scalars()
+    }
+    for account, institution in (await db.execute(q)).all():
+        derived_category, category_unmapped = category_for_institution(
+            institution.code, institution.name
+        )
+        category = account.category if category_unmapped else derived_category
+        group = groups[category.value]
+        group["count"] += 1
+        totals = group["totals_minor_by_currency"]
+        totals[account.currency] = totals.get(account.currency, 0) + account.current_balance_minor
+        group["accounts"].append(
+            {
+                "id": account.id,
+                "institution": institution.name,
+                "type": account.type,
+                "currency": account.currency,
+                "balance_minor": account.current_balance_minor,
+                "account_number_masked": account.account_number_masked,
+                "category_unmapped": category_unmapped,
+                "available_balance_minor": account.available_balance_minor,
+                "ledger_balance_minor": account.ledger_balance_minor,
+                "sync_paused": account.sync_paused,
+                "data_status": links[account.consent_id].data_status
+                if account.consent_id in links
+                else None,
+                **balance_state(account, now_utc(), settings.balance_stale_minutes),
+            }
+        )
+    return {"groups": groups}
+
+
+@app.get("/accounts/{account_id}", response_model=api.AccountDetailResponse)
+async def account_detail(
+    account_id: UUID, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
+):
+    account = (
+        await db.execute(
+            select(Account).where(
+                Account.id == account_id,
+                Account.user_id == user.id,
+                Account.id.in_(active_accounts(user.id, now_utc())),
+            )
+        )
+    ).scalar_one_or_none()
+    if account is None:
+        raise HTTPException(404, "Account not found")
+    institution = await db.get(Institution, account.institution_id)
+    derived_category, category_unmapped = category_for_institution(
+        institution.code, institution.name
+    )
+    link = (
+        await db.execute(
+            select(ProviderLink).where(
+                ProviderLink.user_id == user.id,
+                ProviderLink.consent_id == account.consent_id,
+            )
+        )
+    ).scalar_one_or_none()
+    return {
+        "id": account.id,
+        "account_number_masked": account.account_number_masked,
+        "type": account.type,
+        "category": account.category if category_unmapped else derived_category,
+        "category_unmapped": category_unmapped,
+        "currency": account.currency,
+        "available_balance_minor": account.available_balance_minor,
+        "ledger_balance_minor": account.ledger_balance_minor,
+        **balance_state(account, now_utc(), settings.balance_stale_minutes),
+        "sync_paused": account.sync_paused,
+        "data_status": link.data_status if link else None,
+    }
+
+
+@app.post("/accounts/{account_id}/pause", response_model=api.PauseResponse)
+async def pause_account_sync(
+    account_id: UUID, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
+):
+    account = (
+        await db.execute(
+            select(Account).where(Account.id == account_id, Account.user_id == user.id)
+        )
+    ).scalar_one_or_none()
+    if account is None:
+        raise HTTPException(404, "Account not found")
+    account.sync_paused = True
+    await db.commit()
+    return {"sync_paused": True}
+
+
+@app.post("/accounts/{account_id}/resume", response_model=api.PauseResponse)
+async def resume_account_sync(
+    account_id: UUID, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
+):
+    account = (
+        await db.execute(
+            select(Account).where(Account.id == account_id, Account.user_id == user.id)
+        )
+    ).scalar_one_or_none()
+    if account is None:
+        raise HTTPException(404, "Account not found")
+    account.sync_paused = False
+    await db.commit()
+    return {"sync_paused": False}
+
+
+@app.post("/accounts/{account_id}/unlink", response_model=api.UnlinkResponse)
+async def unlink_account(
+    account_id: UUID, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
+):
+    account = (
+        await db.execute(
+            select(Account).where(Account.id == account_id, Account.user_id == user.id)
+        )
+    ).scalar_one_or_none()
+    if account is None:
+        raise HTTPException(404, "Account not found")
+    link = (
+        await db.execute(
+            select(ProviderLink).where(
+                ProviderLink.user_id == user.id,
+                ProviderLink.consent_id == account.consent_id,
+            )
+        )
+    ).scalar_one_or_none()
+    if link is None:
+        raise HTTPException(404, "Link not found")
+    await purge_linked_account(db, account, link)
+    await db.commit()
+    if link.status == "pending_unlink":
+        await retry_pending_link(db, link)
+        await db.commit()
+    return {"status": link.status, "local_data_purged": True}
+
+
+def sync_window_start(last_synced_at: datetime | None, now: datetime) -> datetime:
+    return (
+        as_utc(last_synced_at) - timedelta(days=3) if last_synced_at else now - timedelta(days=190)
+    )
 
 
 async def sync_owned_account(
@@ -771,12 +1769,11 @@ async def sync_owned_account(
 ) -> int:
     """Fetch a bounded provider window and rebuild derived user data."""
     await owned_consent(db, account.user_id, account.consent_id)
-    if link.status != "connected":
+    if link.status != "connected" or account.sync_paused:
         raise HTTPException(409, "Account is not connected")
     try:
-        rows = await provider().transactions(
-            link.provider_account_id, now - timedelta(days=190), now
-        )
+        start = sync_window_start(account.last_synced_at, now)
+        rows = await provider().transactions(link.provider_account_id, start, now)
     except ProviderNotReady as exc:
         raise HTTPException(409, "Provider data is not ready") from exc
     except ProviderUnavailable as exc:
@@ -787,6 +1784,8 @@ async def sync_owned_account(
     await db.flush()
     await rebuild_account(db, account.id, account.user_id, now)
     await db.flush()
+    await sync_detected_obligations(db, account.user_id)
+    await db.flush()
     await db.execute(
         delete(InsightRecord).where(
             InsightRecord.user_id == account.user_id, InsightRecord.dismissed_at.is_(None)
@@ -796,7 +1795,7 @@ async def sync_owned_account(
     return count
 
 
-@app.post("/sync")
+@app.post("/sync", response_model=api.SyncResponse)
 async def sync(user: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
     now = now_utc()
     account_ids = active_accounts(user.id, now)
@@ -808,6 +1807,7 @@ async def sync(user: User = Depends(current_user), db: AsyncSession = Depends(ge
                 Account.id.in_(account_ids),
                 ProviderLink.user_id == user.id,
                 ProviderLink.status == "connected",
+                Account.sync_paused.is_(False),
             )
         )
     ).all()
@@ -818,7 +1818,11 @@ async def sync(user: User = Depends(current_user), db: AsyncSession = Depends(ge
     return {"accounts_synced": len(pairs), "transactions_imported": count}
 
 
-@app.post("/accounts/{account_id}/refresh")
+@app.post(
+    "/accounts/{account_id}/refresh",
+    response_model=api.RefreshResponse,
+    response_model_exclude_unset=True,
+)
 async def refresh_account(
     account_id: UUID, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
 ):
@@ -844,13 +1848,84 @@ async def refresh_account(
     ).scalar_one_or_none()
     if link is None:
         raise HTTPException(404, "Link not found")
-    if account.last_synced_at and now_utc() - account.last_synced_at < timedelta(hours=1):
-        raise HTTPException(429, "Refresh available once per hour")
+    if account.sync_paused:
+        raise HTTPException(409, "Sync is paused for this account")
+    if link.provider == "mono" and link.data_status not in {"AVAILABLE", "PARTIAL"}:
+        account.sync_status = SyncStatus.delayed
+        await db.commit()
+        return {
+            "status": "delayed",
+            "cached_balance_minor": account.current_balance_minor,
+            **balance_state(account, now_utc(), settings.balance_stale_minutes),
+        }
+    cooldown = settings.account_refresh_cooldown_seconds
     if link.provider == "mono":
-        await provider().details(link.provider_account_id, realtime=True)
+        cooldown = max(cooldown, 300)
+    elapsed = time.monotonic() - _refresh_requests.get(account.id, -float("inf"))
+    if account.last_synced_at:
+        elapsed = min(elapsed, (now_utc() - as_utc(account.last_synced_at)).total_seconds())
+    if elapsed < cooldown:
+        wait = max(1, int(cooldown - elapsed) + 1)
+        raise HTTPException(429, "Refresh cooldown active", headers={"Retry-After": str(wait)})
+    _refresh_requests[account.id] = time.monotonic()
+    if link.provider == "mono":
+        try:
+            response = await provider().balance(link.provider_account_id, realtime=True)
+        except (ProviderError, ValueError, KeyError, TypeError):
+            account.sync_status = SyncStatus.delayed
+            await db.commit()
+            return {
+                "status": "delayed",
+                "cached_balance_minor": account.current_balance_minor,
+                **balance_state(account, now_utc(), settings.balance_stale_minutes),
+            }
+        data = response.get("data") or {}
+        job = response.get("_realtime") or {}
+        job_status = job.get("job_status")
+        if job_status in {"processing", "failed"}:
+            if job_status == "failed":
+                account.sync_status = SyncStatus.delayed
+                await db.commit()
+            return {
+                "status": "requested" if job_status == "processing" else "delayed",
+                "job_status": job_status,
+                "cached_balance_minor": account.current_balance_minor,
+                **balance_state(account, now_utc(), settings.balance_stale_minutes),
+            }
+        if job.get("has_new_data") == "false":
+            return {
+                "status": "cached",
+                "cached_balance_minor": account.current_balance_minor,
+                **balance_state(account, now_utc(), settings.balance_stale_minutes),
+            }
+        if (
+            isinstance(data, dict)
+            and type(data.get("balance")) is int
+            and data.get("currency", "NGN") == account.currency
+        ):
+            account.current_balance_minor = data["balance"]
+            account.available_balance_minor = data["balance"]
+            account.balance_synced_at = now_utc()
+            account.sync_status = SyncStatus.ok
+            await db.commit()
+            status = "synced"
+        else:
+            status = "requested"
+        return {
+            "status": status,
+            "cached_balance_minor": account.current_balance_minor,
+            **balance_state(account, now_utc(), settings.balance_stale_minutes),
+        }
     count = await sync_owned_account(db, account, link, now_utc())
+    account.balance_synced_at = now_utc()
+    account.available_balance_minor = account.current_balance_minor
+    account.sync_status = SyncStatus.ok
     await db.commit()
-    return {"transactions_imported": count}
+    return {
+        "status": "synced",
+        "transactions_imported": count,
+        **balance_state(account, now_utc(), settings.balance_stale_minutes),
+    }
 
 
 @app.get("/summary/overview")
@@ -892,6 +1967,155 @@ async def summary(user: User = Depends(current_user), db: AsyncSession = Depends
     }
 
 
+def manual_asset_response(row: ManualAsset) -> dict:
+    return {
+        "id": row.id,
+        "platform": row.platform,
+        "category": row.category,
+        "currency": row.currency,
+        "amount_minor": row.amount_minor,
+        "fx_rate_used_ppm": row.fx_rate_used,
+        "value_ngn_minor": asset_value_ngn_minor(row),
+        "update_cadence": row.update_cadence,
+        "last_updated_at": row.last_updated_at,
+        "next_reminder_at": row.next_reminder_at,
+    }
+
+
+@app.get("/assets", response_model=list[api.ManualAssetResponse])
+async def list_manual_assets(
+    user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
+):
+    rows = (
+        (await db.execute(select(ManualAsset).where(ManualAsset.user_id == user.id)))
+        .scalars()
+        .all()
+    )
+    return [manual_asset_response(row) for row in rows]
+
+
+@app.post("/assets", status_code=201, response_model=api.ManualAssetResponse)
+async def create_manual_asset(
+    body: ManualAssetIn, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
+):
+    rate = RATE_SCALE
+    if body.currency == "USD":
+        rate, _ = await get_usd_ngn_rate(db, body.fx_rate)
+    now = now_utc()
+    row = ManualAsset(
+        user_id=user.id,
+        platform=body.platform,
+        category=body.category,
+        currency=body.currency,
+        amount_minor=body.amount_minor,
+        fx_rate_used=rate,
+        update_cadence=body.update_cadence,
+        last_updated_at=now,
+        next_reminder_at=next_reminder(now, body.update_cadence),
+    )
+    db.add(row)
+    await db.commit()
+    return manual_asset_response(row)
+
+
+@app.put("/assets/{asset_id}", response_model=api.ManualAssetResponse)
+async def update_manual_asset(
+    asset_id: UUID,
+    body: ManualAssetIn,
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    row = (
+        await db.execute(
+            select(ManualAsset).where(ManualAsset.id == asset_id, ManualAsset.user_id == user.id)
+        )
+    ).scalar_one_or_none()
+    if row is None:
+        raise HTTPException(404, "Asset not found")
+    rate = RATE_SCALE
+    if body.currency == "USD":
+        rate, _ = await get_usd_ngn_rate(db, body.fx_rate)
+    now = now_utc()
+    row.platform = body.platform
+    row.category = body.category
+    row.currency = body.currency
+    row.amount_minor = body.amount_minor
+    row.fx_rate_used = rate
+    row.update_cadence = body.update_cadence
+    row.last_updated_at = now
+    row.next_reminder_at = next_reminder(now, body.update_cadence)
+    await db.commit()
+    return manual_asset_response(row)
+
+
+@app.delete("/assets/{asset_id}", status_code=204)
+async def delete_manual_asset(
+    asset_id: UUID, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(
+        delete(ManualAsset).where(ManualAsset.id == asset_id, ManualAsset.user_id == user.id)
+    )
+    if result.rowcount == 0:
+        raise HTTPException(404, "Asset not found")
+    await db.commit()
+
+
+@app.get("/net-position", response_model=api.NetPositionResponse)
+async def net_position(user: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
+    linked = (
+        (
+            await db.execute(
+                select(Account)
+                .join(Consent, Account.consent_id == Consent.id)
+                .join(ProviderLink, ProviderLink.consent_id == Account.consent_id)
+                .where(
+                    Account.user_id == user.id,
+                    Account.sync_paused.is_(False),
+                    ProviderLink.user_id == user.id,
+                    ProviderLink.status == "connected",
+                    Account.currency == "NGN",
+                    Consent.revoked_at.is_(None),
+                    Consent.expires_at > now_utc(),
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+    cash = sum(
+        account.current_balance_minor
+        for account in linked
+        if account.category != AccountCategory.investment
+    )
+    linked_investments = sum(
+        account.current_balance_minor
+        for account in linked
+        if account.category == AccountCategory.investment
+    )
+    assets = (
+        (await db.execute(select(ManualAsset).where(ManualAsset.user_id == user.id)))
+        .scalars()
+        .all()
+    )
+    investments = linked_investments + sum(asset_value_ngn_minor(asset) for asset in assets)
+    return {
+        "cash_minor": cash,
+        "investments_minor": investments,
+        "total_minor": cash + investments,
+        "currency": "NGN",
+        "as_of": now_utc(),
+        "fx_rate_warning": any(
+            asset.currency == "USD"
+            and (
+                asset.last_updated_at is None
+                or now_utc() - as_utc(asset.last_updated_at)
+                > timedelta(hours=settings.fx_ttl_hours)
+            )
+            for asset in assets
+        ),
+    }
+
+
 @app.get("/summary/monthly")
 async def monthly_summary(user: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
     view, _ = await ledger_view(db, user.id, now_utc())
@@ -924,7 +2148,7 @@ async def category_summary(user: User = Depends(current_user), db: AsyncSession 
     ]
 
 
-@app.get("/transactions")
+@app.get("/transactions", response_model=list[api.TransactionResponse])
 async def transactions(
     user: User = Depends(current_user),
     db: AsyncSession = Depends(get_db),
@@ -933,9 +2157,11 @@ async def transactions(
     merchant_id: UUID | None = None,
     from_date: datetime | None = None,
     to_date: datetime | None = None,
+    type: Literal["credit", "debit"] | None = None,
     limit: int = 50,
     offset: int = 0,
 ):
+    from_date, to_date = as_utc(from_date), as_utc(to_date)
     if not 1 <= limit <= 100 or not 0 <= offset <= 10_000:
         raise HTTPException(422, "Invalid pagination")
     if from_date and to_date and (to_date < from_date or to_date - from_date > timedelta(days=365)):
@@ -948,11 +2174,14 @@ async def transactions(
         )
     )
     q = select(Transaction).where(Transaction.account_id.in_(active))
-    q = q.where(Transaction.category == category) if category else q
+    if category:
+        labels = [category, *(key for key, value in CATEGORY_ALIASES.items() if value == category)]
+        q = q.where(Transaction.category.in_(labels))
     q = q.where(Transaction.account_id == account_id) if account_id else q
     q = q.where(Transaction.merchant_id == merchant_id) if merchant_id else q
     q = q.where(Transaction.posted_at >= from_date) if from_date else q
     q = q.where(Transaction.posted_at <= to_date) if to_date else q
+    q = q.where(Transaction.direction == Direction(type)) if type else q
     rows = (
         await db.execute(q.order_by(Transaction.posted_at.desc()).offset(offset).limit(limit))
     ).scalars()
@@ -963,10 +2192,431 @@ async def transactions(
             "amount_minor": x.amount_minor,
             "direction": x.direction,
             "narration": x.narration_clean,
-            "category": x.category,
+            "raw_narration": x.narration_raw,
+            "decoded_merchant": x.decoded_merchant,
+            "category": category_label(x.category),
+            "category_source": x.category_source,
         }
         for x in rows
     ]
+
+
+@app.get("/transactions/recent", response_model=list[api.RecentTransactionResponse])
+async def recent_transactions(
+    limit: int = 5, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
+):
+    if not 1 <= limit <= 20:
+        raise HTTPException(422, "Limit must be between 1 and 20")
+    rows = (
+        await db.execute(
+            select(Transaction, Account, Institution)
+            .join(Account, Transaction.account_id == Account.id)
+            .join(Institution, Account.institution_id == Institution.id)
+            .where(Account.id.in_(active_accounts(user.id, now_utc())))
+            .order_by(Transaction.posted_at.desc())
+            .limit(limit)
+        )
+    ).all()
+    return [
+        {
+            "id": tx.id,
+            "account_id": account.id,
+            "account_name": None,
+            "masked_number": account.account_number_masked,
+            "institution": institution.name,
+            "decoded_merchant": tx.decoded_merchant,
+            "amount_minor": tx.amount_minor,
+            "direction": tx.direction,
+            "category": category_label(tx.category),
+            "posted_at": tx.posted_at,
+        }
+        for tx, account, institution in rows
+    ]
+
+
+@app.patch("/transactions/{transaction_id}/category", response_model=api.ReclassificationResponse)
+async def reclassify_transaction(
+    transaction_id: UUID,
+    body: ReclassifyIn,
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    tx = (
+        await db.execute(
+            select(Transaction)
+            .join(Account, Transaction.account_id == Account.id)
+            .where(Transaction.id == transaction_id, Account.user_id == user.id)
+        )
+    ).scalar_one_or_none()
+    if tx is None:
+        raise HTTPException(404, "Transaction not found")
+    if not body.apply_to_future:
+        tx.category = body.category
+        tx.category_source = CategorySource.manual
+        await db.commit()
+        return {"id": tx.id, "category": tx.category, "category_source": tx.category_source}
+    key = counterparty_key(tx.decoded_merchant or tx.narration_clean)
+    if not key:
+        raise HTTPException(422, "Transaction has no counterparty for a future rule")
+    rule = (
+        await db.execute(
+            select(CategoryRule).where(
+                CategoryRule.user_id == user.id, CategoryRule.counterparty_key == key
+            )
+        )
+    ).scalar_one_or_none()
+    if rule is None:
+        db.add(
+            CategoryRule(
+                user_id=user.id, counterparty_key=key, category=body.category, created_at=now_utc()
+            )
+        )
+    else:
+        rule.category = body.category
+    matching = (
+        await db.execute(
+            select(Transaction)
+            .join(Account, Transaction.account_id == Account.id)
+            .where(Account.user_id == user.id)
+        )
+    ).scalars()
+    for item in matching:
+        if counterparty_key(item.decoded_merchant or item.narration_clean) == key:
+            item.category = body.category
+            item.category_source = CategorySource.user_rule
+    await db.commit()
+    return {"id": tx.id, "category": tx.category, "category_source": tx.category_source}
+
+
+@app.get("/category-rules", response_model=list[api.CategoryRuleResponse])
+async def category_rules(user: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
+    rows = (await db.execute(select(CategoryRule).where(CategoryRule.user_id == user.id))).scalars()
+    return [
+        {"id": row.id, "counterparty_key": row.counterparty_key, "category": row.category}
+        for row in rows
+    ]
+
+
+@app.delete("/category-rules/{rule_id}", status_code=204)
+async def delete_category_rule(
+    rule_id: UUID, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(
+        delete(CategoryRule).where(CategoryRule.id == rule_id, CategoryRule.user_id == user.id)
+    )
+    if result.rowcount == 0:
+        raise HTTPException(404, "Category rule not found")
+    await db.commit()
+
+
+@app.get("/analytics/spending", response_model=api.SpendingResponse)
+async def spending_analytics(
+    period: Literal["this_month", "last_month", "custom"] = "this_month",
+    from_date: date | None = Query(default=None, alias="from"),
+    to_date: date | None = Query(default=None, alias="to"),
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    today = now_utc().date()
+    if period == "custom":
+        if from_date is None or to_date is None or to_date < from_date:
+            raise HTTPException(422, "A valid from/to range is required")
+        if (to_date - from_date).days > 366:
+            raise HTTPException(422, "Date range is too long")
+        start_day, end_day = from_date, to_date
+    elif period == "last_month":
+        end_day = today.replace(day=1) - timedelta(days=1)
+        start_day = end_day.replace(day=1)
+    else:
+        start_day, end_day = today.replace(day=1), today
+    start = datetime.combine(start_day, datetime.min.time(), UTC)
+    end = datetime.combine(end_day + timedelta(days=1), datetime.min.time(), UTC)
+    amounts = (
+        await db.execute(
+            select(Transaction.category, func.sum(Transaction.amount_minor))
+            .join(Account, Transaction.account_id == Account.id)
+            .where(
+                Account.user_id == user.id,
+                Account.currency == "NGN",
+                Account.id.in_(active_accounts(user.id, now_utc())),
+                Transaction.direction == Direction.debit,
+                Transaction.posted_at >= start,
+                Transaction.posted_at < end,
+            )
+            .group_by(Transaction.category)
+        )
+    ).all()
+    normalised = {}
+    for category, amount in amounts:
+        label = category_label(category)
+        normalised[label] = normalised.get(label, 0) + amount
+    amounts = list(normalised.items())
+    total = sum(amount for _, amount in amounts)
+    return {
+        "period": period,
+        "from": start_day,
+        "to": end_day,
+        "total_outflow_minor": total,
+        "categories": [
+            {
+                "category": category,
+                "amount_minor": amount,
+                "percentage": round(amount * 100 / total, 2) if total else 0,
+            }
+            for category, amount in sorted(amounts)
+        ],
+        "own_transfers_excluded": 0,
+        "own_transfer_detection": "not_available",
+    }
+
+
+@app.get("/budget", response_model=api.BudgetResponse)
+async def get_budget(user: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
+    row = (
+        await db.execute(
+            select(Budget)
+            .where(Budget.user_id == user.id, Budget.effective_from <= now_utc())
+            .order_by(Budget.effective_from.desc())
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+    if row is None:
+        return {"monthly_limit_minor": None, "effective_from": None}
+    return {"monthly_limit_minor": row.monthly_limit_minor, "effective_from": row.effective_from}
+
+
+@app.put("/budget", response_model=api.BudgetResponse)
+async def put_budget(
+    body: BudgetIn, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
+):
+    row = Budget(
+        user_id=user.id, monthly_limit_minor=body.monthly_limit_minor, effective_from=now_utc()
+    )
+    db.add(row)
+    await db.commit()
+    return {"monthly_limit_minor": row.monthly_limit_minor, "effective_from": row.effective_from}
+
+
+@app.get("/budget/velocity", response_model=api.BudgetVelocityResponse)
+async def budget_velocity(user: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
+    budget = (
+        await db.execute(
+            select(Budget)
+            .where(Budget.user_id == user.id, Budget.effective_from <= now_utc())
+            .order_by(Budget.effective_from.desc())
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+    if budget is None:
+        raise HTTPException(404, "Monthly budget not set")
+    now = now_utc()
+    month_start = datetime(now.year, now.month, 1, tzinfo=UTC)
+    spent = (
+        await db.execute(
+            select(func.coalesce(func.sum(Transaction.amount_minor), 0)).where(
+                Transaction.account_id.in_(active_accounts(user.id, now)),
+                Transaction.direction == Direction.debit,
+                Transaction.posted_at >= month_start,
+                Transaction.account_id.in_(select(Account.id).where(Account.currency == "NGN")),
+                Transaction.posted_at <= now,
+            )
+        )
+    ).scalar_one()
+    projected = projected_month_end_spend(spent, now)
+    percentage = round(spent * 100 / budget.monthly_limit_minor, 2)
+    status = (
+        "exceeded"
+        if spent > budget.monthly_limit_minor
+        else ("warning" if projected > budget.monthly_limit_minor else "on_track")
+    )
+    return {
+        "spent_minor": spent,
+        "monthly_limit_minor": budget.monthly_limit_minor,
+        "percentage": percentage,
+        "projected_month_end_minor": projected,
+        "status": status,
+        "as_of": now,
+    }
+
+
+def obligation_response(row: Obligation) -> dict:
+    return {
+        "id": row.id,
+        "account_id": row.account_id,
+        "lender_name": row.lender_name,
+        "kind": row.kind,
+        "amount_minor": row.amount_minor,
+        "cadence_days": row.cadence_days,
+        "next_due_date": row.next_due_date,
+        "days_until_due": (row.next_due_date - now_utc().date()).days,
+        "confidence_bps": row.confidence_bps,
+        "status": row.status,
+        "source": row.source,
+    }
+
+
+@app.post("/obligations", status_code=201, response_model=api.ObligationResponse)
+async def create_obligation(
+    body: ObligationIn, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
+):
+    if body.account_id is not None:
+        account = (
+            await db.execute(
+                select(Account).where(Account.id == body.account_id, Account.user_id == user.id)
+            )
+        ).scalar_one_or_none()
+        if account is None:
+            raise HTTPException(404, "Account not found")
+    row = Obligation(
+        user_id=user.id,
+        account_id=body.account_id,
+        lender_name=body.lender_name,
+        kind=body.kind,
+        amount_minor=body.amount_minor,
+        cadence_days=body.cadence_days,
+        next_due_date=body.next_due_date,
+        confidence_bps=10_000,
+        status="upcoming",
+        source="manual",
+    )
+    db.add(row)
+    await db.commit()
+    return obligation_response(row)
+
+
+@app.get("/obligations", response_model=list[api.ObligationResponse])
+async def list_obligations(user: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
+    rows = (
+        await db.execute(
+            select(Obligation)
+            .where(Obligation.user_id == user.id, Obligation.status != "dismissed")
+            .order_by(Obligation.next_due_date.asc())
+        )
+    ).scalars()
+    return [obligation_response(row) for row in rows]
+
+
+@app.get("/obligations/{obligation_id}", response_model=api.ObligationDetailResponse)
+async def obligation_detail(
+    obligation_id: UUID, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
+):
+    row = (
+        await db.execute(
+            select(Obligation).where(Obligation.id == obligation_id, Obligation.user_id == user.id)
+        )
+    ).scalar_one_or_none()
+    if row is None:
+        raise HTTPException(404, "Obligation not found")
+    payments = (
+        await db.execute(
+            select(ObligationPayment)
+            .where(ObligationPayment.obligation_id == row.id)
+            .order_by(ObligationPayment.paid_at.desc())
+        )
+    ).scalars()
+    return {
+        **obligation_response(row),
+        "payments": [
+            {
+                "transaction_id": item.transaction_id,
+                "paid_at": item.paid_at,
+                "amount_minor": item.amount_minor,
+            }
+            for item in payments
+        ],
+    }
+
+
+@app.patch("/obligations/{obligation_id}", response_model=api.ObligationResponse)
+async def update_obligation(
+    obligation_id: UUID,
+    body: ObligationUpdateIn,
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    row = (
+        await db.execute(
+            select(Obligation).where(Obligation.id == obligation_id, Obligation.user_id == user.id)
+        )
+    ).scalar_one_or_none()
+    if row is None:
+        raise HTTPException(404, "Obligation not found")
+    for name, value in body.model_dump(exclude_unset=True).items():
+        if value is not None:
+            setattr(row, name, value)
+    await db.commit()
+    return obligation_response(row)
+
+
+@app.post("/devices", status_code=201)
+async def register_device(
+    body: DeviceIn, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
+):
+    digest = hash_field(body.token)
+    row = (
+        await db.execute(select(DeviceToken).where(DeviceToken.token_hash == digest))
+    ).scalar_one_or_none()
+    if row and row.user_id != user.id:
+        raise HTTPException(409, "Device is registered to another user")
+    if row is None:
+        row = DeviceToken(
+            user_id=user.id,
+            token_hash=digest,
+            token_encrypted=encrypt_field(body.token),
+            platform=body.platform,
+            last_seen_at=now_utc(),
+        )
+        db.add(row)
+    else:
+        row.token_encrypted = encrypt_field(body.token)
+        row.platform = body.platform
+        row.last_seen_at = now_utc()
+    await db.commit()
+    return {"id": row.id, "platform": row.platform, "last_seen_at": row.last_seen_at}
+
+
+@app.delete("/devices/{device_id}", status_code=204)
+async def unregister_device(
+    device_id: UUID, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(
+        delete(DeviceToken).where(DeviceToken.id == device_id, DeviceToken.user_id == user.id)
+    )
+    if result.rowcount == 0:
+        raise HTTPException(404, "Device not found")
+    await db.commit()
+
+
+def preference_response(row: NotificationPreference | None) -> dict:
+    return {
+        "overspending_alerts": row.overspending_alerts if row else True,
+        "loan_repayment_reminders": row.loan_repayment_reminders if row else True,
+        "investment_update_prompts": row.investment_update_prompts if row else True,
+    }
+
+
+@app.get("/notification-preferences")
+async def get_notification_preferences(
+    user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
+):
+    return preference_response(await db.get(NotificationPreference, user.id))
+
+
+@app.put("/notification-preferences")
+async def put_notification_preferences(
+    body: NotificationPreferencesIn,
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    row = await db.get(NotificationPreference, user.id)
+    if row is None:
+        row = NotificationPreference(user_id=user.id)
+        db.add(row)
+    row.overspending_alerts = body.overspending_alerts
+    row.loan_repayment_reminders = body.loan_repayment_reminders
+    row.investment_update_prompts = body.investment_update_prompts
+    await db.commit()
+    return preference_response(row)
 
 
 @app.post("/statements/upload")
@@ -997,6 +2647,8 @@ async def upload_statement(
     imported = await ingest(db, account, rows)
     await db.flush()
     await rebuild_account(db, account.id, user.id, now_utc())
+    await db.flush()
+    await sync_detected_obligations(db, user.id)
     await db.flush()
     await db.execute(
         delete(InsightRecord).where(
@@ -1133,7 +2785,16 @@ def _document_operation(path: str, method: str, operation: dict) -> None:
     """Add stable Swagger metadata without changing route behaviour."""
     groups = {
         "/auth/": "Auth",
+        "/onboarding/": "Onboarding",
         "/identity/": "Identity",
+        "/assets": "Assets",
+        "/net-position": "Assets",
+        "/category-rules": "Category rules",
+        "/analytics/": "Analytics",
+        "/budget": "Budget",
+        "/obligations": "Obligations",
+        "/devices": "Notifications",
+        "/notification-preferences": "Notifications",
         "/consents": "Consents",
         "/accounts": "Accounts and linking",
         "/sync": "Sync and statements",
@@ -1189,12 +2850,47 @@ def custom_openapi():
         tags=OPENAPI_TAGS,
     )
     schema["servers"] = app.servers
+    error_schema = api.ErrorResponse.model_json_schema(ref_template="#/components/schemas/{model}")
+    definitions = error_schema.pop("$defs", {})
+    schema.setdefault("components", {}).setdefault("schemas", {}).update(definitions)
+    schema["components"]["schemas"]["ErrorResponse"] = error_schema
+    schema["components"]["securitySchemes"]["HTTPBearer"]["description"] = (
+        "App-issued JWT after OTP verification. Refresh tokens rotate on every use; "
+        "refresh-token replay revokes that family. Logout-all revokes access sessions."
+    )
     seen: set[str] = set()
     for path, path_item in schema.get("paths", {}).items():
         for method, operation in path_item.items():
             if method not in {"get", "post", "put", "patch", "delete", "options", "head"}:
                 continue
             _document_operation(path, method, operation)
+            operation.setdefault("security", [])
+            documentation = DEMO_OPERATIONS.get((method, path))
+            if documentation:
+                summary, description, errors = documentation
+                operation["summary"] = summary
+                operation["description"] = description + (
+                    " Requires the signed-in user's Bearer token; resources are owner-scoped."
+                    if operation["security"]
+                    else ""
+                )
+                for code in (*errors, 500):
+                    operation["responses"][str(code)] = {
+                        "description": ERROR_MESSAGES[code],
+                        "content": {
+                            "application/json": {
+                                "schema": {"$ref": "#/components/schemas/ErrorResponse"},
+                                "example": {"detail": ERROR_MESSAGES[code]},
+                            }
+                        },
+                    }
+                if path == "/accounts/{account_id}/refresh":
+                    operation["responses"]["429"]["headers"] = {
+                        "Retry-After": {
+                            "description": "Seconds remaining in the refresh cooldown.",
+                            "schema": {"type": "integer", "minimum": 1},
+                        }
+                    }
             if operation.get("security"):
                 operation.setdefault("responses", {}).setdefault(
                     "401",

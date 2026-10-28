@@ -45,7 +45,15 @@ class Series:
 class Settings:
     safe_buffer: int = 0
     payday_hint: int | None = None
-    discretionary: tuple[str, ...] = ("food", "shopping", "entertainment", "transport")
+    discretionary: tuple[str, ...] = (
+        "food",
+        "shopping",
+        "entertainment",
+        "transport",
+        "Food & Dining",
+        "Shopping & Transfers",
+        "Transport",
+    )
     nominal_tbill_rate_bps: int = 1500
 
 

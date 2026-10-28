@@ -14,6 +14,16 @@ from app.core.db import get_db
 from app.models import User
 
 bearer = HTTPBearer(auto_error=False)
+_development_jwt_secret = secrets.token_urlsafe(48)
+
+
+def _jwt_secret() -> str:
+    settings = get_settings()
+    if settings.jwt_secret:
+        return settings.jwt_secret
+    if settings.environment == "production":
+        raise RuntimeError("JWT_SECRET is required in production")
+    return _development_jwt_secret
 
 
 def hash_secret(value: str, salt: str = "") -> str:
@@ -32,25 +42,30 @@ def access_token(user_id: UUID) -> str:
             "iss": settings.jwt_issuer,
             "aud": settings.jwt_audience,
         },
-        settings.jwt_secret,
+        _jwt_secret(),
         algorithm="HS256",
     )
 
 
-def decode_access(token: str) -> UUID:
+def decode_access_claims(token: str) -> dict:
     try:
         settings = get_settings()
         payload = jwt.decode(
             token,
-            settings.jwt_secret,
+            _jwt_secret(),
             algorithms=["HS256"],
             issuer=settings.jwt_issuer,
             audience=settings.jwt_audience,
             options={"require": ["sub", "iat", "exp", "jti", "iss", "aud"]},
         )
-        return UUID(payload["sub"])
+        UUID(payload["sub"])
+        return payload
     except (jwt.PyJWTError, ValueError, KeyError) as exc:
         raise HTTPException(401, "Invalid or expired access token") from exc
+
+
+def decode_access(token: str) -> UUID:
+    return UUID(decode_access_claims(token)["sub"])
 
 
 async def current_user(
@@ -59,9 +74,17 @@ async def current_user(
 ) -> User:
     if credentials is None:
         raise HTTPException(401, "Authentication required")
-    user = await db.get(User, decode_access(credentials.credentials))
+    claims = decode_access_claims(credentials.credentials)
+    user = await db.get(User, UUID(claims["sub"]))
     if user is None:
         raise HTTPException(401, "Authentication required")
+    if user.sessions_revoked_at:
+        issued = datetime.fromtimestamp(claims["iat"], UTC)
+        revoked_at = user.sessions_revoked_at
+        if revoked_at.tzinfo is None:
+            revoked_at = revoked_at.replace(tzinfo=UTC)
+        if issued <= revoked_at:
+            raise HTTPException(401, "Session revoked")
     return user
 
 

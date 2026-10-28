@@ -10,9 +10,17 @@ from sqlalchemy.orm import selectinload
 
 from app.core.clock import now_utc
 from app.insights.types import Balance, LedgerView, Series, Settings, Tx
-from app.ledger.normalise import categorise, clean_narration, dedupe
+from app.ledger.normalise import (
+    categorise,
+    category_label,
+    clean_narration,
+    counterparty_key,
+    dedupe,
+)
 from app.models import (
     Account,
+    CategoryRule,
+    CategorySource,
     Channel,
     Consent,
     Direction,
@@ -94,7 +102,9 @@ async def ledger_view(
     settings = Settings(
         safe_buffer=settings_row.safe_buffer_minor if settings_row else 500_000,
         payday_hint=settings_row.payday_hint if settings_row else None,
-        discretionary=tuple(settings_row.discretionary_categories)
+        discretionary=tuple(
+            category_label(category) for category in settings_row.discretionary_categories
+        )
         if settings_row and settings_row.discretionary_categories
         else Settings().discretionary,
         nominal_tbill_rate_bps=settings_row.nominal_tbill_rate_bps if settings_row else 1500,
@@ -111,7 +121,7 @@ async def ledger_view(
                 cast(datetime, as_utc(t.posted_at)),
                 t.amount_minor,
                 t.direction.value,
-                t.category,
+                category_label(t.category),
                 merchants[t.merchant_id].canonical_name if t.merchant_id in merchants else "",
                 merchants[t.merchant_id].is_subscription_like
                 if t.merchant_id in merchants
@@ -136,7 +146,7 @@ async def ledger_view(
             Series(
                 str(s.id),
                 series_merchants[s.merchant_id].canonical_name,
-                series_merchants[s.merchant_id].category_default,
+                category_label(series_merchants[s.merchant_id].category_default),
                 s.cadence_days,
                 s.typical_amount_minor,
                 s.last_amount_minor,
@@ -157,29 +167,43 @@ async def ledger_view(
 async def ingest(db: AsyncSession, account: Account, rows: list[ProviderTransaction]) -> int:
     """Persist validated provider rows once per account; return inserted count."""
     count = 0
+    rules = {
+        rule.counterparty_key: rule.category
+        for rule in (
+            await db.execute(select(CategoryRule).where(CategoryRule.user_id == account.user_id))
+        ).scalars()
+    }
     for row in rows:
         if type(row.amount_minor) is not int or row.amount_minor <= 0 or row.amount_minor >= 2**63:
             raise ValueError("Invalid transaction amount")
         if row.direction not in {"credit", "debit"} or row.posted_at.tzinfo is None:
             raise ValueError("Invalid transaction direction or timestamp")
-        key = dedupe(account.id, row.external_id, row.posted_at, row.amount_minor, row.direction)
+        dedupe_key = dedupe(
+            account.id, row.external_id, row.posted_at, row.amount_minor, row.direction
+        )
         if (
             await db.execute(
                 select(Transaction.id).where(
-                    Transaction.account_id == account.id, Transaction.dedupe_hash == key
+                    Transaction.account_id == account.id, Transaction.dedupe_hash == dedupe_key
                 )
             )
         ).scalar_one_or_none():
             continue
         clean = clean_narration(row.narration)
-        name, category, subscription = categorise(clean)
+        name, category, subscription = categorise(row.narration, row.category)
+        merchant_category = category
+        key = counterparty_key(name)
+        source = CategorySource.auto
+        if key in rules:
+            category = category_label(rules[key])
+            source = CategorySource.user_rule
         merchant = (
             await db.execute(select(Merchant).where(Merchant.canonical_name == name))
         ).scalar_one_or_none()
         if merchant is None:
             merchant = Merchant(
                 canonical_name=name,
-                category_default=category,
+                category_default=merchant_category,
                 is_subscription_like=subscription,
                 legitimately_repeating=False,
             )
@@ -192,13 +216,15 @@ async def ingest(db: AsyncSession, account: Account, rows: list[ProviderTransact
                 posted_at=row.posted_at,
                 amount_minor=row.amount_minor,
                 direction=Direction(row.direction),
-                narration_raw=row.narration[:500],
+                narration_raw=row.narration,
                 narration_clean=clean,
+                decoded_merchant=name,
                 merchant_id=merchant.id,
                 category=category,
+                category_source=source,
                 channel=channel,
                 balance_after_minor=row.balance_after_minor,
-                dedupe_hash=key,
+                dedupe_hash=dedupe_key,
             )
         )
         count += 1
