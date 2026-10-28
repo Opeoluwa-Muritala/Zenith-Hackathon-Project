@@ -75,7 +75,8 @@ async def get_usd_ngn_rate(db: AsyncSession, supplied: Decimal | None) -> tuple[
             .limit(1)
         )
     ).scalar_one_or_none()
-    if cached and now_utc() - as_utc(cached.fetched_at) < timedelta(hours=settings.fx_ttl_hours):
+    cached_at = as_utc(cached.fetched_at) if cached else None
+    if cached and cached_at and now_utc() - cached_at < timedelta(hours=settings.fx_ttl_hours):
         return cached.rate, cached.source
     try:
         rate = rate_to_ppm(await HttpFxProvider().fetch_usd_ngn())

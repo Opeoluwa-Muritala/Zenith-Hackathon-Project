@@ -387,6 +387,59 @@
         "title": "AccountsResponse",
         "type": "object"
       },
+      "ActiveConsentResponse": {
+        "properties": {
+          "consent_id": {
+            "format": "uuid",
+            "title": "Consent Id",
+            "type": "string"
+          },
+          "data_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Status"
+          },
+          "institution": {
+            "title": "Institution",
+            "type": "string"
+          },
+          "link_id": {
+            "format": "uuid",
+            "title": "Link Id",
+            "type": "string"
+          },
+          "linked_at": {
+            "format": "date-time",
+            "title": "Linked At",
+            "type": "string"
+          },
+          "read_only": {
+            "title": "Read Only",
+            "type": "boolean"
+          },
+          "scope": {
+            "title": "Scope",
+            "type": "string"
+          }
+        },
+        "required": [
+          "consent_id",
+          "link_id",
+          "institution",
+          "linked_at",
+          "data_status",
+          "scope",
+          "read_only"
+        ],
+        "title": "ActiveConsentResponse",
+        "type": "object"
+      },
       "AiPreferenceRequest": {
         "description": "Whether the user opts in to model-powered wording and chat.",
         "properties": {
@@ -418,6 +471,19 @@
       },
       "BudgetIn": {
         "properties": {
+          "effective_from": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "UTC time when this budget starts applying.",
+            "title": "Effective From"
+          },
           "monthly_limit_minor": {
             "description": "Monthly budget in NGN kobo.",
             "examples": [
@@ -1111,6 +1177,21 @@
         "title": "InitiateLinkResponse",
         "type": "object"
       },
+      "InviteInput": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "title": "InviteInput",
+        "type": "object"
+      },
       "LinkDiscoveredIn": {
         "properties": {
           "email": {
@@ -1440,6 +1521,180 @@
         "title": "MockLinkResponse",
         "type": "object"
       },
+      "ModeInput": {
+        "additionalProperties": false,
+        "properties": {
+          "mode": {
+            "enum": [
+              "consumer",
+              "sme"
+            ],
+            "title": "Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mode"
+        ],
+        "title": "ModeInput",
+        "type": "object"
+      },
+      "MonthlyReport": {
+        "additionalProperties": false,
+        "properties": {
+          "business_expenses_minor": {
+            "title": "Business Expenses Minor",
+            "type": "integer"
+          },
+          "currency": {
+            "default": "NGN",
+            "title": "Currency",
+            "type": "string"
+          },
+          "expenses_minor": {
+            "title": "Expenses Minor",
+            "type": "integer"
+          },
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "income_minor": {
+            "title": "Income Minor",
+            "type": "integer"
+          },
+          "month": {
+            "title": "Month",
+            "type": "string"
+          },
+          "net_cash_flow_minor": {
+            "title": "Net Cash Flow Minor",
+            "type": "integer"
+          },
+          "personal_expenses_minor": {
+            "title": "Personal Expenses Minor",
+            "type": "integer"
+          },
+          "transactions": {
+            "items": {
+              "$ref": "#/components/schemas/ReportItem"
+            },
+            "title": "Transactions",
+            "type": "array"
+          },
+          "uncertain_items": {
+            "items": {
+              "$ref": "#/components/schemas/UncertainItem"
+            },
+            "title": "Uncertain Items",
+            "type": "array"
+          },
+          "unsure_expenses_minor": {
+            "title": "Unsure Expenses Minor",
+            "type": "integer"
+          },
+          "weekly_net_minor": {
+            "items": {
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "type": "object"
+            },
+            "title": "Weekly Net Minor",
+            "type": "array"
+          }
+        },
+        "required": [
+          "month",
+          "income_minor",
+          "expenses_minor",
+          "net_cash_flow_minor",
+          "business_expenses_minor",
+          "personal_expenses_minor",
+          "unsure_expenses_minor",
+          "weekly_net_minor",
+          "transactions",
+          "uncertain_items",
+          "generated_at"
+        ],
+        "title": "MonthlyReport",
+        "type": "object"
+      },
+      "NetPositionBreakdownResponse": {
+        "properties": {
+          "currency": {
+            "description": "Currency.",
+            "title": "Currency",
+            "type": "string"
+          },
+          "fx_rate_ppm": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Fx rate ppm.",
+            "title": "Fx Rate Ppm"
+          },
+          "id": {
+            "description": "Application resource identifier.",
+            "examples": [
+              "00000000-0000-4000-8000-000000000001"
+            ],
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "description": "Label.",
+            "title": "Label",
+            "type": "string"
+          },
+          "paused": {
+            "description": "Paused.",
+            "title": "Paused",
+            "type": "boolean"
+          },
+          "source": {
+            "description": "Source.",
+            "enum": [
+              "account",
+              "manual_asset"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "value_ngn_minor": {
+            "description": "Integer NGN minor units (kobo).",
+            "examples": [
+              10000
+            ],
+            "title": "Value Ngn Minor",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "source",
+          "label",
+          "value_ngn_minor",
+          "currency",
+          "paused"
+        ],
+        "title": "NetPositionBreakdownResponse",
+        "type": "object"
+      },
       "NetPositionResponse": {
         "properties": {
           "as_of": {
@@ -1450,6 +1705,14 @@
             "format": "date-time",
             "title": "As Of",
             "type": "string"
+          },
+          "breakdown": {
+            "description": "Breakdown.",
+            "items": {
+              "$ref": "#/components/schemas/NetPositionBreakdownResponse"
+            },
+            "title": "Breakdown",
+            "type": "array"
           },
           "cash_minor": {
             "description": "Integer NGN minor units (kobo).",
@@ -1478,6 +1741,11 @@
             "title": "Investments Minor",
             "type": "integer"
           },
+          "paused_accounts_included": {
+            "description": "Paused accounts included.",
+            "title": "Paused Accounts Included",
+            "type": "integer"
+          },
           "total_minor": {
             "description": "Integer NGN minor units (kobo).",
             "examples": [
@@ -1493,7 +1761,9 @@
           "total_minor",
           "currency",
           "as_of",
-          "fx_rate_warning"
+          "fx_rate_warning",
+          "paused_accounts_included",
+          "breakdown"
         ],
         "title": "NetPositionResponse",
         "type": "object"
@@ -1561,6 +1831,11 @@
             "title": "Days Until Due",
             "type": "integer"
           },
+          "due_date_estimated": {
+            "description": "Due date estimated.",
+            "title": "Due Date Estimated",
+            "type": "boolean"
+          },
           "id": {
             "description": "Application resource identifier.",
             "examples": [
@@ -1626,6 +1901,7 @@
           "confidence_bps",
           "status",
           "source",
+          "due_date_estimated",
           "payments"
         ],
         "title": "ObligationDetailResponse",
@@ -1779,6 +2055,11 @@
             "title": "Days Until Due",
             "type": "integer"
           },
+          "due_date_estimated": {
+            "description": "Due date estimated.",
+            "title": "Due Date Estimated",
+            "type": "boolean"
+          },
           "id": {
             "description": "Application resource identifier.",
             "examples": [
@@ -1835,13 +2116,26 @@
           "days_until_due",
           "confidence_bps",
           "status",
-          "source"
+          "source",
+          "due_date_estimated"
         ],
         "title": "ObligationResponse",
         "type": "object"
       },
       "ObligationUpdateIn": {
         "properties": {
+          "account_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account Id"
+          },
           "amount_minor": {
             "anyOf": [
               {
@@ -1868,6 +2162,22 @@
               }
             ],
             "title": "Cadence Days"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "loan",
+                  "direct_debit",
+                  "subscription"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
           },
           "lender_name": {
             "anyOf": [
@@ -2042,6 +2352,105 @@
           }
         },
         "title": "PhoneIn",
+        "type": "object"
+      },
+      "PlanResponse": {
+        "properties": {
+          "entitlements": {
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "title": "Entitlements",
+            "type": "object"
+          },
+          "free_live_account_limit": {
+            "title": "Free Live Account Limit",
+            "type": "integer"
+          },
+          "paid_sme": {
+            "title": "Paid Sme",
+            "type": "boolean"
+          },
+          "tier": {
+            "enum": [
+              "free",
+              "sme"
+            ],
+            "title": "Tier",
+            "type": "string"
+          },
+          "trial_ends_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trial Ends At"
+          },
+          "trial_started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trial Started At"
+          },
+          "trial_status": {
+            "enum": [
+              "not_started",
+              "active",
+              "expired",
+              "paid"
+            ],
+            "title": "Trial Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tier",
+          "paid_sme",
+          "trial_status",
+          "trial_started_at",
+          "trial_ends_at",
+          "free_live_account_limit",
+          "entitlements"
+        ],
+        "title": "PlanResponse",
+        "type": "object"
+      },
+      "PrivacyPreferenceIn": {
+        "properties": {
+          "privacy_blur": {
+            "title": "Privacy Blur",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "privacy_blur"
+        ],
+        "title": "PrivacyPreferenceIn",
+        "type": "object"
+      },
+      "PrivacyPreferenceResponse": {
+        "properties": {
+          "privacy_blur": {
+            "description": "Privacy blur.",
+            "title": "Privacy Blur",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "privacy_blur"
+        ],
+        "title": "PrivacyPreferenceResponse",
         "type": "object"
       },
       "RecentTransactionResponse": {
@@ -2332,6 +2741,57 @@
         "title": "RefreshResponse",
         "type": "object"
       },
+      "ReportItem": {
+        "additionalProperties": false,
+        "properties": {
+          "amount_minor": {
+            "title": "Amount Minor",
+            "type": "integer"
+          },
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "confidence_bps": {
+            "title": "Confidence Bps",
+            "type": "integer"
+          },
+          "direction": {
+            "title": "Direction",
+            "type": "string"
+          },
+          "merchant": {
+            "title": "Merchant",
+            "type": "string"
+          },
+          "posted_at": {
+            "format": "date-time",
+            "title": "Posted At",
+            "type": "string"
+          },
+          "transaction_id": {
+            "format": "uuid",
+            "title": "Transaction Id",
+            "type": "string"
+          },
+          "use_label": {
+            "title": "Use Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "transaction_id",
+          "posted_at",
+          "amount_minor",
+          "direction",
+          "merchant",
+          "category",
+          "use_label",
+          "confidence_bps"
+        ],
+        "title": "ReportItem",
+        "type": "object"
+      },
       "SelectDiscoveredIn": {
         "properties": {
           "ids": {
@@ -2368,6 +2828,20 @@
           "skipped"
         ],
         "title": "SelectionResponse",
+        "type": "object"
+      },
+      "ShareInput": {
+        "additionalProperties": false,
+        "properties": {
+          "expires_in_days": {
+            "default": 7,
+            "maximum": 30.0,
+            "minimum": 1.0,
+            "title": "Expires In Days",
+            "type": "integer"
+          }
+        },
+        "title": "ShareInput",
         "type": "object"
       },
       "SkippedAccountResponse": {
@@ -2644,6 +3118,31 @@
         "title": "TransactionResponse",
         "type": "object"
       },
+      "UncertainItem": {
+        "additionalProperties": false,
+        "properties": {
+          "amount_minor": {
+            "title": "Amount Minor",
+            "type": "integer"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "transaction_id": {
+            "format": "uuid",
+            "title": "Transaction Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "transaction_id",
+          "amount_minor",
+          "reason"
+        ],
+        "title": "UncertainItem",
+        "type": "object"
+      },
       "UnlinkResponse": {
         "properties": {
           "local_data_purged": {
@@ -2675,6 +3174,67 @@
         ],
         "title": "UpdateCadence",
         "type": "string"
+      },
+      "UpgradeTapRequest": {
+        "properties": {
+          "desired_tier": {
+            "const": "sme",
+            "default": "sme",
+            "title": "Desired Tier",
+            "type": "string"
+          },
+          "surface": {
+            "enum": [
+              "home",
+              "report",
+              "business_separator",
+              "alerts",
+              "account_limit",
+              "trial_expired",
+              "settings"
+            ],
+            "title": "Surface",
+            "type": "string"
+          }
+        },
+        "required": [
+          "surface"
+        ],
+        "title": "UpgradeTapRequest",
+        "type": "object"
+      },
+      "UpgradeTapResponse": {
+        "properties": {
+          "status": {
+            "const": "recorded",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "UpgradeTapResponse",
+        "type": "object"
+      },
+      "UseReviewInput": {
+        "additionalProperties": false,
+        "properties": {
+          "label": {
+            "enum": [
+              "business",
+              "personal",
+              "unsure"
+            ],
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label"
+        ],
+        "title": "UseReviewInput",
+        "type": "object"
       },
       "ValidationError": {
         "properties": {
@@ -2764,6 +3324,46 @@
           "received"
         ],
         "title": "WebhookResponse",
+        "type": "object"
+      },
+      "WipeRequest": {
+        "properties": {
+          "otp": {
+            "pattern": "^\\d{6}$",
+            "title": "Otp",
+            "type": "string"
+          }
+        },
+        "required": [
+          "otp"
+        ],
+        "title": "WipeRequest",
+        "type": "object"
+      },
+      "WipeResponse": {
+        "properties": {
+          "deleted": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Deleted",
+            "type": "object"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "unlink_pending": {
+            "title": "Unlink Pending",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "status",
+          "deleted",
+          "unlink_pending"
+        ],
+        "title": "WipeResponse",
         "type": "object"
       }
     },
@@ -4137,7 +4737,7 @@
     },
     "/accounts/{account_id}/unlink": {
       "post": {
-        "description": "Purge linked local transactions, recurring records and obligations, revoke consent, then attempt Mono unlink. Failure retains an encrypted pending_unlink target; no automatic retry worker exists. User-level derived insights and AI conversations are also purged. Requires the signed-in user's Bearer token; resources are owner-scoped.",
+        "description": "Purge linked local transactions, recurring records and obligations, revoke consent, then attempt Mono unlink. Failure retains an encrypted durable retry target processed by the scheduler. User-level derived insights and AI conversations are also purged. Requires the signed-in user's Bearer token; resources are owner-scoped.",
         "operationId": "post_accounts_by_account_id_unlink",
         "parameters": [
           {
@@ -5226,6 +5826,501 @@
         ]
       }
     },
+    "/billing/upgrade-events": {
+      "post": {
+        "description": "Record the authenticated user's paywall surface and desired SME tier for pricing research. This route never starts checkout or charges a payment method. Requires the signed-in user's Bearer token; resources are owner-scoped.",
+        "operationId": "post_billing_upgrade_events",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpgradeTapRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpgradeTapResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Authentication is missing, invalid or expired."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Authentication is missing, invalid or expired."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Invalid input or date range; sensitive input values are omitted."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid input or date range; sensitive input values are omitted."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Internal server error."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal server error."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Record an upgrade tap",
+        "tags": [
+          "Accounts and linking"
+        ]
+      }
+    },
+    "/bookkeeper-invites": {
+      "get": {
+        "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "get_bookkeeper_invites",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "additionalProperties": true,
+                      "type": "object"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Get Bookkeeper Invite Bookkeeper Invites Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Bookkeeper Invite",
+        "tags": [
+          "Accounts and linking"
+        ]
+      },
+      "post": {
+        "description": "Submit this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "post_bookkeeper_invites",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InviteInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Invite Bookkeeper Bookkeeper Invites Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Invite Bookkeeper",
+        "tags": [
+          "Accounts and linking"
+        ]
+      }
+    },
+    "/bookkeeper-invites/{invite_id}": {
+      "delete": {
+        "description": "Delete this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "delete_bookkeeper_invites_by_invite_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "invite_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Invite Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Revoke Bookkeeper Invite",
+        "tags": [
+          "Accounts and linking"
+        ]
+      }
+    },
+    "/bookkeeper-invites/{token}/accept": {
+      "post": {
+        "description": "Submit this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "post_bookkeeper_invites_by_token_accept",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "title": "Token",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Accept Bookkeeper Invite Bookkeeper Invites  Token  Accept Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Accept Bookkeeper Invite",
+        "tags": [
+          "Accounts and linking"
+        ]
+      }
+    },
+    "/bookkeeper/clients/{owner_id}/reports/monthly/{month}": {
+      "get": {
+        "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "get_bookkeeper_clients_by_owner_id_reports_monthly_by_month",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "owner_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Owner Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "month",
+            "required": true,
+            "schema": {
+              "title": "Month",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonthlyReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Bookkeeper Report",
+        "tags": [
+          "Accounts and linking"
+        ]
+      }
+    },
+    "/bookkeeper/clients/{owner_id}/transactions": {
+      "get": {
+        "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "get_bookkeeper_clients_by_owner_id_transactions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "owner_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Owner Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "maximum": 10000,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Response Bookkeeper Ledger Bookkeeper Clients  Owner Id  Transactions Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Bookkeeper Ledger",
+        "tags": [
+          "Accounts and linking"
+        ]
+      }
+    },
     "/budget": {
       "get": {
         "description": "Return the latest effective monthly limit or null fields when unset. Requires the signed-in user's Bearer token; resources are owner-scoped.",
@@ -5419,6 +6514,132 @@
         ]
       }
     },
+    "/business-personal/review": {
+      "get": {
+        "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "get_business_personal_review",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Business Personal Review Business Personal Review Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Business Personal Review",
+        "tags": [
+          "Accounts and linking"
+        ]
+      }
+    },
+    "/business-personal/transactions/{transaction_id}": {
+      "put": {
+        "description": "Manage this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "put_business_personal_transactions_by_transaction_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "transaction_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Transaction Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UseReviewInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Review Transaction Use Business Personal Transactions  Transaction Id  Put",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Review Transaction Use",
+        "tags": [
+          "Accounts and linking"
+        ]
+      }
+    },
     "/category-rules": {
       "get": {
         "description": "Read the user's persistent category overrides. No provider call. Requires the signed-in user's Bearer token; resources are owner-scoped.",
@@ -5560,6 +6781,71 @@
         ]
       }
     },
+    "/classification-corrections/{correction_id}/confirm": {
+      "post": {
+        "description": "Submit this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "post_classification_corrections_by_correction_id_confirm",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "correction_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Correction Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Confirm Classification Correction",
+        "tags": [
+          "Accounts and linking"
+        ]
+      }
+    },
     "/consents": {
       "get": {
         "description": "Return the user's active and revoked consent records. scope is the stored requested value; it is not verified provider permission information. Requires the signed-in user's Bearer token; resources are owner-scoped.",
@@ -5693,7 +6979,7 @@
     },
     "/consents/{consent_id}": {
       "delete": {
-        "description": "Revoke owned consent, purge linked account data and attempt remote unlink. Failed unlinks remain pending; no automatic retry worker exists. Requires the signed-in user's Bearer token; resources are owner-scoped.",
+        "description": "Revoke owned consent, purge linked account data and attempt remote unlink. Failed unlinks remain in the encrypted scheduler queue. Requires the signed-in user's Bearer token; resources are owner-scoped.",
         "operationId": "delete_consents_by_consent_id",
         "parameters": [
           {
@@ -6037,6 +7323,218 @@
         "summary": "Verify Bvn",
         "tags": [
           "Identity"
+        ]
+      }
+    },
+    "/insight-alerts": {
+      "get": {
+        "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "get_insight_alerts",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "default": "unread",
+              "enum": [
+                "all",
+                "unread"
+              ],
+              "title": "Status",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Response List Insight Alerts Insight Alerts Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Insight Alerts",
+        "tags": [
+          "Accounts and linking"
+        ]
+      }
+    },
+    "/insight-alerts/{alert_id}/read": {
+      "post": {
+        "description": "Submit this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "post_insight_alerts_by_alert_id_read",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "alert_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Alert Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Mark Insight Alert Read Insight Alerts  Alert Id  Read Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Mark Insight Alert Read",
+        "tags": [
+          "Accounts and linking"
+        ]
+      }
+    },
+    "/insight-profile": {
+      "put": {
+        "description": "Manage this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "put_insight_profile",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModeInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Set Insight Profile Insight Profile Put",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Set Insight Profile",
+        "tags": [
+          "Accounts and linking"
         ]
       }
     },
@@ -7171,6 +8669,313 @@
         ]
       }
     },
+    "/plan": {
+      "get": {
+        "description": "Return the free or paid SME flag, live-sync trial state, account cap and feature entitlements. Reading this route does not start the trial. Requires the signed-in user's Bearer token; resources are owner-scoped.",
+        "operationId": "get_plan",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Authentication is missing, invalid or expired."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Authentication is missing, invalid or expired."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Internal server error."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal server error."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Read plan and entitlements",
+        "tags": [
+          "Accounts and linking"
+        ]
+      }
+    },
+    "/privacy-preferences": {
+      "get": {
+        "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "get_privacy_preferences",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrivacyPreferenceResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Privacy Preferences",
+        "tags": [
+          "Consents"
+        ]
+      },
+      "put": {
+        "description": "Manage this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "put_privacy_preferences",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrivacyPreferenceIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrivacyPreferenceResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Put Privacy Preferences",
+        "tags": [
+          "Consents"
+        ]
+      }
+    },
+    "/privacy/consents": {
+      "get": {
+        "description": "Return each active provider link with institution, link time, data status and the read-only scope requested at link time. Requires the signed-in user's Bearer token; resources are owner-scoped.",
+        "operationId": "get_privacy_consents",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ActiveConsentResponse"
+                  },
+                  "title": "Response Active Consents Privacy Consents Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Authentication is missing, invalid or expired."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Authentication is missing, invalid or expired."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Internal server error."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal server error."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List active read-only links",
+        "tags": [
+          "Accounts and linking"
+        ]
+      }
+    },
+    "/privacy/wipe": {
+      "post": {
+        "description": "Require a fresh six-digit OTP, durably queue remote unlinks, attempt them immediately, delete all user-owned data and sessions, and retain only the minimal wipe audit plus any unfinished encrypted unlink work. Requires the signed-in user's Bearer token; resources are owner-scoped.",
+        "operationId": "post_privacy_wipe",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WipeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WipeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Authentication is missing, invalid or expired."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Authentication is missing, invalid or expired."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Resource state prevents this operation."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Resource state prevents this operation."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Invalid input or date range; sensitive input values are omitted."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid input or date range; sensitive input values are omitted."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Internal server error."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal server error."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Revoke all access and wipe user data",
+        "tags": [
+          "Accounts and linking"
+        ]
+      }
+    },
     "/recurring": {
       "get": {
         "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
@@ -7211,6 +9016,337 @@
         "summary": "Recurring",
         "tags": [
           "Recurring"
+        ]
+      }
+    },
+    "/report-share-links": {
+      "get": {
+        "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "get_report_share_links",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Response List Report Share Links Report Share Links Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Report Share Links",
+        "tags": [
+          "Accounts and linking"
+        ]
+      }
+    },
+    "/report-share-links/{link_id}": {
+      "delete": {
+        "description": "Delete this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "delete_report_share_links_by_link_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "link_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Link Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Revoke Report Share Link",
+        "tags": [
+          "Accounts and linking"
+        ]
+      }
+    },
+    "/reports/monthly/{month}": {
+      "get": {
+        "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "get_reports_monthly_by_month",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "month",
+            "required": true,
+            "schema": {
+              "title": "Month",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonthlyReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Monthly Report",
+        "tags": [
+          "Accounts and linking"
+        ]
+      }
+    },
+    "/reports/monthly/{month}/export": {
+      "get": {
+        "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "get_reports_monthly_by_month_export",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "month",
+            "required": true,
+            "schema": {
+              "title": "Month",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "format",
+            "required": true,
+            "schema": {
+              "enum": [
+                "pdf",
+                "csv"
+              ],
+              "title": "Format",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Export Monthly Report",
+        "tags": [
+          "Accounts and linking"
+        ]
+      }
+    },
+    "/reports/monthly/{month}/share-links": {
+      "post": {
+        "description": "Submit this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "post_reports_monthly_by_month_share_links",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "month",
+            "required": true,
+            "schema": {
+              "title": "Month",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShareInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Create Report Share Link Reports Monthly  Month  Share Links Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Report Share Link",
+        "tags": [
+          "Accounts and linking"
         ]
       }
     },
@@ -7274,6 +9410,105 @@
         "summary": "Set Ai Preference",
         "tags": [
           "AI"
+        ]
+      }
+    },
+    "/shared/reports/{token}": {
+      "get": {
+        "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "get_shared_reports_by_token",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "title": "Token",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonthlyReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [],
+        "summary": "Shared Report",
+        "tags": [
+          "Accounts and linking"
+        ]
+      }
+    },
+    "/shared/reports/{token}/export": {
+      "get": {
+        "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "get_shared_reports_by_token_export",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "title": "Token",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "format",
+            "required": true,
+            "schema": {
+              "enum": [
+                "pdf",
+                "csv"
+              ],
+              "title": "Format",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [],
+        "summary": "Export Shared Report",
+        "tags": [
+          "Accounts and linking"
         ]
       }
     },
@@ -7643,6 +9878,24 @@
           },
           {
             "in": "query",
+            "name": "merchant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Merchant"
+            }
+          },
+          {
+            "in": "query",
             "name": "from_date",
             "required": false,
             "schema": {
@@ -7965,6 +10218,138 @@
         ]
       }
     },
+    "/transfer-suggestions": {
+      "get": {
+        "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "get_transfer_suggestions",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Response List Suggestions Transfer Suggestions Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Suggestions",
+        "tags": [
+          "Accounts and linking"
+        ]
+      }
+    },
+    "/transfer-suggestions/{suggestion_id}/{action}": {
+      "post": {
+        "description": "Submit this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+        "operationId": "post_transfer_suggestions_by_suggestion_id_by_action",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "suggestion_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Suggestion Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "action",
+            "required": true,
+            "schema": {
+              "enum": [
+                "confirm",
+                "dismiss"
+              ],
+              "title": "Action",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Review Suggestion Transfer Suggestions  Suggestion Id   Action  Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "detail"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Authentication is missing or invalid."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Review Suggestion",
+        "tags": [
+          "Accounts and linking"
+        ]
+      }
+    },
     "/webhooks/mono": {
       "post": {
         "description": "Public receiver authenticated by mono-webhook-secret, compared in constant time. Handles account_connected, account_updated and account_unlinked. Saves event-key processing metadata but no raw payload. Completed duplicates are ignored; failed deliveries may retry on redelivery. Returns receipt acknowledgement before background processing.",
@@ -8107,6 +10492,14 @@
       "name": "Consents"
     },
     {
+      "description": "Review active links or permanently wipe user data.",
+      "name": "Privacy"
+    },
+    {
+      "description": "Read entitlements and record upgrade intent.",
+      "name": "Plans"
+    },
+    {
       "description": "Link demo or Mono accounts. Mono flow: initiate, authorise at hosted link, receive webhook, poll status; SDK code exchange is optional.",
       "name": "Accounts and linking"
     },
@@ -8129,6 +10522,10 @@
     {
       "description": "Read, run and dismiss deterministic detector results.",
       "name": "Insights"
+    },
+    {
+      "description": "Generate, export and selectively share monthly reports.",
+      "name": "Reports"
     },
     {
       "description": "Read the safe-to-spend calculation.",

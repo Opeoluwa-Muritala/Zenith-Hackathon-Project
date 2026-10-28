@@ -15,6 +15,7 @@ Do not edit; run `python backend/scripts/gen_data_model.py`.
 | `currency` | `VARCHAR(3)` | False |  |  |
 | `current_balance_minor` | `BIGINT` | False |  |  |
 | `last_synced_at` | `DATETIME` | True |  |  |
+| `sync_cursor_at` | `DATETIME` | True |  |  |
 | `category` | `VARCHAR(19)` | False |  |  |
 | `available_balance_minor` | `BIGINT` | True |  |  |
 | `ledger_balance_minor` | `BIGINT` | True |  |  |
@@ -68,6 +69,20 @@ Do not edit; run `python backend/scripts/gen_data_model.py`.
 | `locked_until` | `DATETIME` | True |  |  |
 | `updated_at` | `DATETIME` | False |  |  |
 
+## `bookkeeper_invites`
+
+| Column | Type | Nullable | Key | Protection |
+|---|---|---:|---|---|
+| `id` | `CHAR(32)` | False | PK |  |
+| `owner_user_id` | `CHAR(32)` | False | FK |  |
+| `email` | `VARCHAR(254)` | False |  |  |
+| `token_hash` | `VARCHAR(64)` | False |  | Hash |
+| `status` | `VARCHAR(20)` | False |  |  |
+| `accepted_by_user_id` | `CHAR(32)` | True | FK |  |
+| `created_at` | `DATETIME` | False |  |  |
+| `expires_at` | `DATETIME` | False |  |  |
+| `revoked_at` | `DATETIME` | True |  |  |
+
 ## `budgets`
 
 | Column | Type | Nullable | Key | Protection |
@@ -97,6 +112,17 @@ Do not edit; run `python backend/scripts/gen_data_model.py`.
 | `user_id` | `CHAR(32)` | False | FK |  |
 | `counterparty_key` | `VARCHAR(160)` | False |  |  |
 | `category` | `VARCHAR(40)` | False |  |  |
+| `created_at` | `DATETIME` | False |  |  |
+
+## `classification_corrections`
+
+| Column | Type | Nullable | Key | Protection |
+|---|---|---:|---|---|
+| `id` | `CHAR(32)` | False | PK |  |
+| `user_id` | `CHAR(32)` | False | FK |  |
+| `counterparty_key` | `VARCHAR(160)` | False |  |  |
+| `category` | `VARCHAR(40)` | False |  |  |
+| `confirmed` | `BOOLEAN` | False |  |  |
 | `created_at` | `DATETIME` | False |  |  |
 
 ## `consent_audit`
@@ -131,6 +157,8 @@ Do not edit; run `python backend/scripts/gen_data_model.py`.
 | `token_hash` | `VARCHAR(64)` | False |  | Hash |
 | `platform` | `VARCHAR(20)` | False |  |  |
 | `last_seen_at` | `DATETIME` | False |  |  |
+| `is_valid` | `BOOLEAN` | False |  |  |
+| `invalidated_at` | `DATETIME` | True |  |  |
 
 ## `discovered_accounts`
 
@@ -166,6 +194,28 @@ Do not edit; run `python backend/scripts/gen_data_model.py`.
 | `source` | `VARCHAR(80)` | False |  |  |
 | `fetched_at` | `DATETIME` | False |  |  |
 
+## `insight_alerts`
+
+| Column | Type | Nullable | Key | Protection |
+|---|---|---:|---|---|
+| `id` | `CHAR(32)` | False | PK |  |
+| `user_id` | `CHAR(32)` | False | FK |  |
+| `insight_id` | `CHAR(32)` | False | FK |  |
+| `kind` | `VARCHAR(30)` | False |  |  |
+| `severity` | `VARCHAR(20)` | False |  |  |
+| `what_changed` | `VARCHAR(200)` | False |  |  |
+| `suggested_response` | `VARCHAR(200)` | False |  |  |
+| `created_at` | `DATETIME` | False |  |  |
+| `read_at` | `DATETIME` | True |  |  |
+
+## `insight_profiles`
+
+| Column | Type | Nullable | Key | Protection |
+|---|---|---:|---|---|
+| `user_id` | `CHAR(32)` | False | PK |  |
+| `mode` | `VARCHAR(12)` | False |  |  |
+| `updated_at` | `DATETIME` | False |  |  |
+
 ## `insights`
 
 | Column | Type | Nullable | Key | Protection |
@@ -197,6 +247,18 @@ Do not edit; run `python backend/scripts/gen_data_model.py`.
 | `logo_url` | `VARCHAR(500)` | True |  |  |
 | `savings_rate_bps` | `INTEGER` | False |  |  |
 
+## `job_runs`
+
+| Column | Type | Nullable | Key | Protection |
+|---|---|---:|---|---|
+| `id` | `CHAR(32)` | False | PK |  |
+| `job_name` | `VARCHAR(60)` | False |  |  |
+| `scheduled_for` | `DATETIME` | False |  |  |
+| `lock_owner` | `VARCHAR(64)` | False |  |  |
+| `status` | `VARCHAR(20)` | False |  |  |
+| `started_at` | `DATETIME` | False |  |  |
+| `completed_at` | `DATETIME` | True |  |  |
+
 ## `manual_assets`
 
 | Column | Type | Nullable | Key | Protection |
@@ -221,6 +283,20 @@ Do not edit; run `python backend/scripts/gen_data_model.py`.
 | `category_default` | `VARCHAR(40)` | False |  |  |
 | `is_subscription_like` | `BOOLEAN` | False |  |  |
 | `legitimately_repeating` | `BOOLEAN` | False |  |  |
+
+## `notification_logs`
+
+| Column | Type | Nullable | Key | Protection |
+|---|---|---:|---|---|
+| `id` | `CHAR(32)` | False | PK |  |
+| `user_id` | `CHAR(32)` | False | FK |  |
+| `device_id` | `CHAR(32)` | False | FK |  |
+| `event_key` | `VARCHAR(160)` | False |  |  |
+| `kind` | `VARCHAR(40)` | False |  |  |
+| `status` | `VARCHAR(20)` | False |  |  |
+| `attempts` | `INTEGER` | False |  |  |
+| `last_attempt_at` | `DATETIME` | False |  |  |
+| `sent_at` | `DATETIME` | True |  |  |
 
 ## `notification_preferences`
 
@@ -270,6 +346,32 @@ Do not edit; run `python backend/scripts/gen_data_model.py`.
 | `consumed_at` | `DATETIME` | True |  |  |
 | `created_at` | `DATETIME` | False |  |  |
 
+## `pending_unlinks`
+
+| Column | Type | Nullable | Key | Protection |
+|---|---|---:|---|---|
+| `id` | `CHAR(32)` | False | PK |  |
+| `user_hash` | `VARCHAR(64)` | False |  | Hash |
+| `provider` | `VARCHAR(20)` | False |  |  |
+| `provider_account_id_encrypted` | `VARCHAR(512)` | False |  | Encrypted |
+| `provider_account_id_hash` | `VARCHAR(64)` | False |  | Hash |
+| `attempts` | `INTEGER` | False |  |  |
+| `created_at` | `DATETIME` | False |  |  |
+| `last_attempt_at` | `DATETIME` | True |  |  |
+| `completed_at` | `DATETIME` | True |  |  |
+
+## `provider_call_logs`
+
+| Column | Type | Nullable | Key | Protection |
+|---|---|---:|---|---|
+| `id` | `CHAR(32)` | False | PK |  |
+| `user_id` | `CHAR(32)` | False | FK |  |
+| `provider` | `VARCHAR(20)` | False |  |  |
+| `operation` | `VARCHAR(60)` | False |  |  |
+| `account_id` | `CHAR(32)` | True | FK |  |
+| `requested_at` | `DATETIME` | False |  |  |
+| `outcome` | `VARCHAR(20)` | False |  |  |
+
 ## `provider_links`
 
 | Column | Type | Nullable | Key | Protection |
@@ -316,6 +418,27 @@ Do not edit; run `python backend/scripts/gen_data_model.py`.
 | `family_id` | `CHAR(32)` | False |  |  |
 | `revoked_at` | `DATETIME` | True |  |  |
 
+## `report_share_links`
+
+| Column | Type | Nullable | Key | Protection |
+|---|---|---:|---|---|
+| `id` | `CHAR(32)` | False | PK |  |
+| `user_id` | `CHAR(32)` | False | FK |  |
+| `month` | `DATE` | False |  |  |
+| `token_hash` | `VARCHAR(64)` | False |  | Hash |
+| `created_at` | `DATETIME` | False |  |  |
+| `expires_at` | `DATETIME` | False |  |  |
+| `revoked_at` | `DATETIME` | True |  |  |
+
+## `reviewed_global_rules`
+
+| Column | Type | Nullable | Key | Protection |
+|---|---|---:|---|---|
+| `id` | `CHAR(32)` | False | PK |  |
+| `narration_hash` | `VARCHAR(64)` | False |  | Hash |
+| `category` | `VARCHAR(40)` | False |  |  |
+| `reviewed_at` | `DATETIME` | False |  |  |
+
 ## `security_audit_events`
 
 | Column | Type | Nullable | Key | Protection |
@@ -325,6 +448,17 @@ Do not edit; run `python backend/scripts/gen_data_model.py`.
 | `event` | `VARCHAR(50)` | False |  |  |
 | `subject_hash` | `VARCHAR(64)` | True |  | Hash |
 | `occurred_at` | `DATETIME` | False |  |  |
+
+## `transaction_use_labels`
+
+| Column | Type | Nullable | Key | Protection |
+|---|---|---:|---|---|
+| `transaction_id` | `CHAR(32)` | False | PK |  |
+| `user_id` | `CHAR(32)` | False | FK |  |
+| `suggested_label` | `VARCHAR(12)` | False |  |  |
+| `confidence_bps` | `INTEGER` | False |  |  |
+| `confirmed_label` | `VARCHAR(12)` | True |  |  |
+| `updated_at` | `DATETIME` | False |  |  |
 
 ## `transactions`
 
@@ -344,6 +478,40 @@ Do not edit; run `python backend/scripts/gen_data_model.py`.
 | `dedupe_hash` | `VARCHAR(64)` | False |  | Hash |
 | `decoded_merchant` | `VARCHAR(100)` | True |  |  |
 | `category_source` | `VARCHAR(9)` | False |  |  |
+| `source` | `VARCHAR(20)` | False |  |  |
+| `parse_confidence_bps` | `INTEGER` | False |  |  |
+| `classification_method` | `VARCHAR(20)` | False |  |  |
+
+## `transfer_suggestions`
+
+| Column | Type | Nullable | Key | Protection |
+|---|---|---:|---|---|
+| `id` | `CHAR(32)` | False | PK |  |
+| `user_id` | `CHAR(32)` | False | FK |  |
+| `counterparty_key` | `VARCHAR(160)` | False |  |  |
+| `kind` | `VARCHAR(20)` | False |  |  |
+| `status` | `VARCHAR(20)` | False |  |  |
+| `created_at` | `DATETIME` | False |  |  |
+
+## `upgrade_tap_events`
+
+| Column | Type | Nullable | Key | Protection |
+|---|---|---:|---|---|
+| `id` | `CHAR(32)` | False | PK |  |
+| `user_id` | `CHAR(32)` | False | FK |  |
+| `surface` | `VARCHAR(40)` | False |  |  |
+| `desired_tier` | `VARCHAR(20)` | False |  |  |
+| `occurred_at` | `DATETIME` | False |  |  |
+
+## `user_plans`
+
+| Column | Type | Nullable | Key | Protection |
+|---|---|---:|---|---|
+| `user_id` | `CHAR(32)` | False | PK |  |
+| `paid_sme` | `BOOLEAN` | False |  |  |
+| `trial_started_at` | `DATETIME` | True |  |  |
+| `trial_ends_at` | `DATETIME` | True |  |  |
+| `updated_at` | `DATETIME` | False |  |  |
 
 ## `user_settings`
 
@@ -355,6 +523,7 @@ Do not edit; run `python backend/scripts/gen_data_model.py`.
 | `discretionary_categories` | `JSON` | False |  |  |
 | `nominal_tbill_rate_bps` | `INTEGER` | False |  |  |
 | `ai_enabled` | `BOOLEAN` | False |  |  |
+| `privacy_blur` | `BOOLEAN` | False |  |  |
 
 ## `users`
 
@@ -380,3 +549,11 @@ Do not edit; run `python backend/scripts/gen_data_model.py`.
 | `processing_started_at` | `DATETIME` | True |  |  |
 | `processing_token` | `VARCHAR(36)` | True |  |  |
 | `processed_at` | `DATETIME` | True |  |  |
+
+## `wipe_audits`
+
+| Column | Type | Nullable | Key | Protection |
+|---|---|---:|---|---|
+| `id` | `CHAR(32)` | False | PK |  |
+| `user_hash` | `VARCHAR(64)` | False |  | Hash |
+| `wiped_at` | `DATETIME` | False |  |  |

@@ -27,6 +27,8 @@ dnspython==2.8.0
     # via email-validator
 email-validator==2.3.0
     # via cashlens-backend
+et-xmlfile==2.0.0
+    # via openpyxl
 fastapi==0.142.2
     # via cashlens-backend
 greenlet==3.5.6
@@ -50,6 +52,8 @@ mako==1.4.3
     # via alembic
 markupsafe==3.0.4
     # via mako
+openpyxl==3.1.5
+    # via cashlens-backend
 opentelemetry-api==1.45.0
     # via fastapi
 pycparser==3.12 ; implementation_name != 'PyPy' and platform_python_implementation != 'PyPy'
@@ -64,6 +68,8 @@ pydantic-settings==2.15.0
     # via cashlens-backend
 pyjwt==2.15.1
     # via cashlens-backend
+pypdf==6.21.3
+    # via cashlens-backend
 python-dotenv==1.2.4
     # via
     #   pydantic-settings
@@ -72,6 +78,8 @@ python-multipart==0.0.32
     # via cashlens-backend
 pyyaml==6.0.3
     # via uvicorn
+rapidfuzz==3.14.6
+    # via cashlens-backend
 redis==8.1.0
     # via cashlens-backend
 sqlalchemy==2.1.3

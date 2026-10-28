@@ -11,7 +11,7 @@ from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from html import escape
 from pathlib import Path
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 from uuid import UUID, uuid4
 
 from fastapi import (
@@ -39,7 +39,7 @@ from app.ai.chat.router import router as ai_router
 from app.ai.client import GroqClient
 from app.ai.client_factory import client_for
 from app.api_documentation import DEMO_OPERATIONS, ERROR_MESSAGES
-from app.assets.fx import RATE_SCALE, get_usd_ngn_rate
+from app.assets.fx import RATE_SCALE, convert_minor, get_usd_ngn_rate
 from app.assets.service import asset_value_ngn_minor, next_reminder
 from app.core.clock import now_utc
 from app.core.config import PRODUCT_NAME, get_settings
@@ -59,12 +59,19 @@ from app.identity.otp import (
     sender,
 )
 from app.insights.detectors.velocity_warning import projected_month_end_spend
+from app.insights.router import router as insights_phase5_router
 from app.insights.runner import run_for_user
 from app.ledger.account_categories import category_for_institution
 from app.ledger.balances import balance_state
-from app.ledger.normalise import CATEGORY_ALIASES, category_label, counterparty_key
+from app.ledger.normalise import (
+    CATEGORY_ALIASES,
+    FETCH_CATEGORIES,
+    category_label,
+    counterparty_key,
+)
 from app.ledger.obligations import sync_detected_obligations
 from app.ledger.recurring import rebuild_account
+from app.ledger.review import router as classification_review_router
 from app.ledger.service import active_accounts, as_utc, ingest, ledger_view
 from app.ledger.unlink import purge_linked_account, retry_pending_link
 from app.models import (
@@ -75,6 +82,7 @@ from app.models import (
     BvnLookupSession,
     CategoryRule,
     CategorySource,
+    ClassificationCorrection,
     Consent,
     ConsentAudit,
     DeviceToken,
@@ -86,6 +94,7 @@ from app.models import (
     ManualAsset,
     ManualAssetCategory,
     ManualAssetPlatform,
+    Merchant,
     NotificationPreference,
     Obligation,
     ObligationPayment,
@@ -97,13 +106,19 @@ from app.models import (
     Transaction,
     UpdateCadence,
     User,
+    UserSettings,
     WebhookEvent,
 )
+from app.plans.router import router as plans_router
+from app.plans.service import require_live_sync
+from app.privacy.router import router as privacy_router
 from app.providers.base import ProviderNotReady, ProviderUnavailable
+from app.providers.call_budget import reserve_refresh_call
 from app.providers.mock import MockAggregatorProvider
 from app.providers.mono import MonoProvider
 from app.providers.mono_lookup import MonoLookupProvider
 from app.providers.statement import ProviderError, StatementUploadProvider
+from app.reports.router import router as reports_router
 
 settings = get_settings()
 settings.validate_runtime()
@@ -128,6 +143,8 @@ OPENAPI_TAGS = [
     {"name": "Obligations", "description": "Review detected and manual upcoming repayments."},
     {"name": "Notifications", "description": "Register devices and set notification preferences."},
     {"name": "Consents", "description": "Grant, list and revoke scoped data-access consent."},
+    {"name": "Privacy", "description": "Review active links or permanently wipe user data."},
+    {"name": "Plans", "description": "Read entitlements and record upgrade intent."},
     {
         "name": "Accounts and linking",
         "description": (
@@ -146,6 +163,7 @@ OPENAPI_TAGS = [
     {"name": "Summary", "description": "Read account totals and spending aggregates."},
     {"name": "Recurring", "description": "Read recurring bills and subscriptions."},
     {"name": "Insights", "description": "Read, run and dismiss deterministic detector results."},
+    {"name": "Reports", "description": "Generate, export and selectively share monthly reports."},
     {"name": "Forecast", "description": "Read the safe-to-spend calculation."},
     {
         "name": "AI",
@@ -177,6 +195,11 @@ app = FastAPI(
     },
 )
 app.include_router(ai_router)
+app.include_router(classification_review_router)
+app.include_router(insights_phase5_router)
+app.include_router(reports_router)
+app.include_router(privacy_router)
+app.include_router(plans_router)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.origins,
@@ -350,6 +373,13 @@ class BudgetIn(BaseModel):
     monthly_limit_minor: int = Field(
         gt=0, le=2**63 - 1, description="Monthly budget in NGN kobo.", examples=[20000000]
     )
+    effective_from: datetime | None = Field(
+        default=None, description="UTC time when this budget starts applying."
+    )
+
+
+class PrivacyPreferenceIn(BaseModel):
+    privacy_blur: bool
 
 
 class ObligationIn(BaseModel):
@@ -373,6 +403,8 @@ class ObligationUpdateIn(BaseModel):
     )
     cadence_days: int | None = Field(default=None, ge=1, le=366)
     next_due_date: date | None = None
+    kind: Literal["loan", "direct_debit", "subscription"] | None = None
+    account_id: UUID | None = None
     status: Literal["upcoming", "confirmed", "dismissed"] | None = None
 
 
@@ -748,6 +780,8 @@ async def verify_otp(body: OtpIn, request: Request, db: AsyncSession = Depends(g
         if code_row and as_utc(code_row.expires_at) <= now:
             forget_code(identifier)
         raise HTTPException(401, "Invalid code")
+    if code_row is None:  # Defensive narrowing; invalid challenges returned above.
+        raise HTTPException(401, "Invalid code")
     code_row.consumed_at = now
     await clear_failures(db, identifier)
     forget_code(identifier)
@@ -1117,6 +1151,7 @@ async def initiate_link(
     await rate_limit("link:" + str(user.id))
     if settings.aggregator_provider != "mono":
         raise HTTPException(409, "Mono linking is disabled")
+    await require_live_sync(db, user.id, now_utc(), new_account=True)
     await owned_consent(db, user.id, body.consent_id)
     link = ProviderLink(
         user_id=user.id,
@@ -1136,6 +1171,7 @@ async def initiate_link(
         )
     )
     await db.commit()
+    record_auth_event(db, "link.initiated", user_id=user.id)
     return {"ref": link.id, "url": url, "status": "pending"}
 
 
@@ -1171,6 +1207,7 @@ async def exchange_link(
 ):
     if settings.aggregator_provider != "mono":
         raise HTTPException(409, "Mono linking is disabled")
+    await require_live_sync(db, user.id, now_utc(), new_account=True)
     await owned_consent(db, user.id, body.consent_id)
     provider_id = await mono_call(lambda: provider().exchange(body.code))
     if not provider_id:
@@ -1187,6 +1224,7 @@ async def exchange_link(
     )
     db.add(link)
     await db.commit()
+    record_auth_event(db, "link.exchanged", user_id=user.id)
     return {"ref": link.id, "status": "connected"}
 
 
@@ -1215,7 +1253,7 @@ async def process_mono_event(event: dict, event_key: str | None = None):
             )
         )
         await db.commit()
-        if not claimed.rowcount:
+        if not getattr(claimed, "rowcount", 0):
             return
     status = "processed"
     try:
@@ -1299,6 +1337,7 @@ async def apply_mono_event(event: dict):
                     )
                 )
             await db.commit()
+            record_auth_event(db, "link.unlinked_by_provider", user_id=link.user_id)
             return
         if consent.revoked_at or as_utc(consent.expires_at) <= now_utc():
             return
@@ -1327,6 +1366,7 @@ async def apply_mono_event(event: dict):
             if discovered:
                 discovered.status = DiscoveredAccountStatus.linked
             await db.commit()
+            record_auth_event(db, "link.connected", user_id=link.user_id)
             return
         link.data_status = str(meta.get("data_status") or "PROCESSING").upper()
         if (
@@ -1360,16 +1400,16 @@ async def apply_mono_event(event: dict):
             )
             db.add(institution)
             await db.flush()
-        account = (
+        linked_account = (
             await db.execute(
                 select(Account).where(
                     Account.user_id == link.user_id, Account.consent_id == consent.id
                 )
             )
         ).scalar_one_or_none()
-        if account is None:
+        if linked_account is None:
             account_category, _ = category_for_institution(institution.code, institution.name)
-            account = Account(
+            linked_account = Account(
                 user_id=link.user_id,
                 consent_id=consent.id,
                 institution_id=institution.id,
@@ -1396,26 +1436,26 @@ async def apply_mono_event(event: dict):
                 sync_status=SyncStatus.ok,
                 category=account_category,
             )
-            db.add(account)
+            db.add(linked_account)
             await db.flush()
         else:
             if "balance" in (meta.get("retrieved_data") or []) and info.get("balance") is not None:
-                account.current_balance_minor = int(info["balance"])
-                account.available_balance_minor = account.current_balance_minor
-                account.balance_synced_at = now_utc()
-                account.sync_status = SyncStatus.ok
+                linked_account.current_balance_minor = int(info["balance"])
+                linked_account.available_balance_minor = linked_account.current_balance_minor
+                linked_account.balance_synced_at = now_utc()
+                linked_account.sync_status = SyncStatus.ok
         await db.commit()
-        if "transactions" not in (meta.get("retrieved_data") or []) or account.sync_paused:
+        if "transactions" not in (meta.get("retrieved_data") or []) or linked_account.sync_paused:
             return
-        local_account_id = account.id
+        local_account_id = linked_account.id
         try:
-            await sync_owned_account(db, account, link, now_utc())
+            await sync_owned_account(db, linked_account, link, now_utc())
             await db.commit()
         except (ProviderNotReady, ProviderUnavailable, HTTPException):
             await db.rollback()
-            account = await db.get(Account, local_account_id)
-            if account:
-                account.sync_status = SyncStatus.delayed
+            delayed_account = await db.get(Account, local_account_id)
+            if delayed_account:
+                delayed_account.sync_status = SyncStatus.delayed
                 await db.commit()
             raise
 
@@ -1621,7 +1661,7 @@ async def accounts(user: User = Depends(current_user), db: AsyncSession = Depend
             Account.user_id == user.id, Consent.revoked_at.is_(None), Consent.expires_at > now_utc()
         )
     )
-    groups = {
+    groups: dict[str, dict[str, Any]] = {
         category.value: {"count": 0, "totals_minor_by_currency": {}, "accounts": []}
         for category in AccountCategory
     }
@@ -1677,6 +1717,8 @@ async def account_detail(
     if account is None:
         raise HTTPException(404, "Account not found")
     institution = await db.get(Institution, account.institution_id)
+    if institution is None:
+        raise HTTPException(404, "Institution not found")
     derived_category, category_unmapped = category_for_institution(
         institution.code, institution.name
     )
@@ -1777,8 +1819,10 @@ async def sync_owned_account(
     await owned_consent(db, account.user_id, account.consent_id)
     if link.status != "connected" or account.sync_paused:
         raise HTTPException(409, "Account is not connected")
+    if link.provider == "mono":
+        await require_live_sync(db, account.user_id, now)
     try:
-        start = sync_window_start(account.last_synced_at, now)
+        start = sync_window_start(account.sync_cursor_at or account.last_synced_at, now)
         rows = await provider().transactions(link.provider_account_id, start, now)
     except ProviderNotReady as exc:
         raise HTTPException(409, "Provider data is not ready") from exc
@@ -1787,6 +1831,8 @@ async def sync_owned_account(
     if len(rows) > 10_000:
         raise HTTPException(502, "Provider returned too many transactions")
     count = await ingest(db, account, rows)
+    account.sync_cursor_at = now
+    account.last_synced_at = now
     await db.flush()
     await rebuild_account(db, account.id, account.user_id, now)
     await db.flush()
@@ -1854,6 +1900,8 @@ async def refresh_account(
     ).scalar_one_or_none()
     if link is None:
         raise HTTPException(404, "Link not found")
+    if link.provider == "mono":
+        await require_live_sync(db, user.id, now_utc())
     if account.sync_paused:
         raise HTTPException(409, "Sync is paused for this account")
     if link.provider == "mono" and link.data_status not in {"AVAILABLE", "PARTIAL"}:
@@ -1875,6 +1923,9 @@ async def refresh_account(
         raise HTTPException(429, "Refresh cooldown active", headers={"Retry-After": str(wait)})
     _refresh_requests[account.id] = time.monotonic()
     if link.provider == "mono":
+        await reserve_refresh_call(
+            db, user.id, account.id, settings.mono_refresh_monthly_limit
+        )
         try:
             response = await provider().balance(link.provider_account_id, realtime=True)
         except (ProviderError, ValueError, KeyError, TypeError):
@@ -2061,7 +2112,7 @@ async def delete_manual_asset(
     result = await db.execute(
         delete(ManualAsset).where(ManualAsset.id == asset_id, ManualAsset.user_id == user.id)
     )
-    if result.rowcount == 0:
+    if getattr(result, "rowcount", 0) == 0:
         raise HTTPException(404, "Asset not found")
     await db.commit()
 
@@ -2069,33 +2120,29 @@ async def delete_manual_asset(
 @app.get("/net-position", response_model=api.NetPositionResponse)
 async def net_position(user: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
     linked = (
-        (
-            await db.execute(
-                select(Account)
-                .join(Consent, Account.consent_id == Consent.id)
-                .join(ProviderLink, ProviderLink.consent_id == Account.consent_id)
-                .where(
-                    Account.user_id == user.id,
-                    Account.sync_paused.is_(False),
-                    ProviderLink.user_id == user.id,
-                    ProviderLink.status == "connected",
-                    Account.currency == "NGN",
-                    Consent.revoked_at.is_(None),
-                    Consent.expires_at > now_utc(),
-                )
+        await db.execute(
+            select(Account, Institution)
+            .join(Institution, Account.institution_id == Institution.id)
+            .join(Consent, Account.consent_id == Consent.id)
+            .join(ProviderLink, ProviderLink.consent_id == Account.consent_id)
+            .where(
+                Account.user_id == user.id,
+                ProviderLink.user_id == user.id,
+                ProviderLink.status == "connected",
+                Account.currency == "NGN",
+                Consent.revoked_at.is_(None),
+                Consent.expires_at > now_utc(),
             )
         )
-        .scalars()
-        .all()
-    )
+    ).all()
     cash = sum(
         account.current_balance_minor
-        for account in linked
+        for account, _ in linked
         if account.category != AccountCategory.investment
     )
     linked_investments = sum(
         account.current_balance_minor
-        for account in linked
+        for account, _ in linked
         if account.category == AccountCategory.investment
     )
     assets = (
@@ -2103,22 +2150,56 @@ async def net_position(user: User = Depends(current_user), db: AsyncSession = De
         .scalars()
         .all()
     )
-    investments = linked_investments + sum(asset_value_ngn_minor(asset) for asset in assets)
+    usd_assets = [asset for asset in assets if asset.currency == "USD"]
+    read_rate: int | None = None
+    fx_rate_warning = False
+    if usd_assets:
+        try:
+            read_rate, _ = await get_usd_ngn_rate(db, None)
+            await db.commit()
+        except HTTPException:
+            fx_rate_warning = True
+    asset_values = {
+        asset.id: (
+            convert_minor(asset.amount_minor, read_rate)
+            if asset.currency == "USD" and read_rate is not None
+            else asset_value_ngn_minor(asset)
+        )
+        for asset in assets
+    }
+    investments = linked_investments + sum(asset_values.values())
+    breakdown = [
+        {
+            "id": account.id,
+            "source": "account",
+            "label": institution.name,
+            "value_ngn_minor": account.current_balance_minor,
+            "currency": account.currency,
+            "paused": account.sync_paused,
+            "fx_rate_ppm": None,
+        }
+        for account, institution in linked
+    ] + [
+        {
+            "id": asset.id,
+            "source": "manual_asset",
+            "label": asset.platform.value,
+            "value_ngn_minor": asset_values[asset.id],
+            "currency": asset.currency,
+            "paused": False,
+            "fx_rate_ppm": read_rate if asset.currency == "USD" else None,
+        }
+        for asset in assets
+    ]
     return {
         "cash_minor": cash,
         "investments_minor": investments,
         "total_minor": cash + investments,
         "currency": "NGN",
         "as_of": now_utc(),
-        "fx_rate_warning": any(
-            asset.currency == "USD"
-            and (
-                asset.last_updated_at is None
-                or now_utc() - as_utc(asset.last_updated_at)
-                > timedelta(hours=settings.fx_ttl_hours)
-            )
-            for asset in assets
-        ),
+        "fx_rate_warning": fx_rate_warning,
+        "paused_accounts_included": sum(account.sync_paused for account, _ in linked),
+        "breakdown": breakdown,
     }
 
 
@@ -2161,6 +2242,7 @@ async def transactions(
     category: str | None = None,
     account_id: UUID | None = None,
     merchant_id: UUID | None = None,
+    merchant: str | None = Query(default=None, min_length=1, max_length=100),
     from_date: datetime | None = None,
     to_date: datetime | None = None,
     type: Literal["credit", "debit"] | None = None,
@@ -2172,6 +2254,9 @@ async def transactions(
         raise HTTPException(422, "Invalid pagination")
     if from_date and to_date and (to_date < from_date or to_date - from_date > timedelta(days=365)):
         raise HTTPException(422, "Invalid date range")
+    known_categories = FETCH_CATEGORIES | set(CATEGORY_ALIASES) | set(CATEGORY_ALIASES.values())
+    if category and category not in known_categories:
+        raise HTTPException(422, "Invalid category")
     active = (
         select(Account.id)
         .join(Consent)
@@ -2185,6 +2270,13 @@ async def transactions(
         q = q.where(Transaction.category.in_(labels))
     q = q.where(Transaction.account_id == account_id) if account_id else q
     q = q.where(Transaction.merchant_id == merchant_id) if merchant_id else q
+    if merchant:
+        q = q.outerjoin(Merchant, Transaction.merchant_id == Merchant.id).where(
+            or_(
+                Transaction.decoded_merchant.ilike(f"%{merchant}%"),
+                Merchant.canonical_name.ilike(f"%{merchant}%"),
+            )
+        )
     q = q.where(Transaction.posted_at >= from_date) if from_date else q
     q = q.where(Transaction.posted_at <= to_date) if to_date else q
     q = q.where(Transaction.direction == Direction(type)) if type else q
@@ -2259,6 +2351,12 @@ async def reclassify_transaction(
     if not body.apply_to_future:
         tx.category = body.category
         tx.category_source = CategorySource.manual
+        db.add(ClassificationCorrection(
+            user_id=user.id,
+            counterparty_key=counterparty_key(tx.decoded_merchant or tx.narration_clean),
+            category=body.category,
+            created_at=now_utc(),
+        ))
         await db.commit()
         return {"id": tx.id, "category": tx.category, "category_source": tx.category_source}
     key = counterparty_key(tx.decoded_merchant or tx.narration_clean)
@@ -2279,6 +2377,9 @@ async def reclassify_transaction(
         )
     else:
         rule.category = body.category
+    db.add(ClassificationCorrection(
+        user_id=user.id, counterparty_key=key, category=body.category, created_at=now_utc()
+    ))
     matching = (
         await db.execute(
             select(Transaction)
@@ -2303,6 +2404,25 @@ async def category_rules(user: User = Depends(current_user), db: AsyncSession = 
     ]
 
 
+@app.post("/classification-corrections/{correction_id}/confirm")
+async def confirm_classification_correction(
+    correction_id: UUID, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
+):
+    correction = (
+        await db.execute(
+            select(ClassificationCorrection).where(
+                ClassificationCorrection.id == correction_id,
+                ClassificationCorrection.user_id == user.id,
+            )
+        )
+    ).scalar_one_or_none()
+    if correction is None:
+        raise HTTPException(404, "Correction not found")
+    correction.confirmed = True
+    await db.commit()
+    return {"id": correction.id, "confirmed": correction.confirmed}
+
+
 @app.delete("/category-rules/{rule_id}", status_code=204)
 async def delete_category_rule(
     rule_id: UUID, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
@@ -2310,7 +2430,7 @@ async def delete_category_rule(
     result = await db.execute(
         delete(CategoryRule).where(CategoryRule.id == rule_id, CategoryRule.user_id == user.id)
     )
-    if result.rowcount == 0:
+    if getattr(result, "rowcount", 0) == 0:
         raise HTTPException(404, "Category rule not found")
     await db.commit()
 
@@ -2337,7 +2457,7 @@ async def spending_analytics(
         start_day, end_day = today.replace(day=1), today
     start = datetime.combine(start_day, datetime.min.time(), UTC)
     end = datetime.combine(end_day + timedelta(days=1), datetime.min.time(), UTC)
-    amounts = (
+    category_rows = (
         await db.execute(
             select(Transaction.category, func.sum(Transaction.amount_minor))
             .join(Account, Transaction.account_id == Account.id)
@@ -2352,10 +2472,10 @@ async def spending_analytics(
             .group_by(Transaction.category)
         )
     ).all()
-    normalised = {}
-    for category, amount in amounts:
+    normalised: dict[str, int] = {}
+    for category, amount in category_rows:
         label = category_label(category)
-        normalised[label] = normalised.get(label, 0) + amount
+        normalised[label] = normalised.get(label, 0) + int(amount or 0)
     amounts = list(normalised.items())
     total = sum(amount for _, amount in amounts)
     return {
@@ -2391,12 +2511,41 @@ async def get_budget(user: User = Depends(current_user), db: AsyncSession = Depe
     return {"monthly_limit_minor": row.monthly_limit_minor, "effective_from": row.effective_from}
 
 
+@app.get("/privacy-preferences", response_model=api.PrivacyPreferenceResponse)
+async def get_privacy_preferences(
+    user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
+):
+    row = await db.get(UserSettings, user.id)
+    return {"privacy_blur": row.privacy_blur if row else False}
+
+
+@app.put("/privacy-preferences", response_model=api.PrivacyPreferenceResponse)
+async def put_privacy_preferences(
+    body: PrivacyPreferenceIn,
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    row = await db.get(UserSettings, user.id)
+    if row is None:
+        row = UserSettings(user_id=user.id, privacy_blur=body.privacy_blur)
+        db.add(row)
+    else:
+        row.privacy_blur = body.privacy_blur
+    await db.commit()
+    return {"privacy_blur": row.privacy_blur}
+
+
 @app.put("/budget", response_model=api.BudgetResponse)
 async def put_budget(
     body: BudgetIn, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
 ):
+    effective_from = as_utc(body.effective_from) or now_utc()
+    if effective_from > now_utc() + timedelta(days=366):
+        raise HTTPException(422, "Budget effective date is too far in the future")
     row = Budget(
-        user_id=user.id, monthly_limit_minor=body.monthly_limit_minor, effective_from=now_utc()
+        user_id=user.id,
+        monthly_limit_minor=body.monthly_limit_minor,
+        effective_from=effective_from,
     )
     db.add(row)
     await db.commit()
@@ -2458,6 +2607,7 @@ def obligation_response(row: Obligation) -> dict:
         "confidence_bps": row.confidence_bps,
         "status": row.status,
         "source": row.source,
+        "due_date_estimated": row.source == "detected",
     }
 
 
@@ -2547,6 +2697,12 @@ async def update_obligation(
     ).scalar_one_or_none()
     if row is None:
         raise HTTPException(404, "Obligation not found")
+    if body.account_id is not None:
+        account = await db.scalar(
+            select(Account).where(Account.id == body.account_id, Account.user_id == user.id)
+        )
+        if account is None:
+            raise HTTPException(404, "Account not found")
     for name, value in body.model_dump(exclude_unset=True).items():
         if value is not None:
             setattr(row, name, value)
@@ -2577,6 +2733,8 @@ async def register_device(
         row.token_encrypted = encrypt_field(body.token)
         row.platform = body.platform
         row.last_seen_at = now_utc()
+        row.is_valid = True
+        row.invalidated_at = None
     await db.commit()
     return {"id": row.id, "platform": row.platform, "last_seen_at": row.last_seen_at}
 
@@ -2588,7 +2746,7 @@ async def unregister_device(
     result = await db.execute(
         delete(DeviceToken).where(DeviceToken.id == device_id, DeviceToken.user_id == user.id)
     )
-    if result.rowcount == 0:
+    if getattr(result, "rowcount", 0) == 0:
         raise HTTPException(404, "Device not found")
     await db.commit()
 
@@ -2632,13 +2790,17 @@ async def upload_statement(
     user: User = Depends(current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    if file.content_type not in {"text/csv", "application/vnd.ms-excel", "application/csv"}:
-        raise HTTPException(415, "CSV required")
+    if file.content_type not in {
+        "text/csv", "application/vnd.ms-excel", "application/csv",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/pdf",
+    }:
+        raise HTTPException(415, "PDF, CSV or XLSX required")
     data = await file.read(2_000_001)
     try:
-        rows = StatementUploadProvider().parse(data)
-    except (ProviderError, ValueError) as exc:
-        raise HTTPException(422, str(exc)) from exc
+        rows = StatementUploadProvider().parse(data, file.filename or "statement.csv")
+    except (ProviderError, ValueError):
+        # Keep parse failures generic so CSV cell contents cannot leak into errors.
+        raise HTTPException(422, "Invalid statement") from None
     account = (
         await db.execute(
             select(Account).where(
@@ -2689,6 +2851,21 @@ async def recurring(user: User = Depends(current_user), db: AsyncSession = Depen
 
 
 def insight_out(x):
+    payload = x.payload_json
+    value_minor = next(
+        (
+            payload[key]
+            for key in (
+                "amount_minor",
+                "annualised_minor",
+                "delta_minor",
+                "overshoot_minor",
+                "outflow_minor",
+            )
+            if isinstance(payload.get(key), int)
+        ),
+        None,
+    )
     return {
         "id": x.id,
         "module": x.module,
@@ -2699,7 +2876,13 @@ def insight_out(x):
         "wording_source": x.wording_source,
         "template_title": x.template_title,
         "template_body": x.template_body,
-        "payload": x.payload_json,
+        "payload": payload,
+        "number_minor": value_minor,
+        "why_it_matters": payload.get("why_it_matters"),
+        "action": payload.get("action"),
+        "confidence_bps": payload.get("confidence_bps"),
+        "confidence_label": payload.get("confidence_label"),
+        "evidence_transaction_ids": payload.get("transaction_ids", []),
         "created_at": x.created_at,
         "footer": "Educational information, not financial advice."
         if x.module == "wealth"
@@ -2799,6 +2982,7 @@ def _document_operation(path: str, method: str, operation: dict) -> None:
         "/analytics/": "Analytics",
         "/budget": "Budget",
         "/obligations": "Obligations",
+        "/privacy-preferences": "Consents",
         "/devices": "Notifications",
         "/notification-preferences": "Notifications",
         "/consents": "Consents",

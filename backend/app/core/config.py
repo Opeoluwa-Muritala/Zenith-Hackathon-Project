@@ -14,9 +14,7 @@ class Settings(BaseSettings):
     )
     database_url: str = "postgresql+asyncpg://localhost/cashlens"
     jwt_secret: str = ""
-    environment: str = Field(
-        "development", validation_alias=AliasChoices("APP_ENV", "ENVIRONMENT")
-    )
+    environment: str = Field("development", validation_alias=AliasChoices("APP_ENV", "ENVIRONMENT"))
     redis_url: str = ""
     cors_origins: str = "http://localhost:3000"
     public_base_url: str = "http://localhost:8000"
@@ -37,12 +35,15 @@ class Settings(BaseSettings):
     otp_lockout_base_seconds: int = Field(60, ge=10, le=3600)
     balance_stale_minutes: int = Field(45, ge=1, le=1440)
     account_refresh_cooldown_seconds: int = Field(3600, ge=60, le=86400)
+    mono_refresh_monthly_limit: int = Field(2, ge=0, le=100)
     fx_provider_name: str = ""
     fx_provider_url: str = ""
     fx_provider_key: str = ""
     fx_ttl_hours: int = Field(6, ge=1, le=168)
     access_minutes: int = 15
     refresh_days: int = 30
+    live_sync_trial_days: int = Field(14, ge=1, le=90)
+    free_live_account_limit: int = Field(2, ge=1, le=2)
     jwt_issuer: str = "cashlens-api"
     jwt_audience: str = "cashlens-mobile"
     bvn_pepper: str = ""
@@ -67,6 +68,7 @@ class Settings(BaseSettings):
     ai_request_timeout_s: float = 20.0
     ai_chat_requests_per_minute: int = 10
     assistant_retention_days: int = 30
+    fcm_credentials_json: str = Field("", repr=False)
     field_encryption_key: str = ""
     field_encryption_key_id: str = "primary"
     field_encryption_previous_keys: str = "{}"

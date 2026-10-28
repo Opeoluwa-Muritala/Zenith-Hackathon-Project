@@ -15,16 +15,19 @@ from app.models import (
     InsightRecord,
     Obligation,
     ObligationPayment,
+    PendingUnlink,
     ProviderLink,
     RecurringSeries,
     Transaction,
 )
+from app.privacy.service import queue_provider_link
 from app.providers.base import ProviderError
 from app.providers.mono import MonoProvider
 
 
 async def purge_linked_account(db: AsyncSession, account: Account, link: ProviderLink) -> None:
     """Remove account data atomically while retaining only encrypted ID for retry."""
+    await queue_provider_link(db, link)
     obligations = select(Obligation.id).where(Obligation.account_id == account.id)
     await db.execute(
         delete(ObligationPayment).where(ObligationPayment.obligation_id.in_(obligations))
@@ -77,6 +80,16 @@ async def retry_pending_link(db: AsyncSession, link: ProviderLink) -> bool:
         await MonoProvider(settings.mono_secret_key, settings.mono_base_url).unlink(identifier)
     except (ProviderError, ValueError):
         return False
+    queued = await db.scalar(
+        select(PendingUnlink).where(
+            PendingUnlink.provider == link.provider,
+            PendingUnlink.provider_account_id_hash == link.provider_account_id_hash,
+        )
+    )
+    if queued is not None:
+        queued.attempts += 1
+        queued.last_attempt_at = now_utc()
+        queued.completed_at = now_utc()
     link.status = "unlinked"
     link.provider_account_id = None
     return True

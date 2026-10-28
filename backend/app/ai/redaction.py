@@ -103,6 +103,20 @@ SAFE_KEYS = frozenset(
 )
 
 
+# Strip jailbreak phrasing and delimiter injection from untrusted labels.
+# Leaving this unfiltered lets merchant/narration text override model instructions.
+INJECTION_RE = re.compile(
+    r"(?is)"
+    r"(?:ignore|disregard|forget)\s+(?:all\s+)?(?:previous|prior|above|the)\s+"
+    r"(?:instructions?|prompts?|rules?)|"
+    r"system\s+prompt|"
+    r"</?verified_financial_data>|"
+    r"developer\s+mode|"
+    r"jailbreak"
+)
+CONTROL_CHARS_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+
+
 def _money_display(key: str, value: int | float | str) -> str:
     """Render integer kobo as Naira for the model from deterministic values."""
     if key.endswith("_minor") and type(value) is int:
@@ -112,6 +126,14 @@ def _money_display(key: str, value: int | float | str) -> str:
     if key.endswith("_bps") and type(value) is int:
         return f"{value / 100:g}%"
     return str(value)
+
+
+def _neutralise_injection(value: str) -> str:
+    """Keep labels as data: drop control chars, delimiters, and jailbreak phrases."""
+    value = CONTROL_CHARS_RE.sub("", value)
+    value = INJECTION_RE.sub("[redacted]", value)
+    value = value.replace("<", " ").replace(">", " ")
+    return re.sub(r"\s+", " ", value).strip()
 
 
 def sanitise(value: Any, *, key: str = "") -> Any:
@@ -127,7 +149,9 @@ def sanitise(value: Any, *, key: str = "") -> Any:
     if type(value) is int and (key.endswith("_minor") or key.endswith("_bps")):
         return _money_display(key, value)
     if isinstance(value, (str, int, float, bool)) or value is None:
-        return value[:300] if isinstance(value, str) else value
+        if isinstance(value, str):
+            return _neutralise_injection(value)[:300]
+        return value
     return None
 
 
@@ -149,7 +173,8 @@ def tool_input(name: str, result: dict) -> dict:
 
 
 def redact_user_text(value: str) -> str:
-    """Mask obvious identity/contact strings before chat persistence or model calls."""
+    """Mask identifiers and jailbreak phrasing before chat persistence or model calls."""
+    value = _neutralise_injection(value)
     value = re.sub(r"\b\d{11}\b", "[redacted number]", value)
     value = re.sub(r"\b\d{10}\b", "[redacted number]", value)
     value = re.sub(r"\+[1-9]\d{7,14}", "[redacted phone]", value)

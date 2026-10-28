@@ -27,12 +27,15 @@ Do not edit; run `python backend/scripts/gen_config_docs.py`.
 | `otp_lockout_base_seconds` | `<class 'int'>` | `60` |
 | `balance_stale_minutes` | `<class 'int'>` | `45` |
 | `account_refresh_cooldown_seconds` | `<class 'int'>` | `3600` |
+| `mono_refresh_monthly_limit` | `<class 'int'>` | `2` |
 | `fx_provider_name` | `<class 'str'>` | `` |
 | `fx_provider_url` | `<class 'str'>` | `` |
 | `fx_provider_key` | `<class 'str'>` | `` |
 | `fx_ttl_hours` | `<class 'int'>` | `6` |
 | `access_minutes` | `<class 'int'>` | `15` |
 | `refresh_days` | `<class 'int'>` | `30` |
+| `live_sync_trial_days` | `<class 'int'>` | `14` |
+| `free_live_account_limit` | `<class 'int'>` | `2` |
 | `jwt_issuer` | `<class 'str'>` | `cashlens-api` |
 | `jwt_audience` | `<class 'str'>` | `cashlens-mobile` |
 | `bvn_pepper` | `<class 'str'>` | `` |
@@ -57,6 +60,7 @@ Do not edit; run `python backend/scripts/gen_config_docs.py`.
 | `ai_request_timeout_s` | `<class 'float'>` | `20.0` |
 | `ai_chat_requests_per_minute` | `<class 'int'>` | `10` |
 | `assistant_retention_days` | `<class 'int'>` | `30` |
+| `fcm_credentials_json` | `<class 'str'>` | `` |
 | `field_encryption_key` | `<class 'str'>` | `` |
 | `field_encryption_key_id` | `<class 'str'>` | `primary` |
 | `field_encryption_previous_keys` | `<class 'str'>` | `{}` |

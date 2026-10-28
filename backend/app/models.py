@@ -104,6 +104,26 @@ class User(Base):
     sessions_revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
+class UserPlan(Base):
+    __tablename__ = "user_plans"
+    user_id: Mapped[UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+    paid_sme: Mapped[bool] = mapped_column(default=False)
+    trial_started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    trial_ends_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class UpgradeTapEvent(Base):
+    __tablename__ = "upgrade_tap_events"
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    surface: Mapped[str] = mapped_column(String(40))
+    desired_tier: Mapped[str] = mapped_column(String(20), default="sme")
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+
+
 class OtpCode(Base):
     __tablename__ = "otp_codes"
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
@@ -133,6 +153,17 @@ class SecurityAuditEvent(Base):
     event: Mapped[str] = mapped_column(String(50), index=True)
     subject_hash: Mapped[str | None] = mapped_column(String(64), index=True)
     occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+
+
+class ProviderCallLog(Base):
+    __tablename__ = "provider_call_logs"
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    provider: Mapped[str] = mapped_column(String(20))
+    operation: Mapped[str] = mapped_column(String(60))
+    account_id: Mapped[UUID | None] = mapped_column(ForeignKey("accounts.id", ondelete="SET NULL"))
+    requested_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    outcome: Mapped[str] = mapped_column(String(20))
 
 
 class RefreshToken(Base):
@@ -186,6 +217,7 @@ class Account(Base):
     currency: Mapped[str] = mapped_column(String(3), default="NGN")
     current_balance_minor: Mapped[int] = mapped_column(BigInteger)
     last_synced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    sync_cursor_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     category: Mapped[AccountCategory] = mapped_column(
         Enum(AccountCategory), default=AccountCategory.commercial_bank
     )
@@ -227,7 +259,33 @@ class Transaction(Base):
     category_source: Mapped[CategorySource] = mapped_column(
         Enum(CategorySource), default=CategorySource.auto
     )
+    source: Mapped[str] = mapped_column(String(20), default="mono")
+    parse_confidence_bps: Mapped[int] = mapped_column(Integer, default=10000)
+    classification_method: Mapped[str] = mapped_column(String(20), default="rule")
     merchant: Mapped[Merchant | None] = relationship()
+
+
+class TransactionUseLabel(Base):
+    """Owner-reviewed SME business/personal classification for one transaction."""
+
+    __tablename__ = "transaction_use_labels"
+    transaction_id: Mapped[UUID] = mapped_column(
+        ForeignKey("transactions.id", ondelete="CASCADE"), primary_key=True
+    )
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    suggested_label: Mapped[str] = mapped_column(String(12))
+    confidence_bps: Mapped[int] = mapped_column(Integer)
+    confirmed_label: Mapped[str | None] = mapped_column(String(12))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class InsightProfile(Base):
+    __tablename__ = "insight_profiles"
+    user_id: Mapped[UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+    mode: Mapped[str] = mapped_column(String(12), default="consumer")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
 class RecurringSeries(Base):
@@ -261,6 +319,7 @@ class UserSettings(Base):
     discretionary_categories: Mapped[list] = mapped_column(JSON, default=list)
     nominal_tbill_rate_bps: Mapped[int] = mapped_column(Integer, default=1500)
     ai_enabled: Mapped[bool] = mapped_column(default=False)
+    privacy_blur: Mapped[bool] = mapped_column(default=False)
 
 
 class InsightRecord(Base):
@@ -282,6 +341,50 @@ class InsightRecord(Base):
     dedupe_key: Mapped[str] = mapped_column(String(160))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     dismissed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class InsightAlert(Base):
+    __tablename__ = "insight_alerts"
+    __table_args__ = (UniqueConstraint("user_id", "insight_id"),)
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    insight_id: Mapped[UUID] = mapped_column(
+        ForeignKey("insights.id", ondelete="CASCADE"), index=True
+    )
+    kind: Mapped[str] = mapped_column(String(30))
+    severity: Mapped[str] = mapped_column(String(20))
+    what_changed: Mapped[str] = mapped_column(String(200))
+    suggested_response: Mapped[str] = mapped_column(String(200))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class ReportShareLink(Base):
+    __tablename__ = "report_share_links"
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    month: Mapped[date] = mapped_column()
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class BookkeeperInvite(Base):
+    __tablename__ = "bookkeeper_invites"
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    owner_user_id: Mapped[UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), unique=True, index=True
+    )
+    email: Mapped[str] = mapped_column(String(254))
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    status: Mapped[str] = mapped_column(String(20), default="pending")
+    accepted_by_user_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class ProviderLink(Base):
@@ -314,6 +417,31 @@ class ProviderLink(Base):
 
         self.provider_account_id_encrypted = encrypt_field(value) if value else None
         self.provider_account_id_hash = hash_field(value) if value else None
+
+
+class PendingUnlink(Base):
+    """Remote unlink target that intentionally has no user foreign key."""
+
+    __tablename__ = "pending_unlinks"
+    __table_args__ = (UniqueConstraint("provider", "provider_account_id_hash"),)
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    user_hash: Mapped[str] = mapped_column(String(64), index=True)
+    provider: Mapped[str] = mapped_column(String(20))
+    provider_account_id_encrypted: Mapped[str] = mapped_column(String(512))
+    provider_account_id_hash: Mapped[str] = mapped_column(String(64))
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    last_attempt_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+
+
+class WipeAudit(Base):
+    """The only user-specific record retained after a complete wipe."""
+
+    __tablename__ = "wipe_audits"
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    user_hash: Mapped[str] = mapped_column(String(64), index=True)
+    wiped_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
 
 
 class WebhookEvent(Base):
@@ -423,6 +551,35 @@ class CategoryRule(Base):
     __table_args__ = (UniqueConstraint("user_id", "counterparty_key"),)
 
 
+class ClassificationCorrection(Base):
+    __tablename__ = "classification_corrections"
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    counterparty_key: Mapped[str] = mapped_column(String(160), index=True)
+    category: Mapped[str] = mapped_column(String(40))
+    confirmed: Mapped[bool] = mapped_column(default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class TransferSuggestion(Base):
+    __tablename__ = "transfer_suggestions"
+    __table_args__ = (UniqueConstraint("user_id", "counterparty_key", "kind"),)
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    counterparty_key: Mapped[str] = mapped_column(String(160))
+    kind: Mapped[str] = mapped_column(String(20))
+    status: Mapped[str] = mapped_column(String(20), default="pending")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class ReviewedGlobalRule(Base):
+    __tablename__ = "reviewed_global_rules"
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    narration_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    category: Mapped[str] = mapped_column(String(40))
+    reviewed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
 class Budget(Base):
     __tablename__ = "budgets"
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
@@ -468,6 +625,8 @@ class DeviceToken(Base):
     token_hash: Mapped[str] = mapped_column(String(64), unique=True)
     platform: Mapped[str] = mapped_column(String(20))
     last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    is_valid: Mapped[bool] = mapped_column(default=True)
+    invalidated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class NotificationPreference(Base):
@@ -478,6 +637,34 @@ class NotificationPreference(Base):
     overspending_alerts: Mapped[bool] = mapped_column(default=True)
     loan_repayment_reminders: Mapped[bool] = mapped_column(default=True)
     investment_update_prompts: Mapped[bool] = mapped_column(default=True)
+
+
+class NotificationLog(Base):
+    __tablename__ = "notification_logs"
+    __table_args__ = (UniqueConstraint("device_id", "event_key"),)
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    device_id: Mapped[UUID] = mapped_column(
+        ForeignKey("device_tokens.id", ondelete="CASCADE"), index=True
+    )
+    event_key: Mapped[str] = mapped_column(String(160))
+    kind: Mapped[str] = mapped_column(String(40))
+    status: Mapped[str] = mapped_column(String(20))
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    last_attempt_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class JobRun(Base):
+    __tablename__ = "job_runs"
+    __table_args__ = (UniqueConstraint("job_name", "scheduled_for"),)
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    job_name: Mapped[str] = mapped_column(String(60), index=True)
+    scheduled_for: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    lock_owner: Mapped[str] = mapped_column(String(64))
+    status: Mapped[str] = mapped_column(String(20))
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class BvnLookupSession(Base):
