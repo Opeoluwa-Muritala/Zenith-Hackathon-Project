@@ -1997,9 +1997,7 @@ async def refresh_account(
         raise HTTPException(429, "Refresh cooldown active", headers={"Retry-After": str(wait)})
     _refresh_requests[account.id] = time.monotonic()
     if link.provider == "mono":
-        await reserve_refresh_call(
-            db, user.id, account.id, settings.mono_refresh_monthly_limit
-        )
+        await reserve_refresh_call(db, user.id, account.id, settings.mono_refresh_monthly_limit)
         try:
             response = await provider().balance(link.provider_account_id, realtime=True)
         except (ProviderError, ValueError, KeyError, TypeError):
@@ -2425,12 +2423,14 @@ async def reclassify_transaction(
     if not body.apply_to_future:
         tx.category = body.category
         tx.category_source = CategorySource.manual
-        db.add(ClassificationCorrection(
-            user_id=user.id,
-            counterparty_key=counterparty_key(tx.decoded_merchant or tx.narration_clean),
-            category=body.category,
-            created_at=now_utc(),
-        ))
+        db.add(
+            ClassificationCorrection(
+                user_id=user.id,
+                counterparty_key=counterparty_key(tx.decoded_merchant or tx.narration_clean),
+                category=body.category,
+                created_at=now_utc(),
+            )
+        )
         await db.commit()
         return {"id": tx.id, "category": tx.category, "category_source": tx.category_source}
     key = counterparty_key(tx.decoded_merchant or tx.narration_clean)
@@ -2451,9 +2451,11 @@ async def reclassify_transaction(
         )
     else:
         rule.category = body.category
-    db.add(ClassificationCorrection(
-        user_id=user.id, counterparty_key=key, category=body.category, created_at=now_utc()
-    ))
+    db.add(
+        ClassificationCorrection(
+            user_id=user.id, counterparty_key=key, category=body.category, created_at=now_utc()
+        )
+    )
     matching = (
         await db.execute(
             select(Transaction)
@@ -2865,8 +2867,11 @@ async def upload_statement(
     db: AsyncSession = Depends(get_db),
 ):
     if file.content_type not in {
-        "text/csv", "application/vnd.ms-excel", "application/csv",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/pdf",
+        "text/csv",
+        "application/vnd.ms-excel",
+        "application/csv",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/pdf",
     }:
         raise HTTPException(415, "PDF, CSV or XLSX required")
     data = await file.read(2_000_001)

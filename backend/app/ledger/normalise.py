@@ -181,10 +181,7 @@ def detect_ajo_esusu(
         dates = sorted({item[0].date() for item in recurring})
         if len(dates) < 3:
             continue
-        gaps = [
-            (second - first).days
-            for first, second in zip(dates, dates[1:], strict=False)
-        ]
+        gaps = [(second - first).days for first, second in zip(dates, dates[1:], strict=False)]
         if not (all(5 <= gap <= 9 for gap in gaps) or all(26 <= gap <= 33 for gap in gaps)):
             continue
         for credit_date, credit_amount, credit_name in credits:
