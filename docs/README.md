@@ -11,6 +11,7 @@ This index links the current backend documentation. It is verified against `back
 | [Data model](data-model.md) | Tables and generated schema reference. |
 | [API guide](api-guide.md) | HTTP conventions and route groups. |
 | [Public API](public-api.md) | Shareable API overview, safety model, and generated contract links. |
+| [Web test console](web-test.md) | Protected sandbox QA console deployment and environment setup. |
 | [Webhooks](webhooks.md) | Mono webhook verification and events. |
 | [Background jobs](background-jobs.md) | Current background behavior and gaps. |
 | [Configuration](configuration.md) | Settings and environment configuration. |
