@@ -1,0 +1,135 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  repository-integrity:
+    name: Repository integrity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Reject hidden execution and disguised payloads
+        run: python scripts/security_guard.py
+
+  backend:
+    name: Backend
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: fetch
+          POSTGRES_USER: fetch
+          POSTGRES_PASSWORD: fetch_dev
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fetch"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql+asyncpg://fetch:fetch_dev@localhost:5432/fetch
+      AGGREGATOR_PROVIDER: mock
+      MONO_SECRET_KEY: test_sk_dummy
+      MONO_PUBLIC_KEY: test_pk_dummy
+      MONO_WEBHOOK_SECRET: dummy_webhook_secret
+      AI_ENABLED_GLOBAL: "false"
+      AI_PROVIDER: fake
+      OPENROUTER_API_KEY: dummy_openrouter_key
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Install backend dependencies
+        run: uv sync --all-groups
+        working-directory: backend
+      - name: Lint, format, and type-check
+        run: uv run ruff check . && uv run ruff format --check . && uv run mypy app
+        working-directory: backend
+      - name: Apply migrations
+        run: uv run alembic upgrade head
+        working-directory: backend
+      - name: Run backend tests
+        run: uv run pytest --cov=app.insights --cov-fail-under=85
+        working-directory: backend
+
+  contracts-and-docs:
+    name: Contracts and docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Install backend dependencies
+        run: uv sync --all-groups
+        working-directory: backend
+      - name: Validate generated OpenAPI contract
+        run: uv run python -m scripts.export_openapi && git diff --exit-code openapi.json
+        working-directory: backend
+      - name: Validate documentation
+        run: make docs-check
+
+  web-test:
+    name: Web test console
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web-test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web-test/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Lint and format-check
+        run: npm run lint && npm run format
+      - name: Run tests
+        run: npm test -- --passWithNoTests
+      - name: Build
+        run: npm run build
+
+  mobile:
+    name: Mobile
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Test
+        run: npm test
+      - name: Validate Expo project
+        run: npx expo-doctor
+      - name: Export Android bundle
+        run: npx expo export --platform android
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fetch-android-bundle
+          path: mobile/dist/**
