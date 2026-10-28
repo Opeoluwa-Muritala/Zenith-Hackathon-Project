@@ -5002,6 +5002,216 @@
               }
             }
           ],
+          "name": "Business Personal Review",
+          "request": {
+            "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "header": [],
+            "method": "GET",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "business-personal",
+                "review"
+              ],
+              "raw": "{{base_url}}/business-personal/review"
+            }
+          },
+          "response": [
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{}",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Successful Response",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "business-personal",
+                    "review"
+                  ],
+                  "raw": "{{base_url}}/business-personal/review"
+                }
+              },
+              "status": "Successful Response"
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Authentication is missing or invalid.\"\n}",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Authentication is missing or invalid.",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "business-personal",
+                    "review"
+                  ],
+                  "raw": "{{base_url}}/business-personal/review"
+                }
+              },
+              "status": "Authentication is missing or invalid."
+            }
+          ]
+        },
+        {
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('documented success', function () { pm.expect([200]).to.include(pm.response.code); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "name": "Review Transaction Use",
+          "request": {
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"label\": \"business\"\n}"
+            },
+            "description": "Manage this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "method": "PUT",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "business-personal",
+                "transactions",
+                "{{transaction_id}}"
+              ],
+              "raw": "{{base_url}}/business-personal/transactions/{{transaction_id}}"
+            }
+          },
+          "response": [
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{}",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Successful Response",
+              "originalRequest": {
+                "method": "PUT",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "business-personal",
+                    "transactions",
+                    "{{transaction_id}}"
+                  ],
+                  "raw": "{{base_url}}/business-personal/transactions/{{transaction_id}}"
+                }
+              },
+              "status": "Successful Response"
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Authentication is missing or invalid.\"\n}",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Authentication is missing or invalid.",
+              "originalRequest": {
+                "method": "PUT",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "business-personal",
+                    "transactions",
+                    "{{transaction_id}}"
+                  ],
+                  "raw": "{{base_url}}/business-personal/transactions/{{transaction_id}}"
+                }
+              },
+              "status": "Authentication is missing or invalid."
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Validation Error\"\n}",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Validation Error",
+              "originalRequest": {
+                "method": "PUT",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "business-personal",
+                    "transactions",
+                    "{{transaction_id}}"
+                  ],
+                  "raw": "{{base_url}}/business-personal/transactions/{{transaction_id}}"
+                }
+              },
+              "status": "Validation Error"
+            }
+          ]
+        },
+        {
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('documented success', function () { pm.expect([200]).to.include(pm.response.code); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "name": "Confirm Classification Correction",
           "request": {
             "description": "Submit this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
@@ -5097,6 +5307,375 @@
                     "confirm"
                   ],
                   "raw": "{{base_url}}/classification-corrections/{{correction_id}}/confirm"
+                }
+              },
+              "status": "Validation Error"
+            }
+          ]
+        },
+        {
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('documented success', function () { pm.expect([200]).to.include(pm.response.code); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "name": "List Insight Alerts",
+          "request": {
+            "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "header": [],
+            "method": "GET",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "insight-alerts"
+              ],
+              "query": [
+                {
+                  "description": "",
+                  "disabled": true,
+                  "key": "status",
+                  "value": "all"
+                }
+              ],
+              "raw": "{{base_url}}/insight-alerts"
+            }
+          },
+          "response": [
+            {
+              "_postman_previewlanguage": "json",
+              "body": "[\n  {}\n]",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Successful Response",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "insight-alerts"
+                  ],
+                  "query": [
+                    {
+                      "description": "",
+                      "disabled": true,
+                      "key": "status",
+                      "value": "all"
+                    }
+                  ],
+                  "raw": "{{base_url}}/insight-alerts"
+                }
+              },
+              "status": "Successful Response"
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Authentication is missing or invalid.\"\n}",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Authentication is missing or invalid.",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "insight-alerts"
+                  ],
+                  "query": [
+                    {
+                      "description": "",
+                      "disabled": true,
+                      "key": "status",
+                      "value": "all"
+                    }
+                  ],
+                  "raw": "{{base_url}}/insight-alerts"
+                }
+              },
+              "status": "Authentication is missing or invalid."
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Validation Error\"\n}",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Validation Error",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "insight-alerts"
+                  ],
+                  "query": [
+                    {
+                      "description": "",
+                      "disabled": true,
+                      "key": "status",
+                      "value": "all"
+                    }
+                  ],
+                  "raw": "{{base_url}}/insight-alerts"
+                }
+              },
+              "status": "Validation Error"
+            }
+          ]
+        },
+        {
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('documented success', function () { pm.expect([200]).to.include(pm.response.code); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "name": "Mark Insight Alert Read",
+          "request": {
+            "description": "Submit this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "header": [],
+            "method": "POST",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "insight-alerts",
+                "{{alert_id}}",
+                "read"
+              ],
+              "raw": "{{base_url}}/insight-alerts/{{alert_id}}/read"
+            }
+          },
+          "response": [
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{}",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Successful Response",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "insight-alerts",
+                    "{{alert_id}}",
+                    "read"
+                  ],
+                  "raw": "{{base_url}}/insight-alerts/{{alert_id}}/read"
+                }
+              },
+              "status": "Successful Response"
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Authentication is missing or invalid.\"\n}",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Authentication is missing or invalid.",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "insight-alerts",
+                    "{{alert_id}}",
+                    "read"
+                  ],
+                  "raw": "{{base_url}}/insight-alerts/{{alert_id}}/read"
+                }
+              },
+              "status": "Authentication is missing or invalid."
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Validation Error\"\n}",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Validation Error",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "insight-alerts",
+                    "{{alert_id}}",
+                    "read"
+                  ],
+                  "raw": "{{base_url}}/insight-alerts/{{alert_id}}/read"
+                }
+              },
+              "status": "Validation Error"
+            }
+          ]
+        },
+        {
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('documented success', function () { pm.expect([200]).to.include(pm.response.code); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "name": "Set Insight Profile",
+          "request": {
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"mode\": \"consumer\"\n}"
+            },
+            "description": "Manage this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "method": "PUT",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "insight-profile"
+              ],
+              "raw": "{{base_url}}/insight-profile"
+            }
+          },
+          "response": [
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{}",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Successful Response",
+              "originalRequest": {
+                "method": "PUT",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "insight-profile"
+                  ],
+                  "raw": "{{base_url}}/insight-profile"
+                }
+              },
+              "status": "Successful Response"
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Authentication is missing or invalid.\"\n}",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Authentication is missing or invalid.",
+              "originalRequest": {
+                "method": "PUT",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "insight-profile"
+                  ],
+                  "raw": "{{base_url}}/insight-profile"
+                }
+              },
+              "status": "Authentication is missing or invalid."
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Validation Error\"\n}",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Validation Error",
+              "originalRequest": {
+                "method": "PUT",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "insight-profile"
+                  ],
+                  "raw": "{{base_url}}/insight-profile"
                 }
               },
               "status": "Validation Error"

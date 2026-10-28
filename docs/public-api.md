@@ -32,11 +32,10 @@ OTP codes expire after five minutes, are single-use, and are limited to five att
 | Ledger | `/transactions*`, `/statements/upload` | Read and classify the unified ledger |
 | Money views | `/net-position`, `/assets`, `/analytics/spending` | Cash, investments, and spending |
 | Planning | `/budget*`, `/obligations*` | Budgets, velocity, and obligations |
-| Insights | `/insights*`, `/forecast/safe-to-spend` | Evidence-linked financial findings |
+| Insights | `/insights*`, `/insight-alerts*` | Evidence-linked findings and alerts |
+| SME review | `/insight-profile`, `/business-personal/*` | Business/personal review |
 | Privacy | `/consents*` | Consent status and revocation |
 | Devices | `/devices*`, `/notification-preferences` | Push registration and preferences |
-
-## Environments
 
 ## Classification review
 
@@ -52,6 +51,21 @@ corrections. It is deliberately unavailable through public user credentials.
 The optional narration classifier uses the configured AI client when
 `AI_ENABLED_GLOBAL=true`. Invalid responses and provider failures retain the
 deterministic result. Its normalized-narration cache is process-local.
+
+## Insight cards and SME review
+
+`POST /insights/run` computes Leak Finder, cash-flow and weekly health findings from
+the consented ledger. Cards include `number_minor`, `why_it_matters`, `action`,
+confidence, and `evidence_transaction_ids`. Amounts are integer kobo and are always
+computed by backend code.
+
+Set `PUT /insight-profile` to `{"mode":"sme"}` to enable the separator.
+`GET /business-personal/review` returns business, personal or unsure suggestions and
+split totals. `PUT /business-personal/transactions/{transaction_id}` records the
+owner's correction. `GET /insight-alerts` lists alerts and
+`POST /insight-alerts/{alert_id}/read` marks one read.
+
+## Environments
 
 Set the API base URL supplied by the Fetch deployment. Do not place Mono keys, JWT secrets,
 encryption keys, BVNs, OTPs, or refresh tokens in a client bundle or URL.

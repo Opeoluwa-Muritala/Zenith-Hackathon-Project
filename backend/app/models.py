@@ -245,6 +245,29 @@ class Transaction(Base):
     merchant: Mapped[Merchant | None] = relationship()
 
 
+class TransactionUseLabel(Base):
+    """Owner-reviewed SME business/personal classification for one transaction."""
+
+    __tablename__ = "transaction_use_labels"
+    transaction_id: Mapped[UUID] = mapped_column(
+        ForeignKey("transactions.id", ondelete="CASCADE"), primary_key=True
+    )
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    suggested_label: Mapped[str] = mapped_column(String(12))
+    confidence_bps: Mapped[int] = mapped_column(Integer)
+    confirmed_label: Mapped[str | None] = mapped_column(String(12))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class InsightProfile(Base):
+    __tablename__ = "insight_profiles"
+    user_id: Mapped[UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+    mode: Mapped[str] = mapped_column(String(12), default="consumer")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
 class RecurringSeries(Base):
     __tablename__ = "recurring_series"
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
@@ -297,6 +320,22 @@ class InsightRecord(Base):
     dedupe_key: Mapped[str] = mapped_column(String(160))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     dismissed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class InsightAlert(Base):
+    __tablename__ = "insight_alerts"
+    __table_args__ = (UniqueConstraint("user_id", "insight_id"),)
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    insight_id: Mapped[UUID] = mapped_column(
+        ForeignKey("insights.id", ondelete="CASCADE"), index=True
+    )
+    kind: Mapped[str] = mapped_column(String(30))
+    severity: Mapped[str] = mapped_column(String(20))
+    what_changed: Mapped[str] = mapped_column(String(200))
+    suggested_response: Mapped[str] = mapped_column(String(200))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class ProviderLink(Base):
