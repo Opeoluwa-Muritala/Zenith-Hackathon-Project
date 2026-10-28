@@ -542,6 +542,7 @@ Do not edit; run `python backend/scripts/gen_data_model.py`.
 | Column | Type | Nullable | Key | Protection |
 |---|---|---:|---|---|
 | `id` | `CHAR(32)` | False | PK |  |
+| `user_id` | `CHAR(32)` | True | FK |  |
 | `event_key` | `VARCHAR(64)` | False |  |  |
 | `event_name` | `VARCHAR(100)` | False |  |  |
 | `received_at` | `DATETIME` | False |  |  |

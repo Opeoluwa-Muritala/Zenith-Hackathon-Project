@@ -29,6 +29,7 @@ dev = [
     "pytest-cov>=5",
     "ruff>=0.13",
     "mypy>=1.11",
+    "openapi-spec-validator>=0.7.2",
     "respx>=0.23.1",
     "aiosqlite>=0.20",
 ]
