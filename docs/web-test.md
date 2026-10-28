@@ -34,6 +34,10 @@ the browser to the console; account status polling and webhooks remain authorita
 Register the staging webhook as
 `https://zenith-hackathon-project.vercel.app/webhooks/mono` in the Mono sandbox app.
 
+The current protected console origin is `https://fetch-test-two.vercel.app`. Therefore
+the staging backend uses `CORS_ORIGINS=https://fetch-test-two.vercel.app` and
+`MONO_REDIRECT_URL=https://fetch-test-two.vercel.app/link/callback`.
+
 ## Unconfirmed Mono behavior
 
 - Test institutions and credentials are supplied by the Mono sandbox experience and

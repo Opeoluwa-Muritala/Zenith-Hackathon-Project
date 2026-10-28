@@ -447,6 +447,9 @@ class WipeAudit(Base):
 class WebhookEvent(Base):
     __tablename__ = "webhook_events"
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    user_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), index=True
+    )
     event_key: Mapped[str] = mapped_column(String(64), unique=True)
     event_name: Mapped[str] = mapped_column(String(100))
     received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))

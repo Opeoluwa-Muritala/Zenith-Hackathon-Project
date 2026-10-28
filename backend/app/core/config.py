@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     demo_mode: bool = False
     demo_otp_inbox_password: str = Field("", repr=False)
     demo_identifiers: str = ""
-    otp_http_url: str = ""
+    otp_http_url: str = Field("", validation_alias=AliasChoices("OTP_HTTP_URL", "EMAIL_URL"))
     otp_http_key: str = ""
     otp_sender_id: str = ""
     otp_expiry_seconds: int = Field(300, ge=60, le=900)

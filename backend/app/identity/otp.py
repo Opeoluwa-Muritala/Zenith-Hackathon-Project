@@ -86,18 +86,30 @@ class DevInboxSender:
 class HttpOtpSender:
     async def send(self, identifier: str, code: str) -> None:
         settings = get_settings()
-        if not settings.otp_http_url or not settings.otp_http_key:
+        if not settings.otp_http_url:
             raise RuntimeError("OTP HTTP sender is not configured")
+        if "@" not in identifier:
+            raise RuntimeError("Configured OTP sender supports email only")
         if settings.environment == "production" and not settings.otp_http_url.startswith(
             "https://"
         ):
             raise RuntimeError("OTP HTTP sender must use HTTPS")
+        headers = {}
+        if settings.otp_http_key:
+            headers["Authorization"] = f"Bearer {settings.otp_http_key}"
         async with httpx.AsyncClient(timeout=10) as client:
             try:
                 response = await client.post(
                     settings.otp_http_url,
-                    headers={"Authorization": f"Bearer {settings.otp_http_key}"},
-                    json={"to": identifier, "code": code, "sender_id": settings.otp_sender_id},
+                    headers=headers,
+                    json={
+                        "to": identifier,
+                        "subject": "Your Fetch sign-in code",
+                        "text": (
+                            f"Your Fetch sign-in code is {code}. "
+                            f"It expires in {settings.otp_expiry_seconds // 60} minutes."
+                        ),
+                    },
                 )
             except httpx.RequestError:
                 raise RuntimeError("OTP delivery failed") from None

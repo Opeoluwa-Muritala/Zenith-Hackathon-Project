@@ -60,6 +60,7 @@ PURGE_USER_FOREIGN_KEYS = {
     "upgrade_tap_events.user_id",
     "user_plans.user_id",
     "user_settings.user_id",
+    "webhook_events.user_id",
 }
 
 

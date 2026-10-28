@@ -30,8 +30,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from pydantic import BaseModel, EmailStr, Field, model_validator
-from sqlalchemy import and_, delete, func, or_, select, update
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy import and_, delete, func, or_, select, text, update
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import api_models as api
@@ -668,6 +668,63 @@ async def health():
     return {"status": "ok", "product": PRODUCT_NAME}
 
 
+@app.get("/dev/status", include_in_schema=False)
+async def dev_status(db: AsyncSession = Depends(get_db)):
+    """Expose non-secret deployment readiness only outside production."""
+    if settings.environment == "production":
+        raise HTTPException(404, "Not found")
+    try:
+        revision = await db.scalar(text("SELECT version_num FROM alembic_version"))
+    except SQLAlchemyError:
+        revision = None
+    return {
+        "app_env": settings.environment,
+        "demo_mode": settings.demo_mode,
+        "migration_revision": revision,
+        "expected_revision": "0026",
+        "mono_connect_configured": bool(settings.mono_secret_key),
+        "mono_lookup_configured": bool(settings.mono_lookup_secret_key),
+        "mono_sandbox_keys": bool(
+            settings.mono_secret_key.startswith("test_")
+            and settings.mono_lookup_secret_key.startswith("test_")
+        ),
+        "webhook_receiver_configured": bool(settings.webhook_secure_key),
+        "webhook_registration_confirmed": False,
+    }
+
+
+@app.get("/dev/webhook-events", include_in_schema=False)
+async def dev_webhook_events(
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Return redacted processing metadata for the signed-in user outside production."""
+    if settings.environment == "production":
+        raise HTTPException(404, "Not found")
+    rows = (
+        (
+            await db.execute(
+                select(WebhookEvent)
+                .where(WebhookEvent.user_id == user.id)
+                .order_by(WebhookEvent.received_at.desc())
+                .limit(100)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return [
+        {
+            "id": str(row.id),
+            "event_name": row.event_name,
+            "received_at": row.received_at,
+            "processing_status": row.processing_status,
+            "processed_at": row.processed_at,
+        }
+        for row in rows
+    ]
+
+
 @app.get("/api-docs", include_in_schema=False)
 async def api_docs_alias():
     """Provide a stable, shareable alias for the configured Swagger UI."""
@@ -1265,7 +1322,9 @@ async def process_mono_event(event: dict, event_key: str | None = None):
             return
     status = "processed"
     try:
-        await apply_mono_event(event)
+        claimed_event = dict(event)
+        claimed_event["_fetch_event_key"] = event_key
+        await apply_mono_event(claimed_event)
     except Exception as exc:
         status = "failed"
         logger.warning("mono_webhook_processing_failed", extra={"error_type": type(exc).__name__})
@@ -1285,6 +1344,7 @@ async def process_mono_event(event: dict, event_key: str | None = None):
 
 async def apply_mono_event(event: dict):
     """Apply an authenticated Mono event, then sync if account data is ready."""
+    event_key = event.get("_fetch_event_key")
     name = event.get("event")
     data = event.get("data") or {}
     meta = data.get("meta") or {}
@@ -1313,6 +1373,12 @@ async def apply_mono_event(event: dict):
             ).scalar_one_or_none()
         if link is None:
             return
+        if event_key:
+            await db.execute(
+                update(WebhookEvent)
+                .where(WebhookEvent.event_key == event_key)
+                .values(user_id=link.user_id)
+            )
         consent = await db.get(Consent, link.consent_id)
         if consent is None:
             return
