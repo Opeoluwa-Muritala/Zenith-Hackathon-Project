@@ -79,7 +79,9 @@ class StatementUploadProvider:
         try:
             from pypdf import PdfReader
 
-            text = "\n".join(page.extract_text() or "" for page in PdfReader(io.BytesIO(data)).pages)
+            text = "\n".join(
+                page.extract_text() or "" for page in PdfReader(io.BytesIO(data)).pages
+            )
         except Exception as exc:
             raise ProviderError("Invalid PDF statement") from exc
         records = []
@@ -87,7 +89,13 @@ class StatementUploadProvider:
             parts = [part.strip() for part in line.split("|")]
             if len(parts) >= 4:
                 records.append(
-                    {"date": parts[0], "amount_minor": parts[1], "direction": parts[2], "narration": parts[3], "id": str(index)}
+                    {
+                        "date": parts[0],
+                        "amount_minor": parts[1],
+                        "direction": parts[2],
+                        "narration": parts[3],
+                        "id": str(index),
+                    }
                 )
         return self._parse_records(records)
 
@@ -98,7 +106,11 @@ class StatementUploadProvider:
                 raise ProviderError("Statement exceeds row limit")
             try:
                 posted = row.get("date")
-                posted_at = posted if isinstance(posted, datetime) else datetime.fromisoformat(str(posted).replace("Z", "+00:00"))
+                posted_at = (
+                    posted
+                    if isinstance(posted, datetime)
+                    else datetime.fromisoformat(str(posted).replace("Z", "+00:00"))
+                )
                 if posted_at.tzinfo is None:
                     posted_at = posted_at.replace(tzinfo=UTC)
                 direction = str(row.get("direction") or "").lower()
@@ -107,13 +119,34 @@ class StatementUploadProvider:
                     credit, debit = row.get("credit"), row.get("debit")
                     direction = "credit" if credit not in (None, "") else "debit"
                     amount = credit if direction == "credit" else debit
-                amount_minor = int((Decimal(str(amount).replace(",", "")) * 100).to_integral()) if isinstance(amount, str) and "." in amount else int(amount)
-                narration = str(row.get("narration") or row.get("description") or row.get("details") or "")
+                if amount in (None, ""):
+                    raise ValueError
+                raw_amount = str(amount).replace(",", "")
+                amount_minor = (
+                    int((Decimal(raw_amount) * 100).to_integral())
+                    if isinstance(amount, str) and "." in raw_amount
+                    else int(raw_amount)
+                )
+                narration = str(
+                    row.get("narration") or row.get("description") or row.get("details") or ""
+                )
                 if direction not in {"credit", "debit"} or amount_minor <= 0 or not narration:
                     raise ValueError
             except (InvalidOperation, TypeError, ValueError, OverflowError) as exc:
                 raise ProviderError("Invalid statement row") from exc
-            out.append(ProviderTransaction(str(row.get("id") or index), posted_at, amount_minor, direction, narration[:500], row.get("category") or None, None, "upload", 8000))
+            out.append(
+                ProviderTransaction(
+                    str(row.get("id") or index),
+                    posted_at,
+                    amount_minor,
+                    direction,
+                    narration[:500],
+                    row.get("category") or None,
+                    None,
+                    "upload",
+                    8000,
+                )
+            )
         if not out:
             raise ProviderError("Missing statement rows")
         return out

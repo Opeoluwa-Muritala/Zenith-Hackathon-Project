@@ -11,7 +11,7 @@ from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from html import escape
 from pathlib import Path
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 from uuid import UUID, uuid4
 
 from fastapi import (
@@ -780,6 +780,8 @@ async def verify_otp(body: OtpIn, request: Request, db: AsyncSession = Depends(g
         if code_row and as_utc(code_row.expires_at) <= now:
             forget_code(identifier)
         raise HTTPException(401, "Invalid code")
+    if code_row is None:  # Defensive narrowing; invalid challenges returned above.
+        raise HTTPException(401, "Invalid code")
     code_row.consumed_at = now
     await clear_failures(db, identifier)
     forget_code(identifier)
@@ -1251,7 +1253,7 @@ async def process_mono_event(event: dict, event_key: str | None = None):
             )
         )
         await db.commit()
-        if not claimed.rowcount:
+        if not getattr(claimed, "rowcount", 0):
             return
     status = "processed"
     try:
@@ -1398,16 +1400,16 @@ async def apply_mono_event(event: dict):
             )
             db.add(institution)
             await db.flush()
-        account = (
+        linked_account = (
             await db.execute(
                 select(Account).where(
                     Account.user_id == link.user_id, Account.consent_id == consent.id
                 )
             )
         ).scalar_one_or_none()
-        if account is None:
+        if linked_account is None:
             account_category, _ = category_for_institution(institution.code, institution.name)
-            account = Account(
+            linked_account = Account(
                 user_id=link.user_id,
                 consent_id=consent.id,
                 institution_id=institution.id,
@@ -1434,26 +1436,26 @@ async def apply_mono_event(event: dict):
                 sync_status=SyncStatus.ok,
                 category=account_category,
             )
-            db.add(account)
+            db.add(linked_account)
             await db.flush()
         else:
             if "balance" in (meta.get("retrieved_data") or []) and info.get("balance") is not None:
-                account.current_balance_minor = int(info["balance"])
-                account.available_balance_minor = account.current_balance_minor
-                account.balance_synced_at = now_utc()
-                account.sync_status = SyncStatus.ok
+                linked_account.current_balance_minor = int(info["balance"])
+                linked_account.available_balance_minor = linked_account.current_balance_minor
+                linked_account.balance_synced_at = now_utc()
+                linked_account.sync_status = SyncStatus.ok
         await db.commit()
-        if "transactions" not in (meta.get("retrieved_data") or []) or account.sync_paused:
+        if "transactions" not in (meta.get("retrieved_data") or []) or linked_account.sync_paused:
             return
-        local_account_id = account.id
+        local_account_id = linked_account.id
         try:
-            await sync_owned_account(db, account, link, now_utc())
+            await sync_owned_account(db, linked_account, link, now_utc())
             await db.commit()
         except (ProviderNotReady, ProviderUnavailable, HTTPException):
             await db.rollback()
-            account = await db.get(Account, local_account_id)
-            if account:
-                account.sync_status = SyncStatus.delayed
+            delayed_account = await db.get(Account, local_account_id)
+            if delayed_account:
+                delayed_account.sync_status = SyncStatus.delayed
                 await db.commit()
             raise
 
@@ -1659,7 +1661,7 @@ async def accounts(user: User = Depends(current_user), db: AsyncSession = Depend
             Account.user_id == user.id, Consent.revoked_at.is_(None), Consent.expires_at > now_utc()
         )
     )
-    groups = {
+    groups: dict[str, dict[str, Any]] = {
         category.value: {"count": 0, "totals_minor_by_currency": {}, "accounts": []}
         for category in AccountCategory
     }
@@ -1715,6 +1717,8 @@ async def account_detail(
     if account is None:
         raise HTTPException(404, "Account not found")
     institution = await db.get(Institution, account.institution_id)
+    if institution is None:
+        raise HTTPException(404, "Institution not found")
     derived_category, category_unmapped = category_for_institution(
         institution.code, institution.name
     )
@@ -2108,7 +2112,7 @@ async def delete_manual_asset(
     result = await db.execute(
         delete(ManualAsset).where(ManualAsset.id == asset_id, ManualAsset.user_id == user.id)
     )
-    if result.rowcount == 0:
+    if getattr(result, "rowcount", 0) == 0:
         raise HTTPException(404, "Asset not found")
     await db.commit()
 
@@ -2426,7 +2430,7 @@ async def delete_category_rule(
     result = await db.execute(
         delete(CategoryRule).where(CategoryRule.id == rule_id, CategoryRule.user_id == user.id)
     )
-    if result.rowcount == 0:
+    if getattr(result, "rowcount", 0) == 0:
         raise HTTPException(404, "Category rule not found")
     await db.commit()
 
@@ -2453,7 +2457,7 @@ async def spending_analytics(
         start_day, end_day = today.replace(day=1), today
     start = datetime.combine(start_day, datetime.min.time(), UTC)
     end = datetime.combine(end_day + timedelta(days=1), datetime.min.time(), UTC)
-    amounts = (
+    category_rows = (
         await db.execute(
             select(Transaction.category, func.sum(Transaction.amount_minor))
             .join(Account, Transaction.account_id == Account.id)
@@ -2468,10 +2472,10 @@ async def spending_analytics(
             .group_by(Transaction.category)
         )
     ).all()
-    normalised = {}
-    for category, amount in amounts:
+    normalised: dict[str, int] = {}
+    for category, amount in category_rows:
         label = category_label(category)
-        normalised[label] = normalised.get(label, 0) + amount
+        normalised[label] = normalised.get(label, 0) + int(amount or 0)
     amounts = list(normalised.items())
     total = sum(amount for _, amount in amounts)
     return {
@@ -2742,7 +2746,7 @@ async def unregister_device(
     result = await db.execute(
         delete(DeviceToken).where(DeviceToken.id == device_id, DeviceToken.user_id == user.id)
     )
-    if result.rowcount == 0:
+    if getattr(result, "rowcount", 0) == 0:
         raise HTTPException(404, "Device not found")
     await db.commit()
 

@@ -1,10 +1,10 @@
 import hashlib
 import json
 import re
-from functools import lru_cache
-from pathlib import Path
 from collections import Counter
 from datetime import datetime
+from functools import lru_cache
+from pathlib import Path
 
 CATEGORY_ALIASES = {
     "food": "Food & Dining",
@@ -35,10 +35,24 @@ NIGERIA_RULES = (
     (re.compile(r"\b(?:sms|alert)\s*(?:fee|charge)\b", re.I), "SMS Alert Fee", "Bills & Utilities"),
     (re.compile(r"\b(?:stamp\s*duty|stamping)\b", re.I), "Stamp Duty", "Bills & Utilities"),
     (re.compile(r"\bvat\b", re.I), "VAT", "Bills & Utilities"),
-    (re.compile(r"\b(?:tax|wht|withholding|paye|cit|stamp)\s*(?:payment|remittance|deduction)?\b", re.I), "Tax", "Bills & Utilities"),
-    (re.compile(r"\bmaintenance\s*(?:fee|charge)?\b", re.I), "Account Maintenance Fee", "Bills & Utilities"),
+    (
+        re.compile(
+            r"\b(?:tax|wht|withholding|paye|cit|stamp)\s*(?:payment|remittance|deduction)?\b", re.I
+        ),
+        "Tax",
+        "Bills & Utilities",
+    ),
+    (
+        re.compile(r"\bmaintenance\s*(?:fee|charge)?\b", re.I),
+        "Account Maintenance Fee",
+        "Bills & Utilities",
+    ),
     (re.compile(r"\b(?:card|atm)\s*(?:fee|charge)\b", re.I), "Card Fee", "Bills & Utilities"),
-    (re.compile(r"\b(?:ussd|nip|pos|transfer)\s*(?:fee|charge)\b", re.I), "Bank Service Fee", "Bills & Utilities"),
+    (
+        re.compile(r"\b(?:ussd|nip|pos|transfer)\s*(?:fee|charge)\b", re.I),
+        "Bank Service Fee",
+        "Bills & Utilities",
+    ),
     (re.compile(r"\b(?:airtime|data)\b", re.I), "Airtime & Data", "Airtime & Data"),
 )
 
@@ -119,8 +133,18 @@ def categorise(value, provider_category=None):
         from rapidfuzz import fuzz
 
         candidate = counterparty_key(" ".join(narration_parts(value)))
-        best = max(merchant_aliases(), key=lambda item: max(fuzz.ratio(candidate, counterparty_key(alias)) for alias in item["aliases"]), default=None)
-        if best and max(fuzz.ratio(candidate, counterparty_key(alias)) for alias in best["aliases"]) >= 90:
+        best = max(
+            merchant_aliases(),
+            key=lambda item: max(
+                fuzz.ratio(candidate, counterparty_key(alias)) for alias in item["aliases"]
+            ),
+            default=None,
+        )
+        if (
+            best
+            and max(fuzz.ratio(candidate, counterparty_key(alias)) for alias in best["aliases"])
+            >= 90
+        ):
             return best["name"], best["category"], best["subscription"]
     except ImportError:
         pass
@@ -157,7 +181,10 @@ def detect_ajo_esusu(
         dates = sorted({item[0].date() for item in recurring})
         if len(dates) < 3:
             continue
-        gaps = [(second - first).days for first, second in zip(dates, dates[1:])]
+        gaps = [
+            (second - first).days
+            for first, second in zip(dates, dates[1:], strict=False)
+        ]
         if not (all(5 <= gap <= 9 for gap in gaps) or all(26 <= gap <= 33 for gap in gaps)):
             continue
         for credit_date, credit_amount, credit_name in credits:
