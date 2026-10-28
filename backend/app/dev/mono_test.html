@@ -101,10 +101,10 @@
           <div class="step-head"><span class="step-num">1</span><div><h2 id="auth-title">Get a development session</h2><p>Request an OTP, then verify it to receive a token for this tab.</p></div><span class="step-state" id="auth-state" data-state="idle"><span class="dot"></span><span>Not connected</span></span></div>
           <div class="fields">
             <label>Test phone number<input id="phone" autocomplete="off" inputmode="tel" placeholder="+2348000000001" maxlength="16"></label>
-            <label>Development OTP<input id="otp" autocomplete="off" inputmode="numeric" placeholder="Check DEV_OTP in backend env" maxlength="6"></label>
+            <label>Development OTP<input id="otp" autocomplete="off" inputmode="numeric" placeholder="Request a code first" maxlength="6"></label>
           </div>
           <div class="actions"><button id="request-otp">Request OTP</button><button class="secondary" id="verify-otp">Verify and continue</button></div>
-          <p class="hint">The development OTP is configured by <code>DEV_OTP</code>. It is disabled in production.</p>
+          <p class="hint">Set <code>OTP_SENDER=dev_inbox</code> and <code>OTP_DEV_INBOX_ENABLED=true</code> locally. The inbox is disabled in production.</p>
         </section>
 
         <section aria-labelledby="identity-title">
@@ -194,6 +194,10 @@
         setBusy(button, true);
         try {
           const result = await api("/auth/otp/request", { method: "POST", body: JSON.stringify({ phone: document.getElementById("phone").value.trim() }) });
+          const entered = document.getElementById("phone").value.trim();
+          const identifier = /^0[0-9]{10}$/.test(entered) ? "+234" + entered.slice(1) : entered;
+          const inbox = await api("/dev/otp-inbox?identifier=" + encodeURIComponent(identifier));
+          document.getElementById("otp").value = inbox.data.code || "";
           show("OTP requested", { status: result.status, response: result.data });
         } catch (error) { show("OTP request failed", error.message); }
         finally { setBusy(button, false); }

@@ -1,30 +1,26 @@
-cashlens combines consented account data into one ledger and runs deterministic insight rules. This document is for reviewers and developers.
-
 # Architecture
+
+The backend is a FastAPI application using SQLAlchemy async sessions, PostgreSQL configuration, provider adapters, a consent-filtered ledger, deterministic insight detectors, and an optional aggregate-only AI layer. Main sources are `backend/app/main.py`, `models.py`, `providers/`, `ledger/`, `insights/`, and `ai/`.
 
 ```mermaid
 flowchart LR
-  A[Android app] -->|JWT HTTPS| B[FastAPI]
-  B --> C[Consent service]
-  C --> D[Provider interface]
-  D --> E[Mock]
-  D --> F[Mono Connect]
-  D --> G[CSV parser]
-  D --> H[(PostgreSQL)]
-  H --> I[Consent-filtered ledger view]
-  I --> J[12 pure detectors]
-  J --> K[Template explanations]
-  K --> A
+  Client --> API[FastAPI]
+  API --> DB[(PostgreSQL)]
+  API --> Mono[Mono Connect and Lookup]
+  API --> Ledger[Ledger and detectors]
+  Ledger --> Insights[Insights]
 ```
 
-All money is integer kobo and timestamps are UTC. UUID ownership filters are applied in protected resource queries. Revocation is local-first so data disappears even if a provider unlink call later fails.
+```mermaid
+flowchart TD
+  Main[main.py] --> Auth[core/security.py]
+  Main --> Providers[providers]
+  Main --> Ledger[ledger]
+  Main --> AI[ai]
+  Main --> Insights[insights]
+  Models[models.py] --> DB[(PostgreSQL)]
+```
 
-## Decisions
+The current sync path validates active consent, fetches provider transactions, deduplicates rows, normalises narration, rebuilds recurring series, and reruns insights. The first sync uses a 190-day window; later syncs overlap the last successful sync by three days. Mono account connection is webhook-first: processing does not fetch data, and account updates gate sync on `retrieved_data`.
 
-The provider interface prevents BVN from becoming a transaction source. Rule-based detectors are explainable and testable; they trade flexibility for predictable results. One Android module keeps hackathon iteration fast. Product suggestions belong in configuration, not detector code.
-
-## Related docs
-
-- [Consent and privacy](consent-and-privacy.md)
-- [Detectors](detectors.md)
-- [Known gaps](KNOWN_GAPS.md)
+Design decisions present in code include integer minor-unit amounts, UUID identifiers, consent ownership filters, hash-only BVN storage, encrypted provider account IDs/discovered account numbers, and provider adapters. Manual assets store the USD/NGN rate used at write time as parts per million. Scheduler, push delivery, durable unlink, and complete wipe are not implemented.

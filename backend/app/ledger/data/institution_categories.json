@@ -1,0 +1,12 @@
+{
+  "codes": {},
+  "names": {
+    "opay": "digital_bank_wallet",
+    "palmpay": "digital_bank_wallet",
+    "moniepoint": "digital_bank_wallet",
+    "demo campus wallet": "digital_bank_wallet",
+    "demo cedar bank": "commercial_bank",
+    "demo lagoon bank": "commercial_bank",
+    "opay digital services limited": "digital_bank_wallet"
+  }
+}

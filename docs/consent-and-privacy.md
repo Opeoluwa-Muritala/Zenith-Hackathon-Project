@@ -2,7 +2,7 @@ cashlens is designed to minimise identity and financial data while preserving us
 
 # Consent and privacy
 
-BVN is an identity key only. The service stores a salted hash and the last four digits, never the raw BVN, and does not use BVN to fetch transactions. Transactions enter only through Mock, Mono or bounded CSV provider interfaces tied to consent.
+BVN is an identity key only. The service stores a keyed HMAC hash and the last four digits, never the raw BVN, and does not use BVN to fetch transactions. Transactions enter only through Mock, Mono or bounded CSV provider interfaces tied to consent.
 
 Consent records capture institution, scope, grant, expiry and revocation times. Revocation is checked when accounts, transactions and summaries are read. The intended production flow also unlinks at Mono after local revocation; see known gaps.
 
@@ -19,5 +19,5 @@ These controls are design intent aligned with data minimisation, purpose limitat
 ## Related docs
 
 - [Architecture](architecture.md)
-- [Security policy](../SECURITY.md)
+- [Security and privacy](security-and-privacy.md)
 - [Known gaps](KNOWN_GAPS.md)

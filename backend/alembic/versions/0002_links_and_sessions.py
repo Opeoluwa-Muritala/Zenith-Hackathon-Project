@@ -6,7 +6,7 @@ Revises: 0001
 
 import sqlalchemy as sa
 
-from alembic import op
+from alembic import context, op
 
 revision = "0002"
 down_revision = "0001"
@@ -15,6 +15,8 @@ depends_on = None
 
 
 def upgrade():
+    if context.is_offline_mode():
+        return
     inspector = sa.inspect(op.get_bind())
     tables = set(inspector.get_table_names())
     refresh_columns = {c["name"] for c in inspector.get_columns("refresh_tokens")}

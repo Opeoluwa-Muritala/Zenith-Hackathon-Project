@@ -4,7 +4,7 @@ The mobile client is a React Native app built with Expo and TypeScript. This doc
 
 `mobile/App.tsx` contains the sign-in flow, bottom-tab navigation and the initial live-data screens. `mobile/src/api.ts` owns typed API calls, access-token refresh and secure token persistence through Expo SecureStore. The app calls the FastAPI backend directly; Mono keys remain server-side.
 
-The app currently includes OTP sign-in, BVN verification for synthetic demo identities, Mono hosted-link initiation, mock demo account linking, refresh/sync, overview, transactions, recurring payments, insights, consent revocation and sign-out. Financial values arrive in integer kobo and are formatted as naira only at the UI edge. The backend defaults to local development OTP and does not send SMS.
+The app includes OTP sign-in, BVN verification for synthetic demo identities, Mono hosted-link initiation, mock demo account linking, refresh/sync, overview, transactions, recurring payments, insights, consent revocation and sign-out. Financial values arrive in integer kobo and are formatted as naira at the UI edge. The backend OTP sender defaults to disabled; local development inbox delivery requires explicit opt-in and production requires a configured HTTPS sender.
 
 ## Run on Android
 

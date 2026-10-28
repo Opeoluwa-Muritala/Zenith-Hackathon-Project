@@ -5,10 +5,10 @@ An unverified row is not a recommendation; run the synthetic eval suite before s
 
 | Groq model ID | Tool calls checked | Insight wording pass rate | Chat eval pass rate | Cost per 1,000 turns | Status / notes |
 |---|---:|---:|---:|---:|---|
-| `llama-3.1-8b-instant` | Groq lists tool support; runtime unverified | Unverified | Unverified | Unverified | Insight wording default |
-| `llama-3.3-70b-versatile` | Groq lists tool support; runtime unverified | Unverified | Unverified | Unverified | Chat default |
+| `openai/gpt-oss-20b` | Groq lists tool support; live request passed | Unverified | Unverified | Unverified | Insight wording default |
+| `openai/gpt-oss-120b` | Groq lists tool support; live request passed | Unverified | Unverified | Unverified | Chat default |
 
-The default models require a live evaluation before a demo. Before demo, run `make ai-eval MODEL=<slug>` with synthetic seeded data, compare at least three supported models, and record actual pass rates and pricing from account-side usage. This repository has not measured a per-turn price.
+Both default models returned a live synthetic response; the chat model also returned a tool call. A full seeded evaluation is still required before a demo. Before demo, run `make ai-eval MODEL=<slug>` with synthetic seeded data, compare at least three supported models, and record actual pass rates and pricing from account-side usage. This repository has not measured a per-turn price.
 
 ## Related docs
 

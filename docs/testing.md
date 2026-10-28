@@ -1,13 +1,7 @@
-Backend tests use pytest and fake or mocked provider clients. This document is for contributors validating changes locally.
-
 # Testing
 
-Run backend tests with `cd backend; uv run pytest`. `test_detectors.py` checks registry completeness, trigger cases, a near miss and insufficient-data behaviour. `test_statement.py` rejects oversized and negative-value CSV data. `test_mono.py` mocks HTTP and never contacts Mono.
+Tests live in `backend/tests/`. Run `python -m pytest tests`. Mono HTTP calls use `respx`; AI and statement tests use local fakes/fixtures. `test_openapi_quality.py` checks generated route metadata and security declarations. Database integration tests use their configured test database/SQLite setup; no live provider calls are required.
 
-The React Native client uses Expo and TypeScript. Run `cd mobile; npm test` for its TypeScript check, or `npx expo export --platform android` to validate the Android JavaScript bundle. GitHub Actions performs these checks after `npm ci`. No automated UI/device test suite is configured yet.
+For a new route, add a named request/response model, route-level ownership/security tests, mocked provider tests where needed, and regenerate OpenAPI/Postman artifacts.
 
-## Related docs
-
-- [Mobile architecture](mobile.md)
-- [Detectors](detectors.md)
-- [Known gaps](KNOWN_GAPS.md)
+Install `backend/requirements-docs.txt` into the test environment for OpenAPI standard validation. `test_demo_journey.py` exercises the HTTP login/discovery/link/webhook/finance/logout flow with SQLite and respx, including replay handling and cached refresh failures. Presenter-inbox tests cover password checks, allowlists and expiry. Generated JSON/YAML, model/config references and Postman coverage are checked for drift. Actual Neon migrations, sandbox accounts, callback handling and provider delivery are not verified by these tests.

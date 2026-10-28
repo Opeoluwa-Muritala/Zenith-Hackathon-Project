@@ -25,7 +25,7 @@ def detect(view, settings, now):
             )
     months = {}
     for t in view.transactions:
-        if t.direction == "debit" and t.category == "utilities":
+        if t.direction == "debit" and t.category in {"utilities", "Bills & Utilities"}:
             months[(t.posted_at.year, t.posted_at.month)] = (
                 months.get((t.posted_at.year, t.posted_at.month), 0) + t.amount
             )

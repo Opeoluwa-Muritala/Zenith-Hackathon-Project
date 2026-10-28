@@ -8,6 +8,7 @@ from sqlalchemy import select
 from app.core.clock import now_utc
 from app.core.db import SessionLocal
 from app.insights.runner import run_for_user
+from app.ledger.account_categories import category_for_institution
 from app.ledger.recurring import rebuild_account
 from app.ledger.service import ingest
 from app.models import (
@@ -107,6 +108,9 @@ async def seed():
                     currency="NGN",
                     current_balance_minor=balance,
                     last_synced_at=None,
+                    available_balance_minor=balance,
+                    balance_synced_at=now,
+                    category=category_for_institution(code, institutions[code].name)[0],
                 )
                 db.add(account)
                 await db.flush()
@@ -160,6 +164,8 @@ async def seed():
                         currency="NGN",
                         current_balance_minor=savings,
                         last_synced_at=None,
+                        available_balance_minor=savings,
+                        balance_synced_at=now,
                     )
                     db.add(idle)
                     await db.flush()

@@ -6,7 +6,7 @@ Revises: 0002
 
 import sqlalchemy as sa
 
-from alembic import op
+from alembic import context, op
 
 revision = "0003"
 down_revision = "0002"
@@ -15,6 +15,8 @@ depends_on = None
 
 
 def upgrade():
+    if context.is_offline_mode():
+        return
     inspector = sa.inspect(op.get_bind())
     settings_columns = {c["name"] for c in inspector.get_columns("user_settings")}
     if "ai_enabled" not in settings_columns:

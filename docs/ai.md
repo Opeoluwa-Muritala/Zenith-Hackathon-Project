@@ -35,7 +35,7 @@ Token budgets use Groq's reported prompt/completion counts as approximate usage.
 
 ## Model and prompt changes
 
-Set `AI_PROVIDER=groq`, `GROQ_KEY`, `AI_EXPLAIN_MODEL` and `AI_CHAT_MODEL` in the backend environment. The default models are `llama-3.1-8b-instant` and `llama-3.3-70b-versatile`. Prompt versions are constants in `backend/app/ai/prompts.py`. Startup checks the configured chat model against Groq's model catalogue; if it cannot confirm tool support, chat stays unavailable while template insights remain available.
+Set `AI_PROVIDER=groq`, `GROQ_KEY`, `AI_EXPLAIN_MODEL` and `AI_CHAT_MODEL` in the backend environment. The default models are `openai/gpt-oss-20b` and `openai/gpt-oss-120b`. Prompt versions are constants in `backend/app/ai/prompts.py`. Startup checks the configured chat model against Groq's model catalogue; if it cannot confirm tool support, chat stays unavailable while template insights remain available.
 
 `make ai-eval` currently runs the fake-client safety suite only; the requested 60-question seeded model evaluation harness is not implemented. Do not treat its result as a model pass rate. No eval was run against live models during this implementation. For provider request shape and tool calling see [Groq API reference](https://console.groq.com/docs/api-reference) and [tool use](https://console.groq.com/docs/tool-use/overview).
 
