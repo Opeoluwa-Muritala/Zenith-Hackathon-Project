@@ -24,6 +24,10 @@ category before running it; global rules store a hash of the key. User rules alw
 | SPD-1–3 | Filtered/recent transactions, spending ranges and reusable category rules |
 | BUD-1 | Effective-date budgets and deterministic spending velocity |
 | OBL-1–3 | Generic repayment detection, owner review and matched payment history |
+| RPT-1 | Deterministic monthly income, expenses, use split and cash-flow report |
+| RPT-2 | PDF/CSV exports and expiring, revocable owner-created share links |
+| RPT-3 | One revocable bookkeeper invite with read-only ledger/report access |
+| RPT-4 | Unsure and low-confidence report items are explicitly labelled |
 
 Public review routes and API artifacts are linked from [Public API](docs/public-api.md).
 
@@ -31,7 +35,7 @@ Fetch is a FastAPI backend for consented personal-finance data. It authenticates
 
 See [docs/README.md](docs/README.md) for the complete documentation index and [docs/api/openapi.json](docs/api/openapi.json) for the generated API specification.
 
-For the mobile backend demo with Mono sandbox and an existing Neon database, follow the [backend demo walkthrough](docs/demo-backend-walkthrough.md). The presenter can read generated login codes from a protected backend page; finance endpoints continue using the existing Mono integration. Neon was verified at Phase 6 revision 0021 with rollback-only smoke inserts. Mono sandbox behavior remains unverified.
+For the mobile backend demo with Mono sandbox and an existing Neon database, follow the [backend demo walkthrough](docs/demo-backend-walkthrough.md). The presenter can read generated login codes from a protected backend page; finance endpoints continue using the existing Mono integration. Neon was verified at Phase 7 revision 0022 with rollback-only smoke inserts. Mono sandbox behavior remains unverified.
 
 ## Five-minute quickstart
 

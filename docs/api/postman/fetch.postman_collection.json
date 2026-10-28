@@ -5201,6 +5201,725 @@
               }
             }
           ],
+          "name": "Get Bookkeeper Invite",
+          "request": {
+            "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "header": [],
+            "method": "GET",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "bookkeeper-invites"
+              ],
+              "raw": "{{base_url}}/bookkeeper-invites"
+            }
+          },
+          "response": [
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{}",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Successful Response",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "bookkeeper-invites"
+                  ],
+                  "raw": "{{base_url}}/bookkeeper-invites"
+                }
+              },
+              "status": "Successful Response"
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Authentication is missing or invalid.\"\n}",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Authentication is missing or invalid.",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "bookkeeper-invites"
+                  ],
+                  "raw": "{{base_url}}/bookkeeper-invites"
+                }
+              },
+              "status": "Authentication is missing or invalid."
+            }
+          ]
+        },
+        {
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('documented success', function () { pm.expect([201]).to.include(pm.response.code); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "name": "Invite Bookkeeper",
+          "request": {
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"email\": \"user@example.com\"\n}"
+            },
+            "description": "Submit this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "bookkeeper-invites"
+              ],
+              "raw": "{{base_url}}/bookkeeper-invites"
+            }
+          },
+          "response": [
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{}",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Successful Response",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "bookkeeper-invites"
+                  ],
+                  "raw": "{{base_url}}/bookkeeper-invites"
+                }
+              },
+              "status": "Successful Response"
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Authentication is missing or invalid.\"\n}",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Authentication is missing or invalid.",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "bookkeeper-invites"
+                  ],
+                  "raw": "{{base_url}}/bookkeeper-invites"
+                }
+              },
+              "status": "Authentication is missing or invalid."
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Validation Error\"\n}",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Validation Error",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "bookkeeper-invites"
+                  ],
+                  "raw": "{{base_url}}/bookkeeper-invites"
+                }
+              },
+              "status": "Validation Error"
+            }
+          ]
+        },
+        {
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('documented success', function () { pm.expect([204]).to.include(pm.response.code); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "name": "Revoke Bookkeeper Invite",
+          "request": {
+            "description": "Delete this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "header": [],
+            "method": "DELETE",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "bookkeeper-invites",
+                "{{invite_id}}"
+              ],
+              "raw": "{{base_url}}/bookkeeper-invites/{{invite_id}}"
+            }
+          },
+          "response": [
+            {
+              "_postman_previewlanguage": "json",
+              "body": "",
+              "code": 204,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Successful Response",
+              "originalRequest": {
+                "method": "DELETE",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "bookkeeper-invites",
+                    "{{invite_id}}"
+                  ],
+                  "raw": "{{base_url}}/bookkeeper-invites/{{invite_id}}"
+                }
+              },
+              "status": "Successful Response"
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Authentication is missing or invalid.\"\n}",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Authentication is missing or invalid.",
+              "originalRequest": {
+                "method": "DELETE",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "bookkeeper-invites",
+                    "{{invite_id}}"
+                  ],
+                  "raw": "{{base_url}}/bookkeeper-invites/{{invite_id}}"
+                }
+              },
+              "status": "Authentication is missing or invalid."
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Validation Error\"\n}",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Validation Error",
+              "originalRequest": {
+                "method": "DELETE",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "bookkeeper-invites",
+                    "{{invite_id}}"
+                  ],
+                  "raw": "{{base_url}}/bookkeeper-invites/{{invite_id}}"
+                }
+              },
+              "status": "Validation Error"
+            }
+          ]
+        },
+        {
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('documented success', function () { pm.expect([200]).to.include(pm.response.code); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "name": "Accept Bookkeeper Invite",
+          "request": {
+            "description": "Submit this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "header": [],
+            "method": "POST",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "bookkeeper-invites",
+                "{{token}}",
+                "accept"
+              ],
+              "raw": "{{base_url}}/bookkeeper-invites/{{token}}/accept"
+            }
+          },
+          "response": [
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{}",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Successful Response",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "bookkeeper-invites",
+                    "{{token}}",
+                    "accept"
+                  ],
+                  "raw": "{{base_url}}/bookkeeper-invites/{{token}}/accept"
+                }
+              },
+              "status": "Successful Response"
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Authentication is missing or invalid.\"\n}",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Authentication is missing or invalid.",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "bookkeeper-invites",
+                    "{{token}}",
+                    "accept"
+                  ],
+                  "raw": "{{base_url}}/bookkeeper-invites/{{token}}/accept"
+                }
+              },
+              "status": "Authentication is missing or invalid."
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Validation Error\"\n}",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Validation Error",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "bookkeeper-invites",
+                    "{{token}}",
+                    "accept"
+                  ],
+                  "raw": "{{base_url}}/bookkeeper-invites/{{token}}/accept"
+                }
+              },
+              "status": "Validation Error"
+            }
+          ]
+        },
+        {
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('documented success', function () { pm.expect([200]).to.include(pm.response.code); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "name": "Bookkeeper Report",
+          "request": {
+            "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "header": [],
+            "method": "GET",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "bookkeeper",
+                "clients",
+                "{{owner_id}}",
+                "reports",
+                "monthly",
+                "{{month}}"
+              ],
+              "raw": "{{base_url}}/bookkeeper/clients/{{owner_id}}/reports/monthly/{{month}}"
+            }
+          },
+          "response": [
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"business_expenses_minor\": 1,\n  \"currency\": \"fake_de\",\n  \"expenses_minor\": 1,\n  \"generated_at\": \"2026-01-01T00:00:00Z\",\n  \"income_minor\": 1,\n  \"month\": \"fake_de\",\n  \"net_cash_flow_minor\": 1,\n  \"personal_expenses_minor\": 1,\n  \"transactions\": [\n    {\n      \"amount_minor\": 1,\n      \"category\": \"fake_de\",\n      \"confidence_bps\": 1,\n      \"direction\": \"fake_de\",\n      \"merchant\": \"fake_de\",\n      \"posted_at\": \"2026-01-01T00:00:00Z\",\n      \"transaction_id\": \"{{transaction_id}}\",\n      \"use_label\": \"fake_de\"\n    }\n  ],\n  \"uncertain_items\": [\n    {\n      \"amount_minor\": 1,\n      \"reason\": \"fake_de\",\n      \"transaction_id\": \"{{transaction_id}}\"\n    }\n  ],\n  \"unsure_expenses_minor\": 1,\n  \"weekly_net_minor\": [\n    {\n      \"NGN\": 1\n    }\n  ]\n}",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Successful Response",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "bookkeeper",
+                    "clients",
+                    "{{owner_id}}",
+                    "reports",
+                    "monthly",
+                    "{{month}}"
+                  ],
+                  "raw": "{{base_url}}/bookkeeper/clients/{{owner_id}}/reports/monthly/{{month}}"
+                }
+              },
+              "status": "Successful Response"
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Authentication is missing or invalid.\"\n}",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Authentication is missing or invalid.",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "bookkeeper",
+                    "clients",
+                    "{{owner_id}}",
+                    "reports",
+                    "monthly",
+                    "{{month}}"
+                  ],
+                  "raw": "{{base_url}}/bookkeeper/clients/{{owner_id}}/reports/monthly/{{month}}"
+                }
+              },
+              "status": "Authentication is missing or invalid."
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Validation Error\"\n}",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Validation Error",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "bookkeeper",
+                    "clients",
+                    "{{owner_id}}",
+                    "reports",
+                    "monthly",
+                    "{{month}}"
+                  ],
+                  "raw": "{{base_url}}/bookkeeper/clients/{{owner_id}}/reports/monthly/{{month}}"
+                }
+              },
+              "status": "Validation Error"
+            }
+          ]
+        },
+        {
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('documented success', function () { pm.expect([200]).to.include(pm.response.code); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "name": "Bookkeeper Ledger",
+          "request": {
+            "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "header": [],
+            "method": "GET",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "bookkeeper",
+                "clients",
+                "{{owner_id}}",
+                "transactions"
+              ],
+              "query": [
+                {
+                  "description": "",
+                  "disabled": true,
+                  "key": "limit",
+                  "value": "1"
+                },
+                {
+                  "description": "",
+                  "disabled": true,
+                  "key": "offset",
+                  "value": "0"
+                }
+              ],
+              "raw": "{{base_url}}/bookkeeper/clients/{{owner_id}}/transactions"
+            }
+          },
+          "response": [
+            {
+              "_postman_previewlanguage": "json",
+              "body": "[\n  {}\n]",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Successful Response",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "bookkeeper",
+                    "clients",
+                    "{{owner_id}}",
+                    "transactions"
+                  ],
+                  "query": [
+                    {
+                      "description": "",
+                      "disabled": true,
+                      "key": "limit",
+                      "value": "1"
+                    },
+                    {
+                      "description": "",
+                      "disabled": true,
+                      "key": "offset",
+                      "value": "0"
+                    }
+                  ],
+                  "raw": "{{base_url}}/bookkeeper/clients/{{owner_id}}/transactions"
+                }
+              },
+              "status": "Successful Response"
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Authentication is missing or invalid.\"\n}",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Authentication is missing or invalid.",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "bookkeeper",
+                    "clients",
+                    "{{owner_id}}",
+                    "transactions"
+                  ],
+                  "query": [
+                    {
+                      "description": "",
+                      "disabled": true,
+                      "key": "limit",
+                      "value": "1"
+                    },
+                    {
+                      "description": "",
+                      "disabled": true,
+                      "key": "offset",
+                      "value": "0"
+                    }
+                  ],
+                  "raw": "{{base_url}}/bookkeeper/clients/{{owner_id}}/transactions"
+                }
+              },
+              "status": "Authentication is missing or invalid."
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Validation Error\"\n}",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Validation Error",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "bookkeeper",
+                    "clients",
+                    "{{owner_id}}",
+                    "transactions"
+                  ],
+                  "query": [
+                    {
+                      "description": "",
+                      "disabled": true,
+                      "key": "limit",
+                      "value": "1"
+                    },
+                    {
+                      "description": "",
+                      "disabled": true,
+                      "key": "offset",
+                      "value": "0"
+                    }
+                  ],
+                  "raw": "{{base_url}}/bookkeeper/clients/{{owner_id}}/transactions"
+                }
+              },
+              "status": "Validation Error"
+            }
+          ]
+        },
+        {
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('documented success', function () { pm.expect([200]).to.include(pm.response.code); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "name": "Business Personal Review",
           "request": {
             "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
@@ -5875,6 +6594,793 @@
                     "insight-profile"
                   ],
                   "raw": "{{base_url}}/insight-profile"
+                }
+              },
+              "status": "Validation Error"
+            }
+          ]
+        },
+        {
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('documented success', function () { pm.expect([200]).to.include(pm.response.code); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "name": "List Report Share Links",
+          "request": {
+            "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "header": [],
+            "method": "GET",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "report-share-links"
+              ],
+              "raw": "{{base_url}}/report-share-links"
+            }
+          },
+          "response": [
+            {
+              "_postman_previewlanguage": "json",
+              "body": "[\n  {}\n]",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Successful Response",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "report-share-links"
+                  ],
+                  "raw": "{{base_url}}/report-share-links"
+                }
+              },
+              "status": "Successful Response"
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Authentication is missing or invalid.\"\n}",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Authentication is missing or invalid.",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "report-share-links"
+                  ],
+                  "raw": "{{base_url}}/report-share-links"
+                }
+              },
+              "status": "Authentication is missing or invalid."
+            }
+          ]
+        },
+        {
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('documented success', function () { pm.expect([204]).to.include(pm.response.code); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "name": "Revoke Report Share Link",
+          "request": {
+            "description": "Delete this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "header": [],
+            "method": "DELETE",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "report-share-links",
+                "{{link_id}}"
+              ],
+              "raw": "{{base_url}}/report-share-links/{{link_id}}"
+            }
+          },
+          "response": [
+            {
+              "_postman_previewlanguage": "json",
+              "body": "",
+              "code": 204,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Successful Response",
+              "originalRequest": {
+                "method": "DELETE",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "report-share-links",
+                    "{{link_id}}"
+                  ],
+                  "raw": "{{base_url}}/report-share-links/{{link_id}}"
+                }
+              },
+              "status": "Successful Response"
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Authentication is missing or invalid.\"\n}",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Authentication is missing or invalid.",
+              "originalRequest": {
+                "method": "DELETE",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "report-share-links",
+                    "{{link_id}}"
+                  ],
+                  "raw": "{{base_url}}/report-share-links/{{link_id}}"
+                }
+              },
+              "status": "Authentication is missing or invalid."
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Validation Error\"\n}",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Validation Error",
+              "originalRequest": {
+                "method": "DELETE",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "report-share-links",
+                    "{{link_id}}"
+                  ],
+                  "raw": "{{base_url}}/report-share-links/{{link_id}}"
+                }
+              },
+              "status": "Validation Error"
+            }
+          ]
+        },
+        {
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('documented success', function () { pm.expect([200]).to.include(pm.response.code); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "name": "Monthly Report",
+          "request": {
+            "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "header": [],
+            "method": "GET",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "reports",
+                "monthly",
+                "{{month}}"
+              ],
+              "raw": "{{base_url}}/reports/monthly/{{month}}"
+            }
+          },
+          "response": [
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"business_expenses_minor\": 1,\n  \"currency\": \"fake_de\",\n  \"expenses_minor\": 1,\n  \"generated_at\": \"2026-01-01T00:00:00Z\",\n  \"income_minor\": 1,\n  \"month\": \"fake_de\",\n  \"net_cash_flow_minor\": 1,\n  \"personal_expenses_minor\": 1,\n  \"transactions\": [\n    {\n      \"amount_minor\": 1,\n      \"category\": \"fake_de\",\n      \"confidence_bps\": 1,\n      \"direction\": \"fake_de\",\n      \"merchant\": \"fake_de\",\n      \"posted_at\": \"2026-01-01T00:00:00Z\",\n      \"transaction_id\": \"{{transaction_id}}\",\n      \"use_label\": \"fake_de\"\n    }\n  ],\n  \"uncertain_items\": [\n    {\n      \"amount_minor\": 1,\n      \"reason\": \"fake_de\",\n      \"transaction_id\": \"{{transaction_id}}\"\n    }\n  ],\n  \"unsure_expenses_minor\": 1,\n  \"weekly_net_minor\": [\n    {\n      \"NGN\": 1\n    }\n  ]\n}",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Successful Response",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "monthly",
+                    "{{month}}"
+                  ],
+                  "raw": "{{base_url}}/reports/monthly/{{month}}"
+                }
+              },
+              "status": "Successful Response"
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Authentication is missing or invalid.\"\n}",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Authentication is missing or invalid.",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "monthly",
+                    "{{month}}"
+                  ],
+                  "raw": "{{base_url}}/reports/monthly/{{month}}"
+                }
+              },
+              "status": "Authentication is missing or invalid."
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Validation Error\"\n}",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Validation Error",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "monthly",
+                    "{{month}}"
+                  ],
+                  "raw": "{{base_url}}/reports/monthly/{{month}}"
+                }
+              },
+              "status": "Validation Error"
+            }
+          ]
+        },
+        {
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('documented success', function () { pm.expect([200]).to.include(pm.response.code); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "name": "Export Monthly Report",
+          "request": {
+            "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "header": [],
+            "method": "GET",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "reports",
+                "monthly",
+                "{{month}}",
+                "export"
+              ],
+              "query": [
+                {
+                  "description": "",
+                  "disabled": false,
+                  "key": "format",
+                  "value": "pdf"
+                }
+              ],
+              "raw": "{{base_url}}/reports/monthly/{{month}}/export"
+            }
+          },
+          "response": [
+            {
+              "_postman_previewlanguage": "json",
+              "body": "\"fake_de\"",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Successful Response",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "monthly",
+                    "{{month}}",
+                    "export"
+                  ],
+                  "query": [
+                    {
+                      "description": "",
+                      "disabled": false,
+                      "key": "format",
+                      "value": "pdf"
+                    }
+                  ],
+                  "raw": "{{base_url}}/reports/monthly/{{month}}/export"
+                }
+              },
+              "status": "Successful Response"
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Authentication is missing or invalid.\"\n}",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Authentication is missing or invalid.",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "monthly",
+                    "{{month}}",
+                    "export"
+                  ],
+                  "query": [
+                    {
+                      "description": "",
+                      "disabled": false,
+                      "key": "format",
+                      "value": "pdf"
+                    }
+                  ],
+                  "raw": "{{base_url}}/reports/monthly/{{month}}/export"
+                }
+              },
+              "status": "Authentication is missing or invalid."
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Validation Error\"\n}",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Validation Error",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "monthly",
+                    "{{month}}",
+                    "export"
+                  ],
+                  "query": [
+                    {
+                      "description": "",
+                      "disabled": false,
+                      "key": "format",
+                      "value": "pdf"
+                    }
+                  ],
+                  "raw": "{{base_url}}/reports/monthly/{{month}}/export"
+                }
+              },
+              "status": "Validation Error"
+            }
+          ]
+        },
+        {
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('documented success', function () { pm.expect([201]).to.include(pm.response.code); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "name": "Create Report Share Link",
+          "request": {
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"expires_in_days\": 1.0\n}"
+            },
+            "description": "Submit this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "reports",
+                "monthly",
+                "{{month}}",
+                "share-links"
+              ],
+              "raw": "{{base_url}}/reports/monthly/{{month}}/share-links"
+            }
+          },
+          "response": [
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{}",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Successful Response",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "monthly",
+                    "{{month}}",
+                    "share-links"
+                  ],
+                  "raw": "{{base_url}}/reports/monthly/{{month}}/share-links"
+                }
+              },
+              "status": "Successful Response"
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Authentication is missing or invalid.\"\n}",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Authentication is missing or invalid.",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "monthly",
+                    "{{month}}",
+                    "share-links"
+                  ],
+                  "raw": "{{base_url}}/reports/monthly/{{month}}/share-links"
+                }
+              },
+              "status": "Authentication is missing or invalid."
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Validation Error\"\n}",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Validation Error",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "monthly",
+                    "{{month}}",
+                    "share-links"
+                  ],
+                  "raw": "{{base_url}}/reports/monthly/{{month}}/share-links"
+                }
+              },
+              "status": "Validation Error"
+            }
+          ]
+        },
+        {
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('documented success', function () { pm.expect([200]).to.include(pm.response.code); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "name": "Shared Report",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "header": [],
+            "method": "GET",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "shared",
+                "reports",
+                "{{token}}"
+              ],
+              "raw": "{{base_url}}/shared/reports/{{token}}"
+            }
+          },
+          "response": [
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"business_expenses_minor\": 1,\n  \"currency\": \"fake_de\",\n  \"expenses_minor\": 1,\n  \"generated_at\": \"2026-01-01T00:00:00Z\",\n  \"income_minor\": 1,\n  \"month\": \"fake_de\",\n  \"net_cash_flow_minor\": 1,\n  \"personal_expenses_minor\": 1,\n  \"transactions\": [\n    {\n      \"amount_minor\": 1,\n      \"category\": \"fake_de\",\n      \"confidence_bps\": 1,\n      \"direction\": \"fake_de\",\n      \"merchant\": \"fake_de\",\n      \"posted_at\": \"2026-01-01T00:00:00Z\",\n      \"transaction_id\": \"{{transaction_id}}\",\n      \"use_label\": \"fake_de\"\n    }\n  ],\n  \"uncertain_items\": [\n    {\n      \"amount_minor\": 1,\n      \"reason\": \"fake_de\",\n      \"transaction_id\": \"{{transaction_id}}\"\n    }\n  ],\n  \"unsure_expenses_minor\": 1,\n  \"weekly_net_minor\": [\n    {\n      \"NGN\": 1\n    }\n  ]\n}",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Successful Response",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "shared",
+                    "reports",
+                    "{{token}}"
+                  ],
+                  "raw": "{{base_url}}/shared/reports/{{token}}"
+                }
+              },
+              "status": "Successful Response"
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Validation Error\"\n}",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Validation Error",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "shared",
+                    "reports",
+                    "{{token}}"
+                  ],
+                  "raw": "{{base_url}}/shared/reports/{{token}}"
+                }
+              },
+              "status": "Validation Error"
+            }
+          ]
+        },
+        {
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('documented success', function () { pm.expect([200]).to.include(pm.response.code); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "name": "Export Shared Report",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Read this resource in the cashlens user journey. Protected operations require the signed-in user's Bearer access token and scope data to that user. Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations may update consent, ledger, or derived insight data as described by the route.",
+            "header": [],
+            "method": "GET",
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "shared",
+                "reports",
+                "{{token}}",
+                "export"
+              ],
+              "query": [
+                {
+                  "description": "",
+                  "disabled": false,
+                  "key": "format",
+                  "value": "pdf"
+                }
+              ],
+              "raw": "{{base_url}}/shared/reports/{{token}}/export"
+            }
+          },
+          "response": [
+            {
+              "_postman_previewlanguage": "json",
+              "body": "\"fake_de\"",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Successful Response",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "shared",
+                    "reports",
+                    "{{token}}",
+                    "export"
+                  ],
+                  "query": [
+                    {
+                      "description": "",
+                      "disabled": false,
+                      "key": "format",
+                      "value": "pdf"
+                    }
+                  ],
+                  "raw": "{{base_url}}/shared/reports/{{token}}/export"
+                }
+              },
+              "status": "Successful Response"
+            },
+            {
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Validation Error\"\n}",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "name": "Validation Error",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "shared",
+                    "reports",
+                    "{{token}}",
+                    "export"
+                  ],
+                  "query": [
+                    {
+                      "description": "",
+                      "disabled": false,
+                      "key": "format",
+                      "value": "pdf"
+                    }
+                  ],
+                  "raw": "{{base_url}}/shared/reports/{{token}}/export"
                 }
               },
               "status": "Validation Error"

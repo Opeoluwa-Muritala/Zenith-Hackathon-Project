@@ -806,6 +806,17 @@ components:
       - status
       title: InitiateLinkResponse
       type: object
+    InviteInput:
+      additionalProperties: false
+      properties:
+        email:
+          format: email
+          title: Email
+          type: string
+      required:
+      - email
+      title: InviteInput
+      type: object
     LinkDiscoveredIn:
       properties:
         email:
@@ -1053,6 +1064,71 @@ components:
       required:
       - mode
       title: ModeInput
+      type: object
+    MonthlyReport:
+      additionalProperties: false
+      properties:
+        business_expenses_minor:
+          title: Business Expenses Minor
+          type: integer
+        currency:
+          default: NGN
+          title: Currency
+          type: string
+        expenses_minor:
+          title: Expenses Minor
+          type: integer
+        generated_at:
+          format: date-time
+          title: Generated At
+          type: string
+        income_minor:
+          title: Income Minor
+          type: integer
+        month:
+          title: Month
+          type: string
+        net_cash_flow_minor:
+          title: Net Cash Flow Minor
+          type: integer
+        personal_expenses_minor:
+          title: Personal Expenses Minor
+          type: integer
+        transactions:
+          items:
+            $ref: '#/components/schemas/ReportItem'
+          title: Transactions
+          type: array
+        uncertain_items:
+          items:
+            $ref: '#/components/schemas/UncertainItem'
+          title: Uncertain Items
+          type: array
+        unsure_expenses_minor:
+          title: Unsure Expenses Minor
+          type: integer
+        weekly_net_minor:
+          items:
+            additionalProperties:
+              anyOf:
+              - type: integer
+              - type: string
+            type: object
+          title: Weekly Net Minor
+          type: array
+      required:
+      - month
+      - income_minor
+      - expenses_minor
+      - net_cash_flow_minor
+      - business_expenses_minor
+      - personal_expenses_minor
+      - unsure_expenses_minor
+      - weekly_net_minor
+      - transactions
+      - uncertain_items
+      - generated_at
+      title: MonthlyReport
       type: object
     NetPositionBreakdownResponse:
       properties:
@@ -1788,6 +1864,46 @@ components:
       - status
       title: RefreshResponse
       type: object
+    ReportItem:
+      additionalProperties: false
+      properties:
+        amount_minor:
+          title: Amount Minor
+          type: integer
+        category:
+          title: Category
+          type: string
+        confidence_bps:
+          title: Confidence Bps
+          type: integer
+        direction:
+          title: Direction
+          type: string
+        merchant:
+          title: Merchant
+          type: string
+        posted_at:
+          format: date-time
+          title: Posted At
+          type: string
+        transaction_id:
+          format: uuid
+          title: Transaction Id
+          type: string
+        use_label:
+          title: Use Label
+          type: string
+      required:
+      - transaction_id
+      - posted_at
+      - amount_minor
+      - direction
+      - merchant
+      - category
+      - use_label
+      - confidence_bps
+      title: ReportItem
+      type: object
     SelectDiscoveredIn:
       properties:
         ids:
@@ -1815,6 +1931,17 @@ components:
       - selected
       - skipped
       title: SelectionResponse
+      type: object
+    ShareInput:
+      additionalProperties: false
+      properties:
+        expires_in_days:
+          default: 7
+          maximum: 30.0
+          minimum: 1.0
+          title: Expires In Days
+          type: integer
+      title: ShareInput
       type: object
     SkippedAccountResponse:
       properties:
@@ -2025,6 +2152,25 @@ components:
       - category
       - category_source
       title: TransactionResponse
+      type: object
+    UncertainItem:
+      additionalProperties: false
+      properties:
+        amount_minor:
+          title: Amount Minor
+          type: integer
+        reason:
+          title: Reason
+          type: string
+        transaction_id:
+          format: uuid
+          title: Transaction Id
+          type: string
+      required:
+      - transaction_id
+      - amount_minor
+      - reason
+      title: UncertainItem
       type: object
     UnlinkResponse:
       properties:
@@ -3721,6 +3867,286 @@ paths:
       summary: Rotate refresh token
       tags:
       - Auth
+  /bookkeeper-invites:
+    get:
+      description: Read this resource in the cashlens user journey. Protected operations
+        require the signed-in user's Bearer access token and scope data to that user.
+        Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
+        may update consent, ledger, or derived insight data as described by the route.
+      operationId: get_bookkeeper_invites
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - additionalProperties: true
+                  type: object
+                - type: 'null'
+                title: Response Get Bookkeeper Invite Bookkeeper Invites Get
+          description: Successful Response
+        '401':
+          content:
+            application/json:
+              schema:
+                properties:
+                  detail:
+                    type: string
+                required:
+                - detail
+                type: object
+          description: Authentication is missing or invalid.
+      security:
+      - HTTPBearer: []
+      summary: Get Bookkeeper Invite
+      tags:
+      - Accounts and linking
+    post:
+      description: Submit this resource in the cashlens user journey. Protected operations
+        require the signed-in user's Bearer access token and scope data to that user.
+        Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
+        may update consent, ledger, or derived insight data as described by the route.
+      operationId: post_bookkeeper_invites
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InviteInput'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Invite Bookkeeper Bookkeeper Invites Post
+                type: object
+          description: Successful Response
+        '401':
+          content:
+            application/json:
+              schema:
+                properties:
+                  detail:
+                    type: string
+                required:
+                - detail
+                type: object
+          description: Authentication is missing or invalid.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Invite Bookkeeper
+      tags:
+      - Accounts and linking
+  /bookkeeper-invites/{invite_id}:
+    delete:
+      description: Delete this resource in the cashlens user journey. Protected operations
+        require the signed-in user's Bearer access token and scope data to that user.
+        Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
+        may update consent, ledger, or derived insight data as described by the route.
+      operationId: delete_bookkeeper_invites_by_invite_id
+      parameters:
+      - in: path
+        name: invite_id
+        required: true
+        schema:
+          format: uuid
+          title: Invite Id
+          type: string
+      responses:
+        '204':
+          description: Successful Response
+        '401':
+          content:
+            application/json:
+              schema:
+                properties:
+                  detail:
+                    type: string
+                required:
+                - detail
+                type: object
+          description: Authentication is missing or invalid.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Revoke Bookkeeper Invite
+      tags:
+      - Accounts and linking
+  /bookkeeper-invites/{token}/accept:
+    post:
+      description: Submit this resource in the cashlens user journey. Protected operations
+        require the signed-in user's Bearer access token and scope data to that user.
+        Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
+        may update consent, ledger, or derived insight data as described by the route.
+      operationId: post_bookkeeper_invites_by_token_accept
+      parameters:
+      - in: path
+        name: token
+        required: true
+        schema:
+          title: Token
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Accept Bookkeeper Invite Bookkeeper Invites  Token  Accept
+                  Post
+                type: object
+          description: Successful Response
+        '401':
+          content:
+            application/json:
+              schema:
+                properties:
+                  detail:
+                    type: string
+                required:
+                - detail
+                type: object
+          description: Authentication is missing or invalid.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Accept Bookkeeper Invite
+      tags:
+      - Accounts and linking
+  /bookkeeper/clients/{owner_id}/reports/monthly/{month}:
+    get:
+      description: Read this resource in the cashlens user journey. Protected operations
+        require the signed-in user's Bearer access token and scope data to that user.
+        Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
+        may update consent, ledger, or derived insight data as described by the route.
+      operationId: get_bookkeeper_clients_by_owner_id_reports_monthly_by_month
+      parameters:
+      - in: path
+        name: owner_id
+        required: true
+        schema:
+          format: uuid
+          title: Owner Id
+          type: string
+      - in: path
+        name: month
+        required: true
+        schema:
+          title: Month
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MonthlyReport'
+          description: Successful Response
+        '401':
+          content:
+            application/json:
+              schema:
+                properties:
+                  detail:
+                    type: string
+                required:
+                - detail
+                type: object
+          description: Authentication is missing or invalid.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Bookkeeper Report
+      tags:
+      - Accounts and linking
+  /bookkeeper/clients/{owner_id}/transactions:
+    get:
+      description: Read this resource in the cashlens user journey. Protected operations
+        require the signed-in user's Bearer access token and scope data to that user.
+        Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
+        may update consent, ledger, or derived insight data as described by the route.
+      operationId: get_bookkeeper_clients_by_owner_id_transactions
+      parameters:
+      - in: path
+        name: owner_id
+        required: true
+        schema:
+          format: uuid
+          title: Owner Id
+          type: string
+      - in: query
+        name: limit
+        required: false
+        schema:
+          default: 50
+          maximum: 100
+          minimum: 1
+          title: Limit
+          type: integer
+      - in: query
+        name: offset
+        required: false
+        schema:
+          default: 0
+          maximum: 10000
+          minimum: 0
+          title: Offset
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  additionalProperties: true
+                  type: object
+                title: Response Bookkeeper Ledger Bookkeeper Clients  Owner Id  Transactions
+                  Get
+                type: array
+          description: Successful Response
+        '401':
+          content:
+            application/json:
+              schema:
+                properties:
+                  detail:
+                    type: string
+                required:
+                - detail
+                type: object
+          description: Authentication is missing or invalid.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Bookkeeper Ledger
+      tags:
+      - Accounts and linking
   /budget:
     get:
       description: Return the latest effective monthly limit or null fields when unset.
@@ -5347,6 +5773,226 @@ paths:
       summary: Recurring
       tags:
       - Recurring
+  /report-share-links:
+    get:
+      description: Read this resource in the cashlens user journey. Protected operations
+        require the signed-in user's Bearer access token and scope data to that user.
+        Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
+        may update consent, ledger, or derived insight data as described by the route.
+      operationId: get_report_share_links
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  additionalProperties: true
+                  type: object
+                title: Response List Report Share Links Report Share Links Get
+                type: array
+          description: Successful Response
+        '401':
+          content:
+            application/json:
+              schema:
+                properties:
+                  detail:
+                    type: string
+                required:
+                - detail
+                type: object
+          description: Authentication is missing or invalid.
+      security:
+      - HTTPBearer: []
+      summary: List Report Share Links
+      tags:
+      - Accounts and linking
+  /report-share-links/{link_id}:
+    delete:
+      description: Delete this resource in the cashlens user journey. Protected operations
+        require the signed-in user's Bearer access token and scope data to that user.
+        Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
+        may update consent, ledger, or derived insight data as described by the route.
+      operationId: delete_report_share_links_by_link_id
+      parameters:
+      - in: path
+        name: link_id
+        required: true
+        schema:
+          format: uuid
+          title: Link Id
+          type: string
+      responses:
+        '204':
+          description: Successful Response
+        '401':
+          content:
+            application/json:
+              schema:
+                properties:
+                  detail:
+                    type: string
+                required:
+                - detail
+                type: object
+          description: Authentication is missing or invalid.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Revoke Report Share Link
+      tags:
+      - Accounts and linking
+  /reports/monthly/{month}:
+    get:
+      description: Read this resource in the cashlens user journey. Protected operations
+        require the signed-in user's Bearer access token and scope data to that user.
+        Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
+        may update consent, ledger, or derived insight data as described by the route.
+      operationId: get_reports_monthly_by_month
+      parameters:
+      - in: path
+        name: month
+        required: true
+        schema:
+          title: Month
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MonthlyReport'
+          description: Successful Response
+        '401':
+          content:
+            application/json:
+              schema:
+                properties:
+                  detail:
+                    type: string
+                required:
+                - detail
+                type: object
+          description: Authentication is missing or invalid.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Monthly Report
+      tags:
+      - Accounts and linking
+  /reports/monthly/{month}/export:
+    get:
+      description: Read this resource in the cashlens user journey. Protected operations
+        require the signed-in user's Bearer access token and scope data to that user.
+        Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
+        may update consent, ledger, or derived insight data as described by the route.
+      operationId: get_reports_monthly_by_month_export
+      parameters:
+      - in: path
+        name: month
+        required: true
+        schema:
+          title: Month
+          type: string
+      - in: query
+        name: format
+        required: true
+        schema:
+          enum:
+          - pdf
+          - csv
+          title: Format
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+        '401':
+          content:
+            application/json:
+              schema:
+                properties:
+                  detail:
+                    type: string
+                required:
+                - detail
+                type: object
+          description: Authentication is missing or invalid.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Export Monthly Report
+      tags:
+      - Accounts and linking
+  /reports/monthly/{month}/share-links:
+    post:
+      description: Submit this resource in the cashlens user journey. Protected operations
+        require the signed-in user's Bearer access token and scope data to that user.
+        Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
+        may update consent, ledger, or derived insight data as described by the route.
+      operationId: post_reports_monthly_by_month_share_links
+      parameters:
+      - in: path
+        name: month
+        required: true
+        schema:
+          title: Month
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShareInput'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Create Report Share Link Reports Monthly  Month  Share
+                  Links Post
+                type: object
+          description: Successful Response
+        '401':
+          content:
+            application/json:
+              schema:
+                properties:
+                  detail:
+                    type: string
+                required:
+                - detail
+                type: object
+          description: Authentication is missing or invalid.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Report Share Link
+      tags:
+      - Accounts and linking
   /settings/ai:
     patch:
       description: Persist user opt-in; disabling AI immediately deletes their chat
@@ -5386,6 +6032,76 @@ paths:
       summary: Set Ai Preference
       tags:
       - AI
+  /shared/reports/{token}:
+    get:
+      description: Read this resource in the cashlens user journey. Protected operations
+        require the signed-in user's Bearer access token and scope data to that user.
+        Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
+        may update consent, ledger, or derived insight data as described by the route.
+      operationId: get_shared_reports_by_token
+      parameters:
+      - in: path
+        name: token
+        required: true
+        schema:
+          title: Token
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MonthlyReport'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security: []
+      summary: Shared Report
+      tags:
+      - Accounts and linking
+  /shared/reports/{token}/export:
+    get:
+      description: Read this resource in the cashlens user journey. Protected operations
+        require the signed-in user's Bearer access token and scope data to that user.
+        Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations
+        may update consent, ledger, or derived insight data as described by the route.
+      operationId: get_shared_reports_by_token_export
+      parameters:
+      - in: path
+        name: token
+        required: true
+        schema:
+          title: Token
+          type: string
+      - in: query
+        name: format
+        required: true
+        schema:
+          enum:
+          - pdf
+          - csv
+          title: Format
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security: []
+      summary: Export Shared Report
+      tags:
+      - Accounts and linking
   /statements/upload:
     post:
       description: Submit this resource in the cashlens user journey. Protected operations
@@ -6019,6 +6735,8 @@ tags:
   name: Recurring
 - description: Read, run and dismiss deterministic detector results.
   name: Insights
+- description: Generate, export and selectively share monthly reports.
+  name: Reports
 - description: Read the safe-to-spend calculation.
   name: Forecast
 - description: Opt-in wording and aggregate-only chat; model failure falls back safely.
