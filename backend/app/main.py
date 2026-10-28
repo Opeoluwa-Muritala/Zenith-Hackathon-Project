@@ -1,4 +1,4 @@
-"""cashlens FastAPI entry point."""
+"""fetch FastAPI entry point."""
 
 import hashlib
 import hmac
@@ -122,7 +122,7 @@ from app.reports.router import router as reports_router
 
 settings = get_settings()
 settings.validate_runtime()
-logger = logging.getLogger("cashlens")
+logger = logging.getLogger("fetch")
 API_VERSION = "1.0.0"
 API_DESCRIPTION = """Fetch consolidates user-consented financial data using Mono Connect or a
 mock provider. Authentication uses app-issued JWTs after email or phone OTP verification; refresh
@@ -3020,7 +3020,7 @@ def _document_operation(path: str, method: str, operation: dict) -> None:
     operation.setdefault(
         "description",
         (
-            f"{verb} this resource in the cashlens user journey. Protected operations "
+            f"{verb} this resource in the fetch user journey. Protected operations "
             "require the signed-in user's Bearer access token and scope data to that user. "
             "Amounts are integer kobo; timestamps are UTC ISO 8601. State-changing operations "
             "may update consent, ledger, or derived insight data as described by the route."

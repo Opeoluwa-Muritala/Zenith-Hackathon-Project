@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import AiAudit
 
-logger = logging.getLogger("cashlens.ai")
+logger = logging.getLogger("fetch.ai")
 
 
 async def record(

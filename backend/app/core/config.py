@@ -5,14 +5,14 @@ from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import make_url
 
-PRODUCT_NAME = "cashlens"
+PRODUCT_NAME = "Fetch"
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=("../.env", ".env", "app/.env"), extra="ignore", populate_by_name=True
     )
-    database_url: str = "postgresql+asyncpg://localhost/cashlens"
+    database_url: str = "postgresql+asyncpg://localhost/fetch"
     jwt_secret: str = ""
     environment: str = Field("development", validation_alias=AliasChoices("APP_ENV", "ENVIRONMENT"))
     redis_url: str = ""
@@ -44,8 +44,8 @@ class Settings(BaseSettings):
     refresh_days: int = 30
     live_sync_trial_days: int = Field(14, ge=1, le=90)
     free_live_account_limit: int = Field(2, ge=1, le=2)
-    jwt_issuer: str = "cashlens-api"
-    jwt_audience: str = "cashlens-mobile"
+    jwt_issuer: str = "fetch-api"
+    jwt_audience: str = "fetch-mobile"
     bvn_pepper: str = ""
     aggregator_provider: str = "mock"
     mono_base_url: str = "https://api.withmono.com"
@@ -53,7 +53,7 @@ class Settings(BaseSettings):
     mono_lookup_secret_key: str = ""
     mono_public_key: str = ""
     webhook_secure_key: str = ""
-    mono_redirect_url: str = "cashlens://mono/callback"
+    mono_redirect_url: str = "fetch://mono/callback"
     mono_account_match_enabled: bool = False
     ai_enabled_global: bool = False
     ai_provider: str = "groq"
@@ -141,7 +141,7 @@ class Settings(BaseSettings):
             raise RuntimeError("Production DATABASE_URL must not use a development host")
         if database.username in {None, "postgres", "user"} or database.database in {
             None,
-            "cashlens",
+            "fetch",
             "postgres",
             "dbname",
         }:

@@ -26,5 +26,5 @@ jobs:
       - run: npx expo export --platform android
       - uses: actions/upload-artifact@v4
         with:
-          name: cashlens-android-bundle
+          name: fetch-android-bundle
           path: mobile/dist/**

@@ -20,7 +20,7 @@ from app.core.config import get_settings
 from app.explain.service import WEALTH_FOOTER, TemplateExplanationService
 from app.models import InsightRecord, UserSettings
 
-logger = logging.getLogger("cashlens.ai.explain")
+logger = logging.getLogger("fetch.ai.explain")
 
 
 class InsightCopy(BaseModel):

@@ -15,7 +15,7 @@ from app.ai.redaction import redact_user_text, tool_input
 from app.ai.verify import verify_numbers
 from app.core.config import get_settings
 
-logger = logging.getLogger("cashlens.ai.chat")
+logger = logging.getLogger("fetch.ai.chat")
 MAX_TOOL_CALLS = 5
 MAX_ROUND_TRIPS = 3
 DISTRESS_RE = re.compile(

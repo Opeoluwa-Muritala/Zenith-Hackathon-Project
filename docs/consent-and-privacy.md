@@ -1,4 +1,4 @@
-cashlens is designed to minimise identity and financial data while preserving user control. This document is for users, reviewers and implementers.
+fetch is designed to minimise identity and financial data while preserving user control. This document is for users, reviewers and implementers.
 
 # Consent and privacy
 

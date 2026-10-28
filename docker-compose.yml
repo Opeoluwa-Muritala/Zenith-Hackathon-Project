@@ -2,10 +2,10 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-cashlens}
-      POSTGRES_USER: ${POSTGRES_USER:-cashlens}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cashlens_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-fetch}
+      POSTGRES_USER: ${POSTGRES_USER:-fetch}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fetch_dev}
     ports: ["5432:5432"]
-    volumes: [cashlens_pg:/var/lib/postgresql/data]
+    volumes: [fetch_pg:/var/lib/postgresql/data]
 volumes:
-  cashlens_pg:
+  fetch_pg:

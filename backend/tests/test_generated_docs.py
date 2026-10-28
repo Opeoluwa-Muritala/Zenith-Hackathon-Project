@@ -7,6 +7,7 @@ import yaml
 
 from app.main import app
 from scripts.check_docs import check as check_docs
+from scripts.export_openapi import BACKEND_OUTPUT
 from scripts.export_openapi import OUTPUT as OPENAPI_OUTPUT
 from scripts.export_postman import OUTPUT as POSTMAN_OUTPUT
 from scripts.export_postman import build_postman
@@ -19,6 +20,9 @@ from scripts.gen_data_model import render as render_model
 def test_openapi_artifact_is_current():
     expected = json.dumps(app.openapi(), indent=2, sort_keys=True) + "\n"
     assert OPENAPI_OUTPUT.read_text(encoding="utf-8") == expected, (
+        "Run python backend/scripts/export_openapi.py"
+    )
+    assert BACKEND_OUTPUT.read_text(encoding="utf-8") == expected, (
         "Run python backend/scripts/export_openapi.py"
     )
     assert (

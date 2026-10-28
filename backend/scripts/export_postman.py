@@ -121,7 +121,7 @@ def _request(path: str, method: str, operation: dict, spec: dict) -> dict:
         for p in operation.get("parameters", [])
         if p.get("in") == "query"
     ]
-    url = {
+    url: dict[str, object] = {
         "raw": "{{base_url}}" + raw_path,
         "host": ["{{base_url}}"],
         "path": [
