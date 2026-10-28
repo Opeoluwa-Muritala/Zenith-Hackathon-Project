@@ -435,6 +435,7 @@ Do not edit; run `python backend/scripts/gen_data_model.py`.
 | `discretionary_categories` | `JSON` | False |  |  |
 | `nominal_tbill_rate_bps` | `INTEGER` | False |  |  |
 | `ai_enabled` | `BOOLEAN` | False |  |  |
+| `privacy_blur` | `BOOLEAN` | False |  |  |
 
 ## `users`
 

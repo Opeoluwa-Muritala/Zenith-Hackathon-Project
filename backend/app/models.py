@@ -299,6 +299,7 @@ class UserSettings(Base):
     discretionary_categories: Mapped[list] = mapped_column(JSON, default=list)
     nominal_tbill_rate_bps: Mapped[int] = mapped_column(Integer, default=1500)
     ai_enabled: Mapped[bool] = mapped_column(default=False)
+    privacy_blur: Mapped[bool] = mapped_column(default=False)
 
 
 class InsightRecord(Base):

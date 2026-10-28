@@ -19,6 +19,11 @@ category before running it; global rules store a hash of the key. User rules alw
 | INS-6 | Persisted alerts for leaks, unusual transfers, overspending and repayments |
 | INS-7 | Low-confidence labels and owner-correctable SME suggestions |
 | INS-8 | Code-only calculations; validated phrasing retries once then uses templates |
+| NET-1–5 | Account/asset breakdown, paused balances, read-time FX and reminders |
+| NET-6 | Persisted privacy-blur preference for clients |
+| SPD-1–3 | Filtered/recent transactions, spending ranges and reusable category rules |
+| BUD-1 | Effective-date budgets and deterministic spending velocity |
+| OBL-1–3 | Generic repayment detection, owner review and matched payment history |
 
 Public review routes and API artifacts are linked from [Public API](docs/public-api.md).
 

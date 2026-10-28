@@ -1,11 +1,14 @@
 """Persist high-confidence lender repayments found by the recurring detector."""
 
+import re
+from datetime import datetime
+from typing import cast
 from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.ledger.normalise import lender_name
+from app.ledger.normalise import lender_name, narration_parts
 from app.ledger.service import as_utc
 from app.models import (
     Direction,
@@ -15,6 +18,19 @@ from app.models import (
     RecurringSeries,
     Transaction,
 )
+
+
+def obligation_lender(value: str) -> tuple[str, str] | None:
+    """Match the reviewed lender list, then conservative generic repayment terms."""
+    known = lender_name(value)
+    if known:
+        return known, "loan"
+    lower = value.lower()
+    if not re.search(r"\b(?:loan|repayment|direct[ -]?debit)\b", lower):
+        return None
+    kind = "direct_debit" if re.search(r"\bdirect[ -]?debit\b", lower) else "loan"
+    decoded = " ".join(narration_parts(value)).strip()
+    return (decoded[:120] or ("Direct debit" if kind == "direct_debit" else "Loan repayment"), kind)
 
 
 async def sync_detected_obligations(db: AsyncSession, user_id: UUID) -> int:
@@ -27,9 +43,11 @@ async def sync_detected_obligations(db: AsyncSession, user_id: UUID) -> int:
     ).all()
     count = 0
     for series, merchant in recurring:
-        lender = lender_name(merchant.canonical_name)
-        if lender is None:
+        match = obligation_lender(merchant.canonical_name)
+        if match is None:
             continue
+        lender, kind = match
+        next_due = cast(datetime, as_utc(series.next_expected_at)).date()
         obligation = (
             await db.execute(
                 select(Obligation).where(
@@ -45,10 +63,10 @@ async def sync_detected_obligations(db: AsyncSession, user_id: UUID) -> int:
                 user_id=user_id,
                 account_id=series.account_id,
                 lender_name=lender,
-                kind="loan",
+                kind=kind,
                 amount_minor=series.typical_amount_minor,
                 cadence_days=series.cadence_days,
-                next_due_date=as_utc(series.next_expected_at).date(),
+                next_due_date=next_due,
                 confidence_bps=min(10_000, series.cycles * 2_000),
                 status="upcoming",
                 source="detected",
@@ -59,7 +77,9 @@ async def sync_detected_obligations(db: AsyncSession, user_id: UUID) -> int:
         else:
             obligation.amount_minor = series.typical_amount_minor
             obligation.cadence_days = series.cadence_days
-            obligation.next_due_date = as_utc(series.next_expected_at).date()
+            obligation.next_due_date = next_due
+            obligation.kind = kind
+            obligation.confidence_bps = min(10_000, series.cycles * 2_000)
         transactions = (
             await db.execute(
                 select(Transaction).where(
@@ -69,7 +89,8 @@ async def sync_detected_obligations(db: AsyncSession, user_id: UUID) -> int:
             )
         ).scalars()
         for tx in transactions:
-            if lender_name(tx.decoded_merchant or tx.narration_clean) != lender:
+            transaction_match = obligation_lender(tx.decoded_merchant or tx.narration_clean)
+            if transaction_match is None or transaction_match[0] != lender:
                 continue
             existing = (
                 await db.execute(
