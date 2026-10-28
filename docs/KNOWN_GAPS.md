@@ -11,14 +11,14 @@ This table records MVP features that are still missing or only partially impleme
 | Account match | partial | Optional chargeable match is off by default; mismatches stop sync but are not automatically unlinked. |
 | Account categories and grouped totals | partial | Grouped totals separate currencies; mapping includes a few known names and fictional fixture banks. Unknown names are flagged. Broader coverage is pending. |
 | Balance freshness | partial | List/detail/refresh share freshness fields. Real-time job headers prevent cached processing data from looking fresh. Mono cooldown is at least five minutes; durable job tracking and reauthorisation are pending. Ledger balance stays null. |
-| Single-account unlink | partial | Account unlink and consent revoke purge linked local data before attempting Mono unlink and persist `pending_unlink` on failure; no automatic retry worker exists. |
-| Manual assets and FX | partial | CRUD, write-time rate, generic HTTP rate source and cache exist; no configured provider or reminder worker is included. |
+| Single-account unlink | partial | Account unlink and consent revoke purge linked local data before attempting Mono unlink; the scheduler retries durable `pending_unlink` records. Live Mono unlink remains unverified. |
+| Manual assets and FX | partial | CRUD, write-time rate, generic HTTP rate source, cache and reminder scheduling exist; no live FX provider is configured. |
 | Transaction enrichment | partial | Format parsing, merchant aliases, seven category labels, user-rule priority and unchanged raw narration exist. Wider merchant coverage is pending. |
 | Transaction analytics | partial | Direction filter, recent feed, spending periods and reclassification exist; own-account transfers cannot yet be identified reliably and account display names are not stored. |
-| Budget | partial | Monthly limit and velocity endpoints plus repeatable demo fixtures exist; overspending alerts are pending. |
-| Obligations | partial | Detected lender debits, historical payment matching, manual creation and review endpoints exist; generic direct-debit detection and reminder scheduling remain absent. |
-| Push notifications and scheduler | pending | Device registration/preferences exist. FCM delivery, notification jobs and a worker are outside the demo scope. |
-| Consent wipe | pending | No complete user wipe endpoint. Pending remote unlinks are persisted but have no automatic retry worker. |
+| Budget | partial | Monthly limit, velocity and scheduled overspending alerts exist; category-specific budgets remain outside MVP. |
+| Obligations | partial | Detected lender debits, historical payment matching, manual review and scheduled reminders exist; bank mandate data is unavailable. |
+| Push notifications and scheduler | partial | FCM adapter, duplicate-safe log, invalid-token handling and seven locked jobs exist. Live FCM credentials and delivery remain unverified. |
+| Consent wipe | pending | No complete user wipe endpoint. Pending remote unlinks are persisted and retried by the worker. |
 | Privacy retention and NDPA operations | pending | No raw-narration retention enforcement, DPIA or operational subject-rights workflow. |
 | OpenAPI and Postman detail | partial | Demo operations have named responses, explicit security and documented errors. JSON/YAML standard validation and drift checks pass; Postman covers each operation. Other legacy operation modelling and actual Postman-app import remain pending. |
 | Webhook recovery | partial | Failed or abandoned processing can retry on redelivery. Event bodies are not retained, so receipt acknowledged before a crash still needs external redelivery/manual recovery; no worker exists. |

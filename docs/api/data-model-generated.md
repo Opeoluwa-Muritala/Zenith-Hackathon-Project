@@ -157,6 +157,8 @@ Do not edit; run `python backend/scripts/gen_data_model.py`.
 | `token_hash` | `VARCHAR(64)` | False |  | Hash |
 | `platform` | `VARCHAR(20)` | False |  |  |
 | `last_seen_at` | `DATETIME` | False |  |  |
+| `is_valid` | `BOOLEAN` | False |  |  |
+| `invalidated_at` | `DATETIME` | True |  |  |
 
 ## `discovered_accounts`
 
@@ -245,6 +247,18 @@ Do not edit; run `python backend/scripts/gen_data_model.py`.
 | `logo_url` | `VARCHAR(500)` | True |  |  |
 | `savings_rate_bps` | `INTEGER` | False |  |  |
 
+## `job_runs`
+
+| Column | Type | Nullable | Key | Protection |
+|---|---|---:|---|---|
+| `id` | `CHAR(32)` | False | PK |  |
+| `job_name` | `VARCHAR(60)` | False |  |  |
+| `scheduled_for` | `DATETIME` | False |  |  |
+| `lock_owner` | `VARCHAR(64)` | False |  |  |
+| `status` | `VARCHAR(20)` | False |  |  |
+| `started_at` | `DATETIME` | False |  |  |
+| `completed_at` | `DATETIME` | True |  |  |
+
 ## `manual_assets`
 
 | Column | Type | Nullable | Key | Protection |
@@ -269,6 +283,20 @@ Do not edit; run `python backend/scripts/gen_data_model.py`.
 | `category_default` | `VARCHAR(40)` | False |  |  |
 | `is_subscription_like` | `BOOLEAN` | False |  |  |
 | `legitimately_repeating` | `BOOLEAN` | False |  |  |
+
+## `notification_logs`
+
+| Column | Type | Nullable | Key | Protection |
+|---|---|---:|---|---|
+| `id` | `CHAR(32)` | False | PK |  |
+| `user_id` | `CHAR(32)` | False | FK |  |
+| `device_id` | `CHAR(32)` | False | FK |  |
+| `event_key` | `VARCHAR(160)` | False |  |  |
+| `kind` | `VARCHAR(40)` | False |  |  |
+| `status` | `VARCHAR(20)` | False |  |  |
+| `attempts` | `INTEGER` | False |  |  |
+| `last_attempt_at` | `DATETIME` | False |  |  |
+| `sent_at` | `DATETIME` | True |  |  |
 
 ## `notification_preferences`
 

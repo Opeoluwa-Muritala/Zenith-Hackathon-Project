@@ -4,7 +4,7 @@ The generated source of truth is [OpenAPI JSON](api/openapi.json) and [YAML](api
 
 Amounts ending in `_minor` are integer minor units (NGN kobo); `fx_rate_used_ppm` is NGN per USD multiplied by one million. Timestamps are UTC ISO 8601. List endpoints use bounded `limit` and `offset` where implemented. Transactions can be filtered by account, merchant, category, date range, and `type=credit|debit`. `GET /transactions/recent` returns a cross-account feed; `GET /analytics/spending` supports this month, last month and custom dates. Own-account transfer exclusion is not implemented and is explicitly reported as unavailable. Mono real-time refresh starts a provider job and may return cached balance until a webhook arrives.
 
-Current route groups are authentication, identity, BVN onboarding, consents, discovered-account linking, accounts, assets/FX, net position, sync/statements, transactions, category rules, spending analytics, budget, obligations, notification preferences/device registration, summaries, recurring, insights, forecast, AI, webhooks, and health. Obligation detection is limited to named recurring lenders; push delivery and alerts are not scheduled.
+Current route groups are authentication, identity, BVN onboarding, consents, discovered-account linking, accounts, assets/FX, net position, sync/statements, transactions, category rules, spending analytics, budget, obligations, notification preferences/device registration, summaries, recurring, insights, forecast, AI, webhooks, and health. A separate worker schedules sync, stale marking, unlink retries, reminders, overspending alerts and cleanup; it is not started by an API process.
 
 ## Demo contracts and conventions
 

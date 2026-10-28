@@ -28,6 +28,10 @@ category before running it; global rules store a hash of the key. User rules alw
 | RPT-2 | PDF/CSV exports and expiring, revocable owner-created share links |
 | RPT-3 | One revocable bookkeeper invite with read-only ledger/report access |
 | RPT-4 | Unsure and low-confidence report items are explicitly labelled |
+| NTF-1 | Encrypted device registration, removal and invalid-token handling |
+| NTF-2 | Owner-controlled overspend, repayment and investment preferences |
+| NTF-3 | Idempotent push log and separately deployed, locked scheduler worker |
+| NTF-4 | New-money activity alerts take priority during scheduled sync |
 
 Public review routes and API artifacts are linked from [Public API](docs/public-api.md).
 
@@ -45,7 +49,14 @@ Requirements: Python 3.12 and the project’s Python dependencies. Configure a l
 cd backend
 pip install -e .
 uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+# In a second process:
+python -m app.scheduler.worker
 ```
+
+The scheduler process runs account sync, stale marking, pending-unlink retries,
+asset and obligation reminders, overspending alerts, and retention cleanup. Configure
+`FCM_CREDENTIALS_JSON` for push delivery; when absent, push is disabled with one warning
+while all non-push jobs continue.
 
 Install development dependencies with `uv sync --all-groups` and documentation validation with `uv pip install -r requirements-docs.txt`. Run tests with `uv run python -m pytest tests` from `backend`. Open `http://localhost:8000/docs` for Swagger. OTP delivery must be explicitly configured; demo inboxes must never be used with real users.
 

@@ -14,9 +14,7 @@ class Settings(BaseSettings):
     )
     database_url: str = "postgresql+asyncpg://localhost/cashlens"
     jwt_secret: str = ""
-    environment: str = Field(
-        "development", validation_alias=AliasChoices("APP_ENV", "ENVIRONMENT")
-    )
+    environment: str = Field("development", validation_alias=AliasChoices("APP_ENV", "ENVIRONMENT"))
     redis_url: str = ""
     cors_origins: str = "http://localhost:3000"
     public_base_url: str = "http://localhost:8000"
@@ -68,6 +66,7 @@ class Settings(BaseSettings):
     ai_request_timeout_s: float = 20.0
     ai_chat_requests_per_minute: int = 10
     assistant_retention_days: int = 30
+    fcm_credentials_json: str = Field("", repr=False)
     field_encryption_key: str = ""
     field_encryption_key_id: str = "primary"
     field_encryption_previous_keys: str = "{}"

@@ -580,6 +580,8 @@ class DeviceToken(Base):
     token_hash: Mapped[str] = mapped_column(String(64), unique=True)
     platform: Mapped[str] = mapped_column(String(20))
     last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    is_valid: Mapped[bool] = mapped_column(default=True)
+    invalidated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class NotificationPreference(Base):
@@ -590,6 +592,34 @@ class NotificationPreference(Base):
     overspending_alerts: Mapped[bool] = mapped_column(default=True)
     loan_repayment_reminders: Mapped[bool] = mapped_column(default=True)
     investment_update_prompts: Mapped[bool] = mapped_column(default=True)
+
+
+class NotificationLog(Base):
+    __tablename__ = "notification_logs"
+    __table_args__ = (UniqueConstraint("device_id", "event_key"),)
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    device_id: Mapped[UUID] = mapped_column(
+        ForeignKey("device_tokens.id", ondelete="CASCADE"), index=True
+    )
+    event_key: Mapped[str] = mapped_column(String(160))
+    kind: Mapped[str] = mapped_column(String(40))
+    status: Mapped[str] = mapped_column(String(20))
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    last_attempt_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class JobRun(Base):
+    __tablename__ = "job_runs"
+    __table_args__ = (UniqueConstraint("job_name", "scheduled_for"),)
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    job_name: Mapped[str] = mapped_column(String(60), index=True)
+    scheduled_for: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    lock_owner: Mapped[str] = mapped_column(String(64))
+    status: Mapped[str] = mapped_column(String(20))
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class BvnLookupSession(Base):

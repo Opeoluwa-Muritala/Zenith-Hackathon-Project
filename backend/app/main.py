@@ -2716,6 +2716,8 @@ async def register_device(
         row.token_encrypted = encrypt_field(body.token)
         row.platform = body.platform
         row.last_seen_at = now_utc()
+        row.is_valid = True
+        row.invalidated_at = None
     await db.commit()
     return {"id": row.id, "platform": row.platform, "last_seen_at": row.last_seen_at}
 
