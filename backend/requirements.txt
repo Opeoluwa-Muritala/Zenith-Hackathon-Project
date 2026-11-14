@@ -64,7 +64,7 @@ pydantic==2.13.5
     #   pydantic-settings
 pydantic-core==2.46.5
     # via pydantic
-pydantic-settings==2.15.0
+pydantic-settings==2.16.2
     # via fetch-backend
 pyjwt==2.15.1
     # via fetch-backend
